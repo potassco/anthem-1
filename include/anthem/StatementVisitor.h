@@ -37,19 +37,19 @@ struct StatementVisitor
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &)
 	{
-		std::vector<Clingo::AST::Variable> headVariables;
-		rule.head.data.accept(HeadLiteralCollectVariablesVisitor(), rule.head, headVariables);
+		std::vector<Clingo::AST::Term> headTerms;
+		rule.head.data.accept(HeadLiteralCollectTermsVisitor(), rule.head, headTerms);
 
-		if (!headVariables.empty())
+		if (!headTerms.empty())
 		{
 			std::cout << "exists ";
 
-			for (auto i = headVariables.cbegin(); i != headVariables.cend(); i++)
+			for (auto i = headTerms.cbegin(); i != headTerms.cend(); i++)
 			{
-				if (i != headVariables.cbegin())
+				if (i != headTerms.cbegin())
 					std::cout << ", ";
 
-				std::cout << *i;
+				std::cout << "AUX" << (i - headTerms.cbegin());
 			}
 
 			std::cout << ": ";

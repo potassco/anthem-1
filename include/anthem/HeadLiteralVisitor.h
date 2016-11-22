@@ -58,30 +58,30 @@ struct HeadLiteralVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct HeadLiteralCollectVariablesVisitor
+struct HeadLiteralCollectTermsVisitor
 {
-	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, std::vector<Clingo::AST::Variable> &variables)
+	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, std::vector<Clingo::AST::Term> &terms)
 	{
-		literal.data.accept(LiteralCollectVariablesVisitor(), literal, variables);
+		literal.data.accept(LiteralCollectTermsVisitor(), literal, terms);
 	}
 
-	void visit(const Clingo::AST::Disjunction &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Variable> &)
+	void visit(const Clingo::AST::Disjunction &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
 	{
 		// TODO: implement
 		throwErrorUnsupportedHeadLiteral("disjunction", headLiteral);
 	}
 
-	void visit(const Clingo::AST::Aggregate &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Variable> &)
+	void visit(const Clingo::AST::Aggregate &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
 	{
 		throwErrorUnsupportedHeadLiteral("aggregate", headLiteral);
 	}
 
-	void visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Variable> &)
+	void visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
 	{
 		throwErrorUnsupportedHeadLiteral("head aggregate", headLiteral);
 	}
 
-	void visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Variable> &)
+	void visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
 	{
 		throwErrorUnsupportedHeadLiteral("theory", headLiteral);
 	}

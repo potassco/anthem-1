@@ -29,9 +29,9 @@ struct LiteralVisitor
 	void visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &)
 	{
 		if (boolean.value == true)
-			std::cout << "true";
+			std::cout << "#true";
 		else
-			std::cout << "false";
+			std::cout << "#false";
 	}
 
 	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &)
@@ -52,24 +52,25 @@ struct LiteralVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct LiteralCollectVariablesVisitor
+struct LiteralCollectTermsVisitor
 {
-	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, std::vector<Clingo::AST::Variable> &)
+	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, std::vector<Clingo::AST::Term> &)
 	{
 	}
 
-	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, std::vector<Clingo::AST::Variable> &variables)
+	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, std::vector<Clingo::AST::Term> &terms)
 	{
-		term.data.accept(TermCollectVariablesVisitor(), term, variables);
+		terms.push_back(term);
 	}
 
-	void visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &, std::vector<Clingo::AST::Variable> &variables)
+	void visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &, std::vector<Clingo::AST::Term> &terms)
 	{
-		comparison.left.data.accept(TermCollectVariablesVisitor(), comparison.left, variables);
-		comparison.right.data.accept(TermCollectVariablesVisitor(), comparison.right, variables);
+		terms.reserve(terms.size() + 2);
+		terms.push_back(comparison.left);
+		terms.push_back(comparison.right);
 	}
 
-	void visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, std::vector<Clingo::AST::Variable> &)
+	void visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, std::vector<Clingo::AST::Term> &)
 	{
 		throwErrorUnsupportedLiteral("CSP literal", literal);
 	}

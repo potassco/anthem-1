@@ -63,53 +63,6 @@ struct TermVisitor
 	}
 };
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct TermCollectVariablesVisitor
-{
-	void visit(const Clingo::Symbol &, const Clingo::AST::Term &, std::vector<Clingo::AST::Variable> &)
-	{
-	}
-
-	void visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, std::vector<Clingo::AST::Variable> &variables)
-	{
-		variables.push_back(variable);
-	}
-
-	void visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &, std::vector<Clingo::AST::Variable> &variables)
-	{
-		unaryOperation.argument.data.accept(*this, unaryOperation.argument, variables);
-	}
-
-	void visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &, std::vector<Clingo::AST::Variable> &variables)
-	{
-		binaryOperation.left.data.accept(*this, binaryOperation.left, variables);
-		binaryOperation.right.data.accept(*this, binaryOperation.right, variables);
-	}
-
-	void visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, std::vector<Clingo::AST::Variable> &variables)
-	{
-		interval.left.data.accept(*this, interval.left, variables);
-		interval.right.data.accept(*this, interval.right, variables);
-	}
-
-	void visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, std::vector<Clingo::AST::Variable> &variables)
-	{
-		if (function.external)
-			throwErrorAtLocation(term.location, "external functions currently not supported");
-
-		for (const auto &argument : function.arguments)
-			argument.data.accept(*this, argument, variables);
-	}
-
-	void visit(const Clingo::AST::Pool &pool, const Clingo::AST::Term &, std::vector<Clingo::AST::Variable> &variables)
-	{
-		for (const auto &argument : pool.arguments)
-			argument.data.accept(*this, argument, variables);
-	}
-};
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }

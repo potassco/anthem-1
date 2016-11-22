@@ -2,6 +2,8 @@
 
 #include <boost/program_options.hpp>
 
+#include <anthem/Translation.h>
+
 int main(int argc, char **argv)
 {
 	namespace po = boost::program_options;
@@ -37,7 +39,7 @@ int main(int argc, char **argv)
 	}
 	catch (const po::error &e)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << "error: " << e.what() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;
 	}
@@ -52,6 +54,22 @@ int main(int argc, char **argv)
 	{
 		std::cout << "anthem version 0.1.0-git" << std::endl;
 		return EXIT_SUCCESS;
+	}
+
+	try
+	{
+		if (variablesMap.count("input"))
+		{
+			const auto &inputFiles = variablesMap["input"].as<std::vector<std::string>>();
+			anthem::translate(inputFiles);
+		}
+		else
+			anthem::translate("std::cin", std::cin);
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "error: " << e.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
 	return EXIT_SUCCESS;

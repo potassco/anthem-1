@@ -37,22 +37,35 @@ struct StatementVisitor
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &)
 	{
-		std::cout << "[rule]" << std::endl;
-		std::cout << "[head literal]" << std::endl;
+		std::vector<Clingo::AST::Variable> headVariables;
+		rule.head.data.accept(HeadLiteralCollectVariablesVisitor(), rule.head, headVariables);
 
-		rule.head.data.accept(HeadLiteralVisitor(), rule.head);
+		if (!headVariables.empty())
+		{
+			std::cout << "exists ";
 
-		std::cout << "[body]" << std::endl;
+			for (auto i = headVariables.cbegin(); i != headVariables.cend(); i++)
+			{
+				if (i != headVariables.cbegin())
+					std::cout << ", ";
+
+				std::cout << *i;
+			}
+
+			std::cout << ": ";
+		}
+
+		std::cout << "body -> ";
+
+		/*rule.head.data.accept(HeadLiteralVisitor(), rule.head);
 
 		for (const auto &bodyLiteral : rule.body)
 		{
-			std::cout << "[body literal]" << std::endl;
-
 			if (bodyLiteral.sign != Clingo::AST::Sign::None)
 				throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported");
 
 			bodyLiteral.data.accept(BodyLiteralVisitor(), bodyLiteral);
-		}
+		}*/
 	}
 
 	void visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement)

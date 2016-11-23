@@ -100,12 +100,9 @@ struct TermPrintVisitor
 
 struct LiteralPrintVisitor
 {
-	void visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, Context &)
+	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &literal, Context &)
 	{
-		if (boolean.value == true)
-			std::cout << "#true";
-		else
-			std::cout << "#false";
+		throwErrorAtLocation(literal.location, "“boolean” literals currently unsupported in this context");
 	}
 
 	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, Context &context)

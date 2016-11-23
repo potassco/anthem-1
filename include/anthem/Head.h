@@ -215,6 +215,11 @@ struct HeadLiteralPrintSubstitutedVisitor
 {
 	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, const std::vector<const Clingo::AST::Term *> &terms)
 	{
+		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
+			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported");
+		else if (literal.sign == Clingo::AST::Sign::Negation)
+			std::cout << "not ";
+
 		literal.data.accept(LiteralPrintSubstitutedVisitor(), literal, terms);
 	}
 

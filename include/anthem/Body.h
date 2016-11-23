@@ -17,35 +17,35 @@ namespace anthem
 
 struct TermPrintVisitor
 {
-	void visit(const Clingo::Symbol &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::Symbol &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“symbol” terms currently unsupported in this context");
+		throwErrorAtLocation(term.location, "“symbol” terms currently unsupported in this context", context);
 	}
 
-	void visit(const Clingo::AST::Variable &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::Variable &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“variable” terms currently unsupported in this context");
+		throwErrorAtLocation(term.location, "“variable” terms currently unsupported in this context", context);
 	}
 
-	void visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported in this context");
+		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported in this context", context);
 	}
 
-	void visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“binary operation” terms currently unsupported in this context");
+		throwErrorAtLocation(term.location, "“binary operation” terms currently unsupported in this context", context);
 	}
 
-	void visit(const Clingo::AST::Interval &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::Interval &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“interval” terms currently unsupported in this context");
+		throwErrorAtLocation(term.location, "“interval” terms currently unsupported in this context", context);
 	}
 
 	void visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &term, Context &context)
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
-			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported");
+			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported", context);
 
 		if (function.arguments.empty())
 		{
@@ -98,9 +98,9 @@ struct TermPrintVisitor
 		context.auxiliaryBodyLiteralID += function.arguments.size();
 	}
 
-	void visit(const Clingo::AST::Pool &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::Pool &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“pool” terms currently unsupported");
+		throwErrorAtLocation(term.location, "“pool” terms currently unsupported", context);
 	}
 };
 
@@ -108,9 +108,9 @@ struct TermPrintVisitor
 
 struct LiteralPrintVisitor
 {
-	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &literal, Context &)
+	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &literal, Context &context)
 	{
-		throwErrorAtLocation(literal.location, "“boolean” literals currently unsupported in this context");
+		throwErrorAtLocation(literal.location, "“boolean” literals currently unsupported in this context", context);
 	}
 
 	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, Context &context)
@@ -164,9 +164,9 @@ struct LiteralPrintVisitor
 		context.auxiliaryBodyLiteralID += 2;
 	}
 
-	void visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, Context &)
+	void visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, Context &context)
 	{
-		throwErrorAtLocation(literal.location, "CSP literals currently unsupported");
+		throwErrorAtLocation(literal.location, "CSP literals currently unsupported", context);
 	}
 };
 
@@ -179,29 +179,29 @@ struct BodyLiteralPrintVisitor
 		literal.data.accept(LiteralPrintVisitor(), literal, context);
 	}
 
-	void visit(const Clingo::AST::ConditionalLiteral &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &)
+	void visit(const Clingo::AST::ConditionalLiteral &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
 	{
-		throwErrorAtLocation(bodyLiteral.location, "“conditional literal” body literals currently unsupported");
+		throwErrorAtLocation(bodyLiteral.location, "“conditional literal” body literals currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::Aggregate &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &)
+	void visit(const Clingo::AST::Aggregate &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
 	{
-		throwErrorAtLocation(bodyLiteral.location, "“aggregate” body literals currently unsupported");
+		throwErrorAtLocation(bodyLiteral.location, "“aggregate” body literals currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::BodyAggregate &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &)
+	void visit(const Clingo::AST::BodyAggregate &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
 	{
-		throwErrorAtLocation(bodyLiteral.location, "“body aggregate” body literals currently unsupported");
+		throwErrorAtLocation(bodyLiteral.location, "“body aggregate” body literals currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &)
+	void visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
 	{
-		throwErrorAtLocation(bodyLiteral.location, "“theory atom” body literals currently unsupported");
+		throwErrorAtLocation(bodyLiteral.location, "“theory atom” body literals currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::Disjoint &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &)
+	void visit(const Clingo::AST::Disjoint &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
 	{
-		throwErrorAtLocation(bodyLiteral.location, "“disjoint” body literals currently unsupported");
+		throwErrorAtLocation(bodyLiteral.location, "“disjoint” body literals currently unsupported", context);
 	}
 };
 

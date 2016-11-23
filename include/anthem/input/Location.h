@@ -1,6 +1,8 @@
 #ifndef __ANTHEM__OUTPUT__LOCATION_H
 #define __ANTHEM__OUTPUT__LOCATION_H
 
+#include <cstdlib>
+
 namespace anthem
 {
 namespace input
@@ -17,11 +19,11 @@ struct Location
 	const char *sectionStart = nullptr;
 	const char *sectionEnd = nullptr;
 
-	int rowStart = -1;
-	int rowEnd = -1;
+	std::size_t rowStart = -1;
+	std::size_t rowEnd = -1;
 
-	int columnStart = -1;
-	int columnEnd = -1;
+	std::size_t columnStart = -1;
+	std::size_t columnEnd = -1;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

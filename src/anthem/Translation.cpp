@@ -6,6 +6,7 @@
 
 #include <clingo.hh>
 
+#include <anthem/Context.h>
 #include <anthem/StatementVisitor.h>
 
 namespace anthem
@@ -35,10 +36,12 @@ void translate(const char *fileName, std::istream &stream)
 
 	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
 
+	Context context;
+
 	const auto translateStatement =
-		[](const Clingo::AST::Statement &statement)
+		[&context](const Clingo::AST::Statement &statement)
 		{
-			statement.data.accept(StatementVisitor(), statement);
+			statement.data.accept(StatementVisitor(), statement, context);
 			std::cout << std::endl;
 		};
 

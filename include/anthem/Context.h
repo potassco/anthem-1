@@ -1,6 +1,10 @@
 #ifndef __ANTHEM__CONTEXT_H
 #define __ANTHEM__CONTEXT_H
 
+#include <clingo.hh>
+
+#include <anthem/output/Logger.h>
+
 namespace anthem
 {
 
@@ -12,7 +16,10 @@ namespace anthem
 
 struct Context
 {
-	int auxiliaryBodyLiteralID = 0;
+	output::Logger logger;
+
+	std::vector<const Clingo::AST::Term *> headTerms;
+	size_t auxiliaryBodyLiteralID = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -14,52 +14,38 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void throwErrorUnsupportedStatement(const char *statementType, const Clingo::AST::Statement &statement)
-{
-	const auto errorMessage = std::string("“") + statementType + "” statements currently unsupported";
-
-	throwErrorAtLocation(statement.location, errorMessage.c_str());
-
-	throw std::runtime_error(errorMessage);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 struct StatementVisitor
 {
-	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
 	{
 		std::cout << "[program] " << program.name << std::endl;
 
 		if (!program.parameters.empty())
-			throwErrorAtLocation(statement.location, "program parameters currently unsupported");
+			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &)
+	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
 	{
-		Context context;
-
 		// Concatenate all head terms
-		std::vector<const Clingo::AST::Term *> headTerms;
-		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, headTerms);
+		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, context);
 
 		// Print auxiliary variables replacing the head atom’s arguments
-		if (!headTerms.empty())
+		if (!context.headTerms.empty())
 		{
-			for (auto i = headTerms.cbegin(); i != headTerms.cend(); i++)
+			for (auto i = context.headTerms.cbegin(); i != context.headTerms.cend(); i++)
 			{
 				const auto &headTerm = **i;
 
-				if (i != headTerms.cbegin())
+				if (i != context.headTerms.cbegin())
 					std::cout << ", ";
 
 				std::cout
-					<< AuxiliaryHeadVariablePrefix << (i - headTerms.cbegin())
+					<< AuxiliaryHeadVariablePrefix << (i - context.headTerms.cbegin())
 					<< " in " << headTerm;
 			}
 		}
 
-		if (rule.body.empty() && headTerms.empty())
+		if (rule.body.empty() && context.headTerms.empty())
 			std::cout << "true";
 		else
 		{
@@ -68,11 +54,11 @@ struct StatementVisitor
 			{
 				const auto &bodyLiteral = *i;
 
-				if (!headTerms.empty())
+				if (!context.headTerms.empty())
 					std::cout << " and ";
 
 				if (bodyLiteral.sign != Clingo::AST::Sign::None)
-					throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported");
+					throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported", context);
 
 				bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
 			}
@@ -81,62 +67,62 @@ struct StatementVisitor
 		std::cout << " -> ";
 
 		// Print consequent of the implication
-		rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, headTerms);
+		rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, context);
 	}
 
-	void visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("definition", statement);
+		throwErrorAtLocation(statement.location, "“definition” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::ShowSignature &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::ShowSignature &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("show signature", statement);
+		throwErrorAtLocation(statement.location, "“show signature” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("show term", statement);
+		throwErrorAtLocation(statement.location, "“show term” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::Minimize &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::Minimize &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("minimize", statement);
+		throwErrorAtLocation(statement.location, "“minimize” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::Script &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::Script &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("script", statement);
+		throwErrorAtLocation(statement.location, "“script” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::External &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::External &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("external", statement);
+		throwErrorAtLocation(statement.location, "“external” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::Edge &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::Edge &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("edge", statement);
+		throwErrorAtLocation(statement.location, "“edge” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::Heuristic &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::Heuristic &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("heuristic", statement);
+		throwErrorAtLocation(statement.location, "“heuristic” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::ProjectAtom &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::ProjectAtom &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("project atom", statement);
+		throwErrorAtLocation(statement.location, "“project atom” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::ProjectSignature &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::ProjectSignature &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("project signature", statement);
+		throwErrorAtLocation(statement.location, "“project signature” statements currently unsupported", context);
 	}
 
-	void visit(const Clingo::AST::TheoryDefinition &, const Clingo::AST::Statement &statement)
+	void visit(const Clingo::AST::TheoryDefinition &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorUnsupportedStatement("theory definition", statement);
+		throwErrorAtLocation(statement.location, "“theory definition” statements currently unsupported", context);
 	}
 };
 

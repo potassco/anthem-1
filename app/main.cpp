@@ -10,9 +10,9 @@ int main(int argc, char **argv)
 
 	po::options_description description("Allowed options");
 	description.add_options()
-		("help,h", "display this help message")
-		("version,v", "Display version information.")
-		("input,i", po::value<std::vector<std::string>>(), "Specify the PDDL or SAS input file.");
+		("help,h", "Display this help message")
+		("version,v", "Display version information")
+		("input,i", po::value<std::vector<std::string>>(), "Input files");
 
 	po::positional_options_description positionalOptionsDescription;
 	positionalOptionsDescription.add("input", -1);

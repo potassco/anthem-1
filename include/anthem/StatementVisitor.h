@@ -2,7 +2,7 @@
 #define __ANTHEM__STATEMENT_VISITOR_H
 
 #include <anthem/BodyLiteralVisitor.h>
-#include <anthem/HeadLiteralVisitor.h>
+#include <anthem/Head.h>
 #include <anthem/Utils.h>
 
 namespace anthem
@@ -16,7 +16,7 @@ namespace anthem
 
 void throwErrorUnsupportedStatement(const char *statementType, const Clingo::AST::Statement &statement)
 {
-	const auto errorMessage = std::string("“") + statementType + "” statements currently not supported";
+	const auto errorMessage = std::string("“") + statementType + "” statements currently unsupported";
 
 	throwErrorAtLocation(statement.location, errorMessage.c_str());
 
@@ -32,30 +32,34 @@ struct StatementVisitor
 		std::cout << "[program] " << program.name << std::endl;
 
 		if (!program.parameters.empty())
-			throwErrorAtLocation(statement.location, "program parameters currently not supported");
+			throwErrorAtLocation(statement.location, "program parameters currently unsupported");
 	}
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &)
 	{
-		std::vector<Clingo::AST::Term> headTerms;
-		rule.head.data.accept(HeadLiteralCollectTermsVisitor(), rule.head, headTerms);
+		// Concatenate all head terms
+		std::vector<const Clingo::AST::Term *> headTerms;
+		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, headTerms);
 
+		// Print auxiliary variables replacing the head atom’s arguments
 		if (!headTerms.empty())
 		{
-			std::cout << "exists ";
-
 			for (auto i = headTerms.cbegin(); i != headTerms.cend(); i++)
 			{
+				const auto &headTerm = **i;
+
 				if (i != headTerms.cbegin())
 					std::cout << ", ";
 
-				std::cout << "AUX" << (i - headTerms.cbegin());
+				std::cout
+					<< AuxiliaryVariablePrefix << (i - headTerms.cbegin())
+					<< " in " << headTerm;
 			}
 
-			std::cout << ": ";
+			std::cout << " and ";
 		}
 
-		std::cout << "body -> ";
+		std::cout << "[body] -> ";
 
 		/*rule.head.data.accept(HeadLiteralVisitor(), rule.head);
 
@@ -66,6 +70,9 @@ struct StatementVisitor
 
 			bodyLiteral.data.accept(BodyLiteralVisitor(), bodyLiteral);
 		}*/
+
+		// Print consequent of the implication
+		rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, headTerms);
 	}
 
 	void visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement)

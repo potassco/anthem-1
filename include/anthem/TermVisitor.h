@@ -12,17 +12,6 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void throwErrorUnsupportedTerm(const char *statementType, const Clingo::AST::Term &term)
-{
-	const auto errorMessage = std::string("“") + statementType + "” terms currently not supported";
-
-	throwErrorAtLocation(term.location, errorMessage.c_str());
-
-	throw std::runtime_error(errorMessage);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 struct TermVisitor
 {
 	void visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &)
@@ -32,34 +21,34 @@ struct TermVisitor
 
 	void visit(const Clingo::AST::Variable &, const Clingo::AST::Term &term)
 	{
-		throwErrorUnsupportedTerm("variable", term);
+		throwErrorAtLocation(term.location, "“variable” terms currently unsupported");
 	}
 
 	void visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term)
 	{
-		throwErrorUnsupportedTerm("unary operation", term);
+		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported");
 	}
 
 	void visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Term &term)
 	{
-		throwErrorUnsupportedTerm("binary operation", term);
+		throwErrorAtLocation(term.location, "“binary operation” terms currently unsupported");
 	}
 
 	void visit(const Clingo::AST::Interval &, const Clingo::AST::Term &term)
 	{
-		throwErrorUnsupportedTerm("interval", term);
+		throwErrorAtLocation(term.location, "“interval” terms currently unsupported");
 	}
 
 	void visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term)
 	{
 		std::cout << "[" << function.name << "]";
 
-		throwErrorUnsupportedTerm("function", term);
+		throwErrorAtLocation(term.location, "“function” terms currently unsupported");
 	}
 
 	void visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term)
 	{
-		throwErrorUnsupportedTerm("pool", term);
+		throwErrorAtLocation(term.location, "“pool” terms currently unsupported");
 	}
 };
 

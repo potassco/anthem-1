@@ -21,7 +21,13 @@ inline void throwErrorAtLocation(const Clingo::Location &location, const char *e
 		<< location.begin_line() << ":" << location.begin_column()
 		<< ": error: "
 		<< errorMessage << std::endl;
+
+	throw std::runtime_error(errorMessage);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+constexpr const auto AuxiliaryVariablePrefix = "AUX";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

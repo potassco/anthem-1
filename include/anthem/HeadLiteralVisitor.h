@@ -15,7 +15,7 @@ namespace anthem
 
 void throwErrorUnsupportedHeadLiteral(const char *statementType, const Clingo::AST::HeadLiteral &headLiteral)
 {
-	const auto errorMessage = std::string("“") + statementType + "” head literals currently not supported";
+	const auto errorMessage = std::string("“") + statementType + "” head literals currently unsupported";
 
 	throwErrorAtLocation(headLiteral.location, errorMessage.c_str());
 
@@ -51,37 +51,6 @@ struct HeadLiteralVisitor
 	}
 
 	void visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::HeadLiteral &headLiteral)
-	{
-		throwErrorUnsupportedHeadLiteral("theory", headLiteral);
-	}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct HeadLiteralCollectTermsVisitor
-{
-	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, std::vector<Clingo::AST::Term> &terms)
-	{
-		literal.data.accept(LiteralCollectTermsVisitor(), literal, terms);
-	}
-
-	void visit(const Clingo::AST::Disjunction &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
-	{
-		// TODO: implement
-		throwErrorUnsupportedHeadLiteral("disjunction", headLiteral);
-	}
-
-	void visit(const Clingo::AST::Aggregate &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
-	{
-		throwErrorUnsupportedHeadLiteral("aggregate", headLiteral);
-	}
-
-	void visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
-	{
-		throwErrorUnsupportedHeadLiteral("head aggregate", headLiteral);
-	}
-
-	void visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::HeadLiteral &headLiteral, std::vector<Clingo::AST::Term> &)
 	{
 		throwErrorUnsupportedHeadLiteral("theory", headLiteral);
 	}

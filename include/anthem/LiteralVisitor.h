@@ -15,7 +15,7 @@ namespace anthem
 
 void throwErrorUnsupportedLiteral(const char *statementType, const Clingo::AST::Literal &literal)
 {
-	const auto errorMessage = std::string("“") + statementType + "” literals currently not supported";
+	const auto errorMessage = std::string("“") + statementType + "” literals currently unsupported";
 
 	throwErrorAtLocation(literal.location, errorMessage.c_str());
 
@@ -45,32 +45,6 @@ struct LiteralVisitor
 	}
 
 	void visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal)
-	{
-		throwErrorUnsupportedLiteral("CSP literal", literal);
-	}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct LiteralCollectTermsVisitor
-{
-	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, std::vector<Clingo::AST::Term> &)
-	{
-	}
-
-	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, std::vector<Clingo::AST::Term> &terms)
-	{
-		terms.push_back(term);
-	}
-
-	void visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &, std::vector<Clingo::AST::Term> &terms)
-	{
-		terms.reserve(terms.size() + 2);
-		terms.push_back(comparison.left);
-		terms.push_back(comparison.right);
-	}
-
-	void visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, std::vector<Clingo::AST::Term> &)
 	{
 		throwErrorUnsupportedLiteral("CSP literal", literal);
 	}

@@ -18,8 +18,8 @@ $ anthem [files] [options]
 
 ```bash
 $ git clone https://github.com/potassco/anthem.git
-$ git submodule update --init --recursive
 $ cd anthem
+$ git submodule update --init --recursive
 $ mkdir -p build/release
 $ cd build/release
 $ cmake ../.. -DCMAKE_BUILD_TYPE=Release

@@ -26,6 +26,8 @@ constexpr Format priorityFormat(Priority priority)
 		case Priority::Error:
 			return {Color::Red, FontWeight::Bold};
 	}
+
+	return {Color::White, FontWeight::Bold};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,6 +45,8 @@ constexpr const char *priorityName(Priority priority)
 		case Priority::Error:
 			return "error";
 	}
+
+	return "message";
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

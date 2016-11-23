@@ -170,7 +170,7 @@ struct TermPrintSubstitutedVisitor
 
 			assert(matchingTerm != terms.cend());
 
-			std::cout << AuxiliaryVariablePrefix << (matchingTerm - terms.cbegin());
+			std::cout << AuxiliaryHeadVariablePrefix << (matchingTerm - terms.cbegin());
 		}
 
 		std::cout << ")";

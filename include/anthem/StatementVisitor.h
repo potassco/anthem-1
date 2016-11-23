@@ -1,7 +1,7 @@
 #ifndef __ANTHEM__STATEMENT_VISITOR_H
 #define __ANTHEM__STATEMENT_VISITOR_H
 
-#include <anthem/BodyLiteralVisitor.h>
+#include <anthem/Body.h>
 #include <anthem/Head.h>
 #include <anthem/Utils.h>
 
@@ -37,6 +37,8 @@ struct StatementVisitor
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &)
 	{
+		Context context;
+
 		// Concatenate all head terms
 		std::vector<const Clingo::AST::Term *> headTerms;
 		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, headTerms);
@@ -52,24 +54,26 @@ struct StatementVisitor
 					std::cout << ", ";
 
 				std::cout
-					<< AuxiliaryVariablePrefix << (i - headTerms.cbegin())
+					<< AuxiliaryHeadVariablePrefix << (i - headTerms.cbegin())
 					<< " in " << headTerm;
 			}
-
-			std::cout << " and ";
 		}
 
-		std::cout << "[body] -> ";
-
-		/*rule.head.data.accept(HeadLiteralVisitor(), rule.head);
-
-		for (const auto &bodyLiteral : rule.body)
+		// Print translated body literals
+		for (auto i = rule.body.cbegin(); i != rule.body.cend(); i++)
 		{
+			const auto &bodyLiteral = *i;
+
+			if (!headTerms.empty())
+				std::cout << " and ";
+
 			if (bodyLiteral.sign != Clingo::AST::Sign::None)
 				throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported");
 
-			bodyLiteral.data.accept(BodyLiteralVisitor(), bodyLiteral);
-		}*/
+			bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
+		}
+
+		std::cout << " -> ";
 
 		// Print consequent of the implication
 		rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, headTerms);

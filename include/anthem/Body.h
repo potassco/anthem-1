@@ -17,33 +17,36 @@ namespace anthem
 
 struct TermPrintVisitor
 {
-	void visit(const Clingo::Symbol &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::Symbol &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
 	{
 		throwErrorAtLocation(term.location, "“symbol” terms currently unsupported in this context");
 	}
 
-	void visit(const Clingo::AST::Variable &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::Variable &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
 	{
 		throwErrorAtLocation(term.location, "“variable” terms currently unsupported in this context");
 	}
 
-	void visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
 	{
 		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported in this context");
 	}
 
-	void visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
 	{
 		throwErrorAtLocation(term.location, "“binary operation” terms currently unsupported in this context");
 	}
 
-	void visit(const Clingo::AST::Interval &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::Interval &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
 	{
 		throwErrorAtLocation(term.location, "“interval” terms currently unsupported in this context");
 	}
 
-	void visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context)
+	void visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &term, Context &context)
 	{
+		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
+			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported");
+
 		if (function.arguments.empty())
 		{
 			std::cout << function.name;
@@ -75,7 +78,12 @@ struct TermPrintVisitor
 				<< argument;
 		}
 
-		std::cout << " and " << function.name << "(";
+		std::cout << " and ";
+
+		if (literal.sign == Clingo::AST::Sign::Negation)
+			std::cout << "not ";
+
+		std::cout << function.name << "(";
 
 		for (auto i = function.arguments.cbegin(); i != function.arguments.cend(); i++)
 		{
@@ -90,7 +98,7 @@ struct TermPrintVisitor
 		context.auxiliaryBodyLiteralID += function.arguments.size();
 	}
 
-	void visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, Context &)
+	void visit(const Clingo::AST::Pool &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &)
 	{
 		throwErrorAtLocation(term.location, "“pool” terms currently unsupported");
 	}
@@ -105,13 +113,15 @@ struct LiteralPrintVisitor
 		throwErrorAtLocation(literal.location, "“boolean” literals currently unsupported in this context");
 	}
 
-	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, Context &context)
+	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, Context &context)
 	{
-		term.data.accept(TermPrintVisitor(), term, context);
+		term.data.accept(TermPrintVisitor(), literal, term, context);
 	}
 
 	void visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context)
 	{
+		assert(literal.sign != Clingo::AST::Sign::None);
+
 		const char *operatorName = "";
 
 		switch (comparison.comparison)
@@ -166,9 +176,6 @@ struct BodyLiteralPrintVisitor
 {
 	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &, Context &context)
 	{
-		if (literal.sign != Clingo::AST::Sign::None)
-			throwErrorAtLocation(literal.location, "only positive literals currently supported");
-
 		literal.data.accept(LiteralPrintVisitor(), literal, context);
 	}
 

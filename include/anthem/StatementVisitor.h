@@ -59,18 +59,23 @@ struct StatementVisitor
 			}
 		}
 
-		// Print translated body literals
-		for (auto i = rule.body.cbegin(); i != rule.body.cend(); i++)
+		if (rule.body.empty() && headTerms.empty())
+			std::cout << "true";
+		else
 		{
-			const auto &bodyLiteral = *i;
+			// Print translated body literals
+			for (auto i = rule.body.cbegin(); i != rule.body.cend(); i++)
+			{
+				const auto &bodyLiteral = *i;
 
-			if (!headTerms.empty())
-				std::cout << " and ";
+				if (!headTerms.empty())
+					std::cout << " and ";
 
-			if (bodyLiteral.sign != Clingo::AST::Sign::None)
-				throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported");
+				if (bodyLiteral.sign != Clingo::AST::Sign::None)
+					throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported");
 
-			bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
+				bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
+			}
 		}
 
 		std::cout << " -> ";

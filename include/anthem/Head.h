@@ -3,7 +3,6 @@
 
 #include <algorithm>
 
-#include <anthem/TermVisitor.h>
 #include <anthem/Utils.h>
 
 namespace anthem

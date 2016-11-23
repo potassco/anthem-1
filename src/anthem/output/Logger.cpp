@@ -101,6 +101,9 @@ void Logger::log(Priority priority, const char *message)
 {
 	const auto priorityID = static_cast<int>(priority);
 
+	if (priorityID < static_cast<int>(m_outputPriority))
+		return;
+
 	auto &stream =
 		(priorityID > static_cast<int>(Priority::Warning))
 		? m_errorStream
@@ -118,6 +121,9 @@ void Logger::log(Priority priority, const char *message)
 void Logger::log(Priority priority, const input::Location &location, const char *message)
 {
 	const auto priorityID = static_cast<int>(priority);
+
+	if (priorityID < static_cast<int>(m_outputPriority))
+		return;
 
 	auto &stream =
 		(priorityID > static_cast<int>(Priority::Warning))

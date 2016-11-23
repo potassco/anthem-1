@@ -168,7 +168,7 @@ struct TermPrintSubstitutedVisitor
 
 			const auto matchingTerm = std::find(context.headTerms.cbegin(), context.headTerms.cend(), &argument);
 
-			assert(matchingTerm != terms.cend());
+			assert(matchingTerm != context.headTerms.cend());
 
 			std::cout << AuxiliaryHeadVariablePrefix << (matchingTerm - context.headTerms.cbegin());
 		}

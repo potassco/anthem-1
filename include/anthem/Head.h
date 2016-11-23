@@ -63,9 +63,8 @@ struct TermCollectFunctionTermsVisitor
 
 struct LiteralCollectFunctionTermsVisitor
 {
-	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &literal, std::vector<const Clingo::AST::Term *> &)
+	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, std::vector<const Clingo::AST::Term *> &)
 	{
-		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals");
 	}
 
 	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, std::vector<const Clingo::AST::Term *> &terms)
@@ -188,9 +187,9 @@ struct TermPrintSubstitutedVisitor
 
 struct LiteralPrintSubstitutedVisitor
 {
-	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &literal, const std::vector<const Clingo::AST::Term *> &)
+	void visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, const std::vector<const Clingo::AST::Term *> &)
 	{
-		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals");
+		std::cout << (boolean.value == true ? "true" : "false");
 	}
 
 	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, const std::vector<const Clingo::AST::Term *> &terms)
@@ -235,7 +234,7 @@ struct HeadLiteralPrintSubstitutedVisitor
 			if (i != disjunction.elements.cbegin())
 				std::cout << " or ";
 
-			conditionLiteral.literal.data.accept(LiteralPrintSubstitutedVisitor(), conditionLiteral.literal, terms);
+			visit(conditionLiteral.literal, headLiteral, terms);
 		}
 	}
 

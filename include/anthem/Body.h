@@ -46,7 +46,7 @@ struct TermPrintVisitor
 	{
 		if (function.arguments.empty())
 		{
-			std::cout << "[f " << function.name << "]";
+			std::cout << function.name;
 			return;
 		}
 

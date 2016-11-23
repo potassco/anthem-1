@@ -120,7 +120,7 @@ struct LiteralPrintVisitor
 
 	void visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context)
 	{
-		assert(literal.sign != Clingo::AST::Sign::None);
+		assert(literal.sign == Clingo::AST::Sign::None);
 
 		const char *operatorName = "";
 

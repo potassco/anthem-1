@@ -15,7 +15,8 @@ int main(int argc, char **argv)
 	description.add_options()
 		("help,h", "Display this help message")
 		("version,v", "Display version information")
-		("input,i", po::value<std::vector<std::string>>(), "Input files");
+		("input,i", po::value<std::vector<std::string>>(), "Input files")
+		("color", po::value<std::string>()->default_value("auto"), "Whether to colorize the output (always, never, or auto).");
 
 	po::positional_options_description positionalOptionsDescription;
 	positionalOptionsDescription.add("input", -1);
@@ -57,6 +58,22 @@ int main(int argc, char **argv)
 	{
 		std::cout << "anthem version 0.1.0-git" << std::endl;
 		return EXIT_SUCCESS;
+	}
+
+	const auto colorPolicy = variablesMap["color"].as<std::string>();
+
+	if (colorPolicy == "auto")
+		context.logger.setColorPolicy(anthem::output::ColorStream::ColorPolicy::Auto);
+	else if (colorPolicy == "never")
+		context.logger.setColorPolicy(anthem::output::ColorStream::ColorPolicy::Never);
+	else if (colorPolicy == "always")
+		context.logger.setColorPolicy(anthem::output::ColorStream::ColorPolicy::Always);
+	else
+	{
+		context.logger.log(anthem::output::Priority::Error, ("unknown color policy “" + colorPolicy + "”").c_str());
+		context.logger.errorStream() << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
 	}
 
 	try

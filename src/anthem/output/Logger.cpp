@@ -118,12 +118,7 @@ void Logger::log(Priority priority, const char *message)
 	if (priorityID < static_cast<int>(m_outputPriority))
 		return;
 
-	auto &stream =
-		(priorityID > static_cast<int>(Priority::Warning))
-		? m_errorStream
-		: m_outputStream;
-
-	stream
+	m_outputStream
 		<< priorityFormat(priority) << priorityName(priority) << ":"
 		<< ResetFormat() << " "
 		<< MessageBodyFormat << message

@@ -73,6 +73,14 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		REQUIRE(output.str() == "V1 in 42 -> p(V1)\n");
 	}
 
+	SECTION("0-ary fact")
+	{
+		input << "p.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "#true -> p\n");
+	}
+
 	SECTION("integrity constraint")
 	{
 		input << ":- p(42).";

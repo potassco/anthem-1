@@ -128,4 +128,15 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) -> not p(V1, V2)\n");
 	}
+
+	SECTION("variable numbering")
+	{
+		// TODO: check why order of disjunctive literals is inverted
+		input << "f; q(A1, A2); p(A3, r(A4)); g(g(A5)) :- g(A3), f, q(A4, A1), p(A2, A5).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in A1 and V2 in A2 and V3 in A3 and V4 in r(A4) and V5 in g(A5)"
+		        " and exists X1 (X1 in A3 and g(X1)) and f and exists X2, X3 (X2 in A4 and X3 in A1 and q(X2, X3)) and exists X4, X5 (X4 in A2 and X5 in A5 and p(X4, X5))"
+		        " -> q(V1, V2) or p(V3, V4) or g(V5) or f\n");
+	}
 }

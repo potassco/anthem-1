@@ -16,6 +16,12 @@ namespace anthem
 
 struct Context
 {
+	void reset()
+	{
+		headTerms.clear();
+		auxiliaryBodyLiteralID = 1;
+	}
+
 	output::Logger logger;
 
 	std::vector<const Clingo::AST::Term *> headTerms;

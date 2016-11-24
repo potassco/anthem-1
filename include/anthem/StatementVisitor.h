@@ -28,8 +28,7 @@ struct StatementVisitor
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
 	{
-		// TODO: implement more nicely
-		context.headTerms.clear();
+		context.reset();
 
 		auto &outputStream = context.logger.outputStream();
 

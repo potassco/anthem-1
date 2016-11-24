@@ -141,7 +141,7 @@ void Logger::log(Priority priority, const input::Location &location, const char 
 
 	stream
 		<< LocationFormat
-		<< location.sectionStart << ":" << location.rowStart << ":" << location.columnStart << ":"
+		<< location.sectionStart << ":" << location.rowStart << ":" << location.columnStart << ": "
 		<< priorityFormat(priority) << priorityName(priority) << ":"
 		<< ResetFormat() << " "
 		<< MessageBodyFormat << message

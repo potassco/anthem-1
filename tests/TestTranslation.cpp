@@ -64,4 +64,20 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "V1 in _X1 and V2 in _V1 and exists X1 (X1 in _X1 and q(X1)) and exists X2 (X2 in _V1 and q(X2)) -> p(V1, V2)\n");
 	}
+
+	SECTION("fact")
+	{
+		input << "p(42).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in 42 -> p(V1)\n");
+	}
+
+	SECTION("integrity constraint")
+	{
+		input << ":- p(42).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "exists X1 (X1 in 42 and p(X1)) -> #false\n");
+	}
 }

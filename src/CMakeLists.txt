@@ -15,18 +15,20 @@ set(sources
 )
 
 set(includes
-    ${PROJECT_SOURCE_DIR}/include
-	${Boost_INCLUDE_DIRS}
+	${PROJECT_SOURCE_DIR}/include
 )
 
 set(libraries
-	${Boost_LIBRARIES}
 	libclasp
 	libclingo
 	libgringo
-	pthread
 )
 
-add_library(${target} ${sources})
+if(ANTHEM_BUILD_STATIC)
+	add_library(${target} STATIC ${sources})
+else()
+	add_library(${target} ${sources})
+endif()
+
 target_include_directories(${target} PUBLIC ${includes})
 target_link_libraries(${target} ${libraries})

@@ -7,6 +7,8 @@
 
 int main(int argc, char **argv)
 {
+	anthem::Context context;
+
 	namespace po = boost::program_options;
 
 	po::options_description description("Allowed options");
@@ -23,13 +25,11 @@ int main(int argc, char **argv)
 	const auto printHelp =
 		[&]()
 		{
-			std::cout << "Usage: anthem [files] [options]" << std::endl;
-			std::cout << "Translate ASP programs to the language of first-order theorem provers." << std::endl << std::endl;
-
-			std::cout << description;
+			std::cout
+				<< "Usage: anthem [files] [options]" << std::endl
+				<< "Translate ASP programs to the language of first-order theorem provers." << std::endl << std::endl
+				<< description;
 		};
-
-	anthem::Context context;
 
 	try
 	{
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 	}
 	catch (const po::error &e)
 	{
-		std::cerr << "error: " << e.what() << std::endl;
+		context.logger.log(anthem::output::Priority::Error, e.what());
 		printHelp();
 		return EXIT_FAILURE;
 	}
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "error: " << e.what() << std::endl;
+		context.logger.log(anthem::output::Priority::Error, e.what());
 		return EXIT_FAILURE;
 	}
 

@@ -29,7 +29,7 @@ class Logger
 		ColorStream &errorStream();
 
 		// The level from which on messages should be printed
-		void setOutputPriority(Priority outputLevel);
+		void setLogPriority(Priority logPriority);
 		void setColorPolicy(ColorStream::ColorPolicy colorPolicy);
 
 		void log(Priority priority, const char *message);
@@ -39,7 +39,7 @@ class Logger
 		ColorStream m_outputStream;
 		ColorStream m_errorStream;
 
-		Priority m_outputPriority;
+		Priority m_logPriority;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

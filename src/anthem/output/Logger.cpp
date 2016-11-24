@@ -20,7 +20,7 @@ constexpr Format priorityFormat(Priority priority)
 		case Priority::Debug:
 			return {Color::Green, FontWeight::Bold};
 		case Priority::Info:
-			return {Color::Cyan, FontWeight::Bold};
+			return {Color::Blue, FontWeight::Bold};
 		case Priority::Warning:
 			return {Color::Magenta, FontWeight::Bold};
 		case Priority::Error:
@@ -28,25 +28,6 @@ constexpr Format priorityFormat(Priority priority)
 	}
 
 	return {Color::White, FontWeight::Bold};
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-constexpr const char *priorityName(Priority priority)
-{
-	switch (priority)
-	{
-		case Priority::Debug:
-			return "debug";
-		case Priority::Info:
-			return "info";
-		case Priority::Warning:
-			return "warning";
-		case Priority::Error:
-			return "error";
-	}
-
-	return "message";
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +57,7 @@ Logger::Logger(ColorStream &&outputStream)
 Logger::Logger(ColorStream &&outputStream, ColorStream &&errorStream)
 :	m_outputStream{outputStream},
 	m_errorStream{errorStream},
-	m_outputPriority{Priority::Warning}
+	m_logPriority{Priority::Warning}
 {
 }
 
@@ -96,9 +77,9 @@ ColorStream &Logger::errorStream()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Logger::setOutputPriority(Priority outputPriority)
+void Logger::setLogPriority(Priority logPriority)
 {
-	m_outputPriority = outputPriority;
+	m_logPriority = logPriority;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +96,7 @@ void Logger::log(Priority priority, const char *message)
 {
 	const auto priorityID = static_cast<int>(priority);
 
-	if (priorityID < static_cast<int>(m_outputPriority))
+	if (priorityID < static_cast<int>(m_logPriority))
 		return;
 
 	m_outputStream
@@ -131,7 +112,7 @@ void Logger::log(Priority priority, const input::Location &location, const char 
 {
 	const auto priorityID = static_cast<int>(priority);
 
-	if (priorityID < static_cast<int>(m_outputPriority))
+	if (priorityID < static_cast<int>(m_logPriority))
 		return;
 
 	auto &stream =

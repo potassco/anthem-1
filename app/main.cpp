@@ -16,7 +16,8 @@ int main(int argc, char **argv)
 		("help,h", "Display this help message")
 		("version,v", "Display version information")
 		("input,i", po::value<std::vector<std::string>>(), "Input files")
-		("color", po::value<std::string>()->default_value("auto"), "Whether to colorize the output (always, never, or auto).");
+		("color,c", po::value<std::string>()->default_value("auto"), "Colorize the output (always, never, or auto).")
+		("log-priority,p", po::value<std::string>()->default_value("warning"), "Log messages starting from this priority (debug, info, warning, or error).");
 
 	po::positional_options_description positionalOptionsDescription;
 	positionalOptionsDescription.add("input", -1);
@@ -60,17 +61,32 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	const auto colorPolicy = variablesMap["color"].as<std::string>();
+	const auto colorPolicyString = variablesMap["color"].as<std::string>();
 
-	if (colorPolicy == "auto")
+	if (colorPolicyString == "auto")
 		context.logger.setColorPolicy(anthem::output::ColorStream::ColorPolicy::Auto);
-	else if (colorPolicy == "never")
+	else if (colorPolicyString == "never")
 		context.logger.setColorPolicy(anthem::output::ColorStream::ColorPolicy::Never);
-	else if (colorPolicy == "always")
+	else if (colorPolicyString == "always")
 		context.logger.setColorPolicy(anthem::output::ColorStream::ColorPolicy::Always);
 	else
 	{
-		context.logger.log(anthem::output::Priority::Error, ("unknown color policy “" + colorPolicy + "”").c_str());
+		context.logger.log(anthem::output::Priority::Error, ("unknown color policy “" + colorPolicyString + "”").c_str());
+		context.logger.errorStream() << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
+	}
+
+	const auto logPriorityString = variablesMap["log-priority"].as<std::string>();
+
+	try
+	{
+		const auto logPriority = anthem::output::priorityFromName(logPriorityString.c_str());
+		context.logger.setLogPriority(logPriority);
+	}
+	catch (const std::exception &e)
+	{
+		context.logger.log(anthem::output::Priority::Error, ("unknown log priorty “" + logPriorityString + "”").c_str());
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

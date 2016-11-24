@@ -90,7 +90,39 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		REQUIRE(output.str() == "#true -> p\n");
 	}
 
-	SECTION("integrity constraint")
+	SECTION("disjunctive fact (no arguments)")
+	{
+		input << "q; p.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "#true -> p or q\n");
+	}
+
+	SECTION("disjunctive fact (arguments)")
+	{
+		input << "q; p(42).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in 42 -> p(V1) or q\n");
+	}
+
+	SECTION("integrity constraint (no arguments)")
+	{
+		input << ":- p, q.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "p and q -> #false\n");
+	}
+
+	SECTION("contradiction")
+	{
+		input << ":-.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "#true -> #false\n");
+	}
+
+	SECTION("integrity constraint (arguments)")
 	{
 		input << ":- p(42), q.";
 		anthem::translate("input", input, context);

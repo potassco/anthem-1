@@ -222,8 +222,8 @@ struct HeadLiteralPrintSubstitutedVisitor
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
 			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported", context);
-		else if (literal.sign == Clingo::AST::Sign::Negation)
-			context.logger.outputStream() << Clingo::AST::Sign::Negation << " ";
+
+		context.logger.outputStream() << literal.sign;
 
 		literal.data.accept(LiteralPrintSubstitutedVisitor(), literal, context);
 	}

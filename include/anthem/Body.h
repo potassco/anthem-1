@@ -87,12 +87,10 @@ struct TermPrintVisitor
 				<< argument;
 		}
 
-		outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
-
-		if (literal.sign == Clingo::AST::Sign::Negation)
-			outputStream << Clingo::AST::Sign::Negation << " ";
-
-		outputStream << output::Function(function.name) << "(";
+		outputStream
+			<< " " << Clingo::AST::BinaryOperator::And << " "
+			<< literal.sign
+			<< output::Function(function.name) << "(";
 
 		for (auto i = function.arguments.cbegin(); i != function.arguments.cend(); i++)
 		{

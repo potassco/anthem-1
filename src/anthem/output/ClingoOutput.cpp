@@ -1,5 +1,6 @@
 #include <anthem/output/ClingoOutput.h>
 
+#include <anthem/Utils.h>
 #include <anthem/output/Formatting.h>
 
 namespace anthem
@@ -108,7 +109,12 @@ ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Boolean &boolean
 
 ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Variable &variable)
 {
-	return (stream << Variable(variable.name));
+	if (!isReservedVariableName(variable.name))
+		return (stream << Variable(variable.name));
+
+	const auto variableName = std::string(UserVariablePrefix) + variable.name;
+
+	return (stream << Variable(variableName.c_str()));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

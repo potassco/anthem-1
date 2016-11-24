@@ -43,8 +43,48 @@ inline void throwErrorAtLocation(const Clingo::Location &clingoLocation, const c
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr const auto AuxiliaryHeadVariablePrefix = "AUX_H";
-constexpr const auto AuxiliaryBodyVariablePrefix = "AUX_B";
+inline bool isPrefix(const char *prefix, const char *string)
+{
+	const auto prefixLength = std::strlen(prefix);
+	const auto stringLength = std::strlen(string);
+
+	if (stringLength < prefixLength)
+		return false;
+
+	return std::strncmp(prefix, string, prefixLength) == 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+constexpr const auto AuxiliaryHeadVariablePrefix = "H";
+constexpr const auto AuxiliaryBodyVariablePrefix = "B";
+constexpr const auto UserVariablePrefix = "_";
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline bool isReservedVariableName(const char *variableName)
+{
+	if (!isPrefix(AuxiliaryBodyVariablePrefix, variableName)
+	    && !isPrefix(AuxiliaryHeadVariablePrefix, variableName))
+	{
+		return false;
+	}
+
+	assert(std::strlen(AuxiliaryBodyVariablePrefix) == std::strlen(AuxiliaryHeadVariablePrefix));
+
+	const auto prefixLength = std::strlen(AuxiliaryBodyVariablePrefix);
+
+	if (strlen(variableName) == prefixLength)
+		return false;
+
+	const char *suffix = variableName + prefixLength;
+
+	for (const auto *i = suffix; *i != '\0'; i++)
+		if (!std::isdigit(*i))
+			return false;
+
+	return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

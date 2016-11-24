@@ -16,8 +16,8 @@ int main(int argc, char **argv)
 		("help,h", "Display this help message")
 		("version,v", "Display version information")
 		("input,i", po::value<std::vector<std::string>>(), "Input files")
-		("color,c", po::value<std::string>()->default_value("auto"), "Colorize the output (always, never, or auto).")
-		("log-priority,p", po::value<std::string>()->default_value("warning"), "Log messages starting from this priority (debug, info, warning, or error).");
+		("color,c", po::value<std::string>()->default_value("auto"), "Colorize output (always, never, auto)")
+		("log-priority,p", po::value<std::string>()->default_value("warning"), "Log messages starting from this priority (debug, info, warning, error)");
 
 	po::positional_options_description positionalOptionsDescription;
 	positionalOptionsDescription.add("input", -1);
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 		[&]()
 		{
 			std::cout
-				<< "Usage: anthem [files] [options]" << std::endl
+				<< "Usage: anthem [options] file..." << std::endl
 				<< "Translate ASP programs to the language of first-order theorem provers." << std::endl << std::endl
 				<< description;
 		};

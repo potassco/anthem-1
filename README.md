@@ -9,7 +9,7 @@
 ## Usage
 
 ```bash
-$ anthem [files] [options]
+$ anthem [options] file...
 ```
 
 ## Building

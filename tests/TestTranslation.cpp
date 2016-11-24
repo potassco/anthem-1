@@ -45,7 +45,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(N, 1, 2) :- N = 1..5.";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "V1 in N, V2 in 1, V3 in 2 and exists X1, X2 (X1 in N and X2 in (1..5) and X1 = X2) -> p(V1, V2, V3)\n");
+		REQUIRE(output.str() == "V1 in N and V2 in 1 and V3 in 2 and exists X1, X2 (X1 in N and X2 in (1..5) and X1 = X2) -> p(V1, V2, V3)\n");
 	}
 
 	SECTION("disjunctive head")
@@ -54,6 +54,14 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "q(3, N); p(N, 1, 2) :- N = 1..5.";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "V1 in N, V2 in 1, V3 in 2, V4 in 3, V5 in N and exists X1, X2 (X1 in N and X2 in (1..5) and X1 = X2) -> p(V1, V2, V3) or q(V4, V5)\n");
+		REQUIRE(output.str() == "V1 in N and V2 in 1 and V3 in 2 and V4 in 3 and V5 in N and exists X1, X2 (X1 in N and X2 in (1..5) and X1 = X2) -> p(V1, V2, V3) or q(V4, V5)\n");
+	}
+
+	SECTION("escaping conflicting variable names")
+	{
+		input << "p(X1, V1) :- q(X1), q(V1).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in _X1 and V2 in _V1 and exists X1 (X1 in _X1 and q(X1)) and exists X2 (X2 in _V1 and q(X2)) -> p(V1, V2)\n");
 	}
 }

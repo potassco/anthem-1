@@ -44,7 +44,7 @@ struct StatementVisitor
 				const auto &headTerm = **i;
 
 				if (i != context.headTerms.cbegin())
-					outputStream << ", ";
+					outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
 				const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin() + 1);
 

@@ -177,7 +177,7 @@ ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Pool &pool)
 {
 	// Note: There is no representation for an empty pool
 	if (pool.arguments.empty())
-		return (stream << "(1/0)");
+		return (stream << "(" << Number<int>(1) << "/" << Number<int>(0) << ")");
 
 	printCollection(stream, pool.arguments, "(", ";", ")", true);
 

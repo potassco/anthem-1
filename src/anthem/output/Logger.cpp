@@ -99,7 +99,7 @@ void Logger::log(Priority priority, const char *message)
 	if (priorityID < static_cast<int>(m_logPriority))
 		return;
 
-	m_outputStream
+	m_errorStream
 		<< priorityFormat(priority) << priorityName(priority) << ":"
 		<< ResetFormat() << " "
 		<< MessageBodyFormat << message
@@ -115,12 +115,7 @@ void Logger::log(Priority priority, const input::Location &location, const char 
 	if (priorityID < static_cast<int>(m_logPriority))
 		return;
 
-	auto &stream =
-		(priorityID > static_cast<int>(Priority::Warning))
-		? m_errorStream
-		: m_outputStream;
-
-	stream
+	m_errorStream
 		<< LocationFormat
 		<< location.sectionStart << ":" << location.rowStart << ":" << location.columnStart << ": "
 		<< priorityFormat(priority) << priorityName(priority) << ":"

@@ -46,7 +46,7 @@ struct StatementVisitor
 				if (i != context.headTerms.cbegin())
 					outputStream << ", ";
 
-				const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin());
+				const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin() + 1);
 
 				outputStream
 					<< output::Variable(variableName.c_str())

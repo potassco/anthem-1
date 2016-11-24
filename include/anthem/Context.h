@@ -19,7 +19,7 @@ struct Context
 	output::Logger logger;
 
 	std::vector<const Clingo::AST::Term *> headTerms;
-	size_t auxiliaryBodyLiteralID = 0;
+	size_t auxiliaryBodyLiteralID = 1;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

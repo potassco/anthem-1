@@ -175,7 +175,7 @@ struct TermPrintSubstitutedVisitor
 
 			assert(matchingTerm != context.headTerms.cend());
 
-			const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(matchingTerm - context.headTerms.cbegin());
+			const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(matchingTerm - context.headTerms.cbegin() + 1);
 
 			outputStream << output::Variable(variableName.c_str());
 		}

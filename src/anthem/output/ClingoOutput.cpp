@@ -108,11 +108,11 @@ ColorStream &operator<<(ColorStream &stream, const Clingo::AST::BinaryOperator &
 	switch (binaryOperator)
 	{
 		case Clingo::AST::BinaryOperator::XOr:
-			return (stream << Operator("xor"));
+			return (stream << Keyword("xor"));
 		case Clingo::AST::BinaryOperator::Or:
-			return (stream << Operator("or"));
+			return (stream << Keyword("or"));
 		case Clingo::AST::BinaryOperator::And:
-			return (stream << Operator("and"));
+			return (stream << Keyword("and"));
 		case Clingo::AST::BinaryOperator::Plus:
 			return (stream << Operator("+"));
 		case Clingo::AST::BinaryOperator::Minus:

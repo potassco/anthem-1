@@ -4,6 +4,7 @@
 #include <anthem/Body.h>
 #include <anthem/Head.h>
 #include <anthem/Utils.h>
+#include <anthem/output/ClingoOutput.h>
 
 namespace anthem
 {
@@ -18,7 +19,7 @@ struct StatementVisitor
 {
 	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
 	{
-		std::cout << "[program] " << program.name << std::endl;
+		context.logger.log(output::Priority::Debug, program.name);
 
 		if (!program.parameters.empty())
 			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);
@@ -26,6 +27,8 @@ struct StatementVisitor
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
 	{
+		auto &outputStream = context.logger.outputStream();
+
 		// Concatenate all head terms
 		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, context);
 
@@ -37,16 +40,18 @@ struct StatementVisitor
 				const auto &headTerm = **i;
 
 				if (i != context.headTerms.cbegin())
-					std::cout << ", ";
+					outputStream << ", ";
 
-				std::cout
-					<< AuxiliaryHeadVariablePrefix << (i - context.headTerms.cbegin())
-					<< " in " << headTerm;
+				const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(i - context.headTerms.cbegin());
+
+				outputStream
+					<< output::Variable(variableName.c_str())
+					<< " " << output::Keyword("in") << " " << headTerm;
 			}
 		}
 
 		if (rule.body.empty() && context.headTerms.empty())
-			std::cout << "true";
+			outputStream << output::Boolean("true");
 		else
 		{
 			// Print translated body literals
@@ -64,7 +69,7 @@ struct StatementVisitor
 			}
 		}
 
-		std::cout << " -> ";
+		outputStream << " " << output::Operator("->") << " ";
 
 		// Print consequent of the implication
 		rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, context);

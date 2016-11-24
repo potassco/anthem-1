@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <anthem/Context.h>
+
 namespace anthem
 {
 
@@ -13,8 +15,8 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const std::vector<std::string> &fileNames);
-void translate(const char *fileName, std::istream &stream);
+void translate(const std::vector<std::string> &fileNames, Context &context);
+void translate(const char *fileName, std::istream &stream, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

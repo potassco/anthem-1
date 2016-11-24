@@ -18,37 +18,35 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const std::vector<std::string> &fileNames)
+void translate(const std::vector<std::string> &fileNames, Context &context)
 {
 	for (const auto &fileName : fileNames)
 	{
 		std::ifstream file(fileName, std::ios::in);
 
-		translate(fileName.c_str(), file);
+		translate(fileName.c_str(), file, context);
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const char *fileName, std::istream &stream)
+void translate(const char *fileName, std::istream &stream, Context &context)
 {
 	std::cout << "info: reading " << fileName << std::endl;
 
 	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
 
-	Context context;
-
 	const auto translateStatement =
 		[&context](const Clingo::AST::Statement &statement)
 		{
 			statement.data.accept(StatementVisitor(), statement, context);
-			std::cout << std::endl;
+			context.logger.outputStream() << std::endl;
 		};
 
 	const auto logger =
-		[](const auto warningCode, const auto *text)
+		[&context](const Clingo::WarningCode warningCode, const char *text)
 		{
-			std::cout << "warning: " << text << std::endl;
+			context.logger.log(output::Priority::Error, text);
 		};
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);

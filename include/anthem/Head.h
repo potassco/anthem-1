@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include <anthem/Utils.h>
+#include <anthem/output/Formatting.h>
 
 namespace anthem
 {

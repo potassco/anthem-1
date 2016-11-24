@@ -2,6 +2,7 @@
 
 #include <boost/program_options.hpp>
 
+#include <anthem/Context.h>
 #include <anthem/Translation.h>
 
 int main(int argc, char **argv)
@@ -27,6 +28,8 @@ int main(int argc, char **argv)
 
 			std::cout << description;
 		};
+
+	anthem::Context context;
 
 	try
 	{
@@ -61,10 +64,10 @@ int main(int argc, char **argv)
 		if (variablesMap.count("input"))
 		{
 			const auto &inputFiles = variablesMap["input"].as<std::vector<std::string>>();
-			anthem::translate(inputFiles);
+			anthem::translate(inputFiles, context);
 		}
 		else
-			anthem::translate("std::cin", std::cin);
+			anthem::translate("std::cin", std::cin, context);
 	}
 	catch (const std::exception &e)
 	{

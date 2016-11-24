@@ -84,15 +84,14 @@ inline ColorStream &operator<<(ColorStream &stream, const ResetFormat &)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Token
+struct Function
 {
+	Function(const char *name)
+	:	name{name}
+	{
+	};
+
 	const char *name;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct Function: public Token
-{
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,8 +106,14 @@ inline ColorStream &operator<<(ColorStream &stream, const Function &function)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Keyword: public Token
+struct Keyword
 {
+	Keyword(const char *name)
+	:	name{name}
+	{
+	};
+
+	const char *name;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -116,30 +121,64 @@ struct Keyword: public Token
 inline ColorStream &operator<<(ColorStream &stream, const Keyword &keyword)
 {
 	return (stream
-		<< Format({Color::Blue, FontWeight::Normal})
+		<< Format({Color::Blue, FontWeight::Bold})
 		<< keyword.name
 		<< ResetFormat());
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Number: public Token
+struct Operator
 {
+	Operator(const char *name)
+	:	name{name}
+	{
+	};
+
+	const char *name;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline ColorStream &operator<<(ColorStream &stream, const Number &number)
+inline ColorStream &operator<<(ColorStream &stream, const Operator &operator_)
+{
+	return (stream << operator_.name);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+struct Number
+{
+	Number(T value)
+	:	value{value}
+	{
+	};
+
+	T value;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+inline ColorStream &operator<<(ColorStream &stream, const Number<T> &number)
 {
 	return (stream
 		<< Format({Color::Yellow, FontWeight::Normal})
-		<< number.name
+		<< number.value
 		<< ResetFormat());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Variable: public Token
+struct Variable
 {
+	Variable(const char *name)
+	:	name{name}
+	{
+	};
+
+	const char *name;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,8 +193,14 @@ inline ColorStream &operator<<(ColorStream &stream, const Variable &variable)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct String: public Token
+struct String
 {
+	String(const char *content)
+	:	content{content}
+	{
+	};
+
+	const char *content;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -164,14 +209,20 @@ inline ColorStream &operator<<(ColorStream &stream, const String &string)
 {
 	return (stream
 		<< Format({Color::Green, FontWeight::Normal})
-		<< "\"" << string.name << "\""
+		<< "\"" << string.content << "\""
 		<< ResetFormat());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Boolean: public Token
+struct Boolean
 {
+	Boolean(bool value)
+	:	value{value}
+	{
+	};
+
+	bool value;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,14 +231,20 @@ inline ColorStream &operator<<(ColorStream &stream, const Boolean &boolean)
 {
 	return (stream
 		<< Format({Color::Red, FontWeight::Normal})
-		<< boolean.name
+		<< (boolean.value == true ? "true" : "false")
 		<< ResetFormat());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Reserved: public Token
+struct Reserved
 {
+	Reserved(const char *name)
+	:	name{name}
+	{
+	};
+
+	const char *name;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,8 +259,14 @@ inline ColorStream &operator<<(ColorStream &stream, const Reserved &reserved)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Heading1: public Token
+struct Heading1
 {
+	Heading1(const char *content)
+	:	content{content}
+	{
+	};
+
+	const char *content;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,7 +276,7 @@ inline ColorStream &operator<<(ColorStream &stream, const Heading1 &heading1)
 	return (stream
 		<< Format({Color::Blue, FontWeight::Bold})
 		<< "%---------------------------------------" << std::endl
-		<< "% " << heading1.name << std::endl
+		<< "% " << heading1.content << std::endl
 		<< "%---------------------------------------"
 		<< ResetFormat()
 		<< std::endl);
@@ -221,8 +284,14 @@ inline ColorStream &operator<<(ColorStream &stream, const Heading1 &heading1)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Heading2: public Token
+struct Heading2
 {
+	Heading2(const char *content)
+	:	content{content}
+	{
+	};
+
+	const char *content;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +300,7 @@ inline ColorStream &operator<<(ColorStream &stream, const Heading2 &heading2)
 {
 	return (stream
 		<< Format({Color::Blue, FontWeight::Bold})
-		<< "% " << heading2.name
+		<< "% " << heading2.content
 		<< ResetFormat());
 }
 

@@ -129,6 +129,14 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		REQUIRE(output.str() == "V1 in X and V2 in (1..10) and exists X1, X2 (X1 in X and X2 in (6..12) and q(X1, X2)) -> p(V1, V2)\n");
 	}
 
+	SECTION("comparisons")
+	{
+		input << "p(M, N, O, P) :- M < N, P != O.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in M and V2 in N and V3 in O and V4 in P and exists X1, X2 (X1 in M and X2 in N and X1 < X2) and exists X3, X4 (X3 in P and X4 in O and X3 != X4) -> p(V1, V2, V3, V4)\n");
+	}
+
 	SECTION("single negation")
 	{
 		input << "not p(X, 1) :- not q(X, 2).";

@@ -5,6 +5,8 @@
 
 #include <anthem/Context.h>
 #include <anthem/Utils.h>
+#include <anthem/output/ClingoOutput.h>
+#include <anthem/output/Formatting.h>
 
 namespace anthem
 {
@@ -42,58 +44,67 @@ struct TermPrintVisitor
 		throwErrorAtLocation(term.location, "“interval” terms currently unsupported in this context", context);
 	}
 
+	// TODO: check correctness
 	void visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &term, Context &context)
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
 			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported", context);
 
+		auto &outputStream = context.logger.outputStream();
+
 		if (function.arguments.empty())
 		{
-			std::cout << function.name;
+			outputStream << output::Function(function.name);
 			return;
 		}
 
-		std::cout << "exists ";
+		outputStream << output::Keyword("exists") << " ";
 
 		for (auto i = function.arguments.cbegin(); i != function.arguments.cend(); i++)
 		{
 			if (i != function.arguments.cbegin())
-				std::cout << ", ";
+				outputStream << ", ";
 
-			std::cout << AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID + (i - function.arguments.cbegin()));
+			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(i - function.arguments.cbegin());
+
+			outputStream << output::Variable(variableName.c_str());
 		}
 
-		std::cout << " (";
+		outputStream << " (";
 
 		for (auto i = function.arguments.cbegin(); i != function.arguments.cend(); i++)
 		{
 			const auto &argument = *i;
 
 			if (i != function.arguments.cbegin())
-				std::cout << " and ";
+				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
-			std::cout
-				<< AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID + (i - function.arguments.cbegin()))
-				<< " in "
+			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + (i - function.arguments.cbegin()));
+
+			outputStream
+				<< output::Variable(variableName.c_str())
+				<< " " << output::Keyword("in") << " "
 				<< argument;
 		}
 
-		std::cout << " and ";
+		outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
 		if (literal.sign == Clingo::AST::Sign::Negation)
-			std::cout << "not ";
+			std::cout << Clingo::AST::Sign::Negation << " ";
 
-		std::cout << function.name << "(";
+		outputStream << output::Function(function.name) << "(";
 
 		for (auto i = function.arguments.cbegin(); i != function.arguments.cend(); i++)
 		{
 			if (i != function.arguments.cbegin())
-				std::cout << ", ";
+				outputStream << ", ";
 
-			std::cout << AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID + (i - function.arguments.cbegin()));
+			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + (i - function.arguments.cbegin()));
+
+			outputStream << output::Variable(variableName.c_str());
 		}
 
-		std::cout << "))";
+		outputStream << "))";
 
 		context.auxiliaryBodyLiteralID += function.arguments.size();
 	}
@@ -118,6 +129,7 @@ struct LiteralPrintVisitor
 		term.data.accept(TermPrintVisitor(), literal, term, context);
 	}
 
+	// TODO: refactor
 	void visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context)
 	{
 		assert(literal.sign == Clingo::AST::Sign::None);
@@ -146,19 +158,22 @@ struct LiteralPrintVisitor
 				break;
 		}
 
-		std::cout
-			<< "exists " << AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID)
-			<< ", " << AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID + 1)
+		const auto variableName1 = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID);
+		const auto variableName2 = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + 1);
+
+		context.logger.outputStream()
+			<< output::Keyword("exists") << " " << output::Variable(variableName1.c_str())
+			<< ", " << output::Variable(variableName2.c_str())
 			<< " ("
-			<< AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID)
-			<< " in " << comparison.left
-			<< " and "
-			<< AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID + 1)
-			<< " in " << comparison.right
-			<< " and "
-			<< AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID)
-			<< operatorName
-			<< AuxiliaryBodyVariablePrefix << (context.auxiliaryBodyLiteralID + 1)
+			<< output::Variable(variableName1.c_str())
+			<< " " << output::Keyword("in") << " " << comparison.left
+			<< " " << Clingo::AST::BinaryOperator::And << " "
+			<< output::Variable(variableName2.c_str())
+			<< " " << output::Keyword("in") << " " << comparison.right
+			<< " " << Clingo::AST::BinaryOperator::And << " "
+			<< output::Variable(variableName1.c_str())
+			<< " " << output::Operator(operatorName) << " "
+			<< output::Variable(variableName2.c_str())
 			<< ")";
 
 		context.auxiliaryBodyLiteralID += 2;

@@ -104,4 +104,20 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "V1 in X and V2 in \"foo\" and exists X1, X2 (X1 in X and X2 in \"bar\" and q(X1, X2)) -> p(V1, V2)\n");
 	}
+
+	SECTION("tuples")
+	{
+		input << "p(X, (1, 2, 3)) :- q(X, (4, 5)).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in X and V2 in (1, 2, 3) and exists X1, X2 (X1 in X and X2 in (4, 5) and q(X1, X2)) -> p(V1, V2)\n");
+	}
+
+	SECTION("1-ary tuples")
+	{
+		input << "p(X, (1,)) :- q(X, (2,)).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in X and V2 in (1,) and exists X1, X2 (X1 in X and X2 in (2,) and q(X1, X2)) -> p(V1, V2)\n");
+	}
 }

@@ -41,7 +41,6 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		[&context](const Clingo::AST::Statement &statement)
 		{
 			statement.data.accept(StatementVisitor(), statement, context);
-			context.logger.outputStream() << std::endl;
 		};
 
 	const auto logger =

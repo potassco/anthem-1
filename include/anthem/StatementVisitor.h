@@ -77,6 +77,8 @@ struct StatementVisitor
 
 		// Print consequent of the implication
 		rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, context);
+
+		outputStream << std::endl;
 	}
 
 	void visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)

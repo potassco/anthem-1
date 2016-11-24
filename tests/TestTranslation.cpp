@@ -39,4 +39,21 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "V1 in (N + 1) and exists X1 (X1 in N and q(X1)) -> p(V1)\n");
 	}
+
+	SECTION("n-ary head")
+	{
+		input << "p(N, 1, 2) :- N = 1..5.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in N, V2 in 1, V3 in 2 and exists X1, X2 (X1 in N and X2 in (1..5) and X1 = X2) -> p(V1, V2, V3)\n");
+	}
+
+	SECTION("disjunctive head")
+	{
+		// TODO: check why order of disjunctive literals is inverted
+		input << "q(3, N); p(N, 1, 2) :- N = 1..5.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in N, V2 in 1, V3 in 2, V4 in 3, V5 in N and exists X1, X2 (X1 in N and X2 in (1..5) and X1 = X2) -> p(V1, V2, V3) or q(V4, V5)\n");
+	}
 }

@@ -139,4 +139,12 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		        " and exists X1 (X1 in A3 and g(X1)) and f and exists X2, X3 (X2 in A4 and X3 in A1 and q(X2, X3)) and exists X4, X5 (X4 in A2 and X5 in A5 and p(X4, X5))"
 		        " -> q(V1, V2) or p(V3, V4) or g(V5) or f\n");
 	}
+
+	SECTION("nested functions")
+	{
+		input << "p(q(s(t(X1))), u(X2)) :- u(v(w(X2)), z(X1)).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in q(s(t(_X1))) and V2 in u(_X2) and exists X1, X2 (X1 in v(w(_X2)) and X2 in z(_X1) and u(X1, X2)) -> p(V1, V2)\n");
+	}
 }

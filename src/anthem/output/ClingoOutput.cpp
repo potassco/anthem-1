@@ -180,6 +180,8 @@ ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Function &functi
 	if (function.external)
 		stream << Operator("@");
 
+	stream << output::Function(function.name);
+
 	const auto postToken = (isUnaryTuple ? ",)" : ")");
 
 	printCollection(stream, function.arguments, "(", ", ", postToken, printIfEmpty);

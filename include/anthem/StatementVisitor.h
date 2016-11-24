@@ -62,7 +62,7 @@ struct StatementVisitor
 			{
 				const auto &bodyLiteral = *i;
 
-				if (!context.headTerms.empty())
+				if (!context.headTerms.empty() || i != rule.body.cbegin())
 					outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
 				if (bodyLiteral.sign != Clingo::AST::Sign::None)

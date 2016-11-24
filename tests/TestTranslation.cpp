@@ -92,10 +92,10 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 	SECTION("integrity constraint")
 	{
-		input << ":- p(42).";
+		input << ":- p(42), q.";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "exists X1 (X1 in 42 and p(X1)) -> #false\n");
+		REQUIRE(output.str() == "exists X1 (X1 in 42 and p(X1)) and q -> #false\n");
 	}
 
 	SECTION("inf/sup")

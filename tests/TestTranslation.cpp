@@ -88,4 +88,12 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "exists X1 (X1 in 42 and p(X1)) -> #false\n");
 	}
+
+	SECTION("inf/sup")
+	{
+		input << "p(X, #inf) :- q(X, #sup).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in X and V2 in #inf and exists X1, X2 (X1 in X and X2 in #sup and q(X1, X2)) -> p(V1, V2)\n");
+	}
 }

@@ -49,7 +49,7 @@ ColorStream &operator<<(ColorStream &stream, const Clingo::Symbol &symbol)
 		case Clingo::SymbolType::Infimum:
 			return (stream << Keyword("#inf"));
 		case Clingo::SymbolType::Supremum:
-			return (stream << Keyword("sup"));
+			return (stream << Keyword("#sup"));
 		case Clingo::SymbolType::Number:
 			return (stream << Number<decltype(symbol.number())>(symbol.number()));
 		case Clingo::SymbolType::String:

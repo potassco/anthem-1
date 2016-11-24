@@ -60,8 +60,22 @@ constexpr const Format LocationFormat = {Color::White, FontWeight::Bold};
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Logger::Logger()
-:	m_outputStream{std::cout},
-	m_errorStream{std::cerr},
+:	Logger(std::cout, std::cerr)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Logger::Logger(ColorStream &&outputStream)
+:	Logger(std::forward<ColorStream &&>(outputStream), std::cerr)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Logger::Logger(ColorStream &&outputStream, ColorStream &&errorStream)
+:	m_outputStream{outputStream},
+	m_errorStream{errorStream},
 	m_outputPriority{Priority::Warning}
 {
 }

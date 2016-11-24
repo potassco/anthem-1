@@ -21,7 +21,9 @@ namespace output
 class Logger
 {
 	public:
-		Logger();
+		explicit Logger();
+		explicit Logger(ColorStream &&outputStream);
+		explicit Logger(ColorStream &&outputStream, ColorStream &&errorStream);
 
 		ColorStream &outputStream();
 		ColorStream &errorStream();

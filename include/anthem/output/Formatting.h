@@ -98,10 +98,7 @@ struct Function
 
 inline ColorStream &operator<<(ColorStream &stream, const Function &function)
 {
-	return (stream
-		<< Format({Color::White, FontWeight::Bold})
-		<< function.name
-		<< ResetFormat());
+	return (stream << function.name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -217,12 +214,12 @@ inline ColorStream &operator<<(ColorStream &stream, const String &string)
 
 struct Boolean
 {
-	Boolean(bool value)
+	Boolean(const char *value)
 	:	value{value}
 	{
 	};
 
-	bool value;
+	const char *value;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +228,7 @@ inline ColorStream &operator<<(ColorStream &stream, const Boolean &boolean)
 {
 	return (stream
 		<< Format({Color::Red, FontWeight::Normal})
-		<< (boolean.value == true ? "true" : "false")
+		<< boolean.value
 		<< ResetFormat());
 }
 

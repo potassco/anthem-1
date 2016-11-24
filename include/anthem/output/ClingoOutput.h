@@ -18,6 +18,7 @@ namespace output
 
 ColorStream &operator<<(ColorStream &stream, const Clingo::Symbol &symbol);
 ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Sign &sign);
+ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Boolean &boolean);
 ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Variable &variable);
 ColorStream &operator<<(ColorStream &stream, const Clingo::AST::BinaryOperator &binaryOperator);
 ColorStream &operator<<(ColorStream &stream, const Clingo::AST::UnaryOperation &unaryOperation);

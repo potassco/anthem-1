@@ -96,6 +96,16 @@ ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Sign &sign)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Boolean &boolean)
+{
+	if (boolean.value == true)
+		return (stream << Boolean("#true"));
+
+	return (stream << Boolean("#false"));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ColorStream &operator<<(ColorStream &stream, const Clingo::AST::Variable &variable)
 {
 	return (stream << Variable(variable.name));

@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include <anthem/Utils.h>
+#include <anthem/output/ClingoOutput.h>
 #include <anthem/output/Formatting.h>
 
 namespace anthem
@@ -148,22 +149,25 @@ struct TermPrintSubstitutedVisitor
 		throwErrorAtLocation(term.location, "“interval” terms currently unsupported, function expected", context);
 	}
 
+	// TODO: check correctness
 	void visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context)
 	{
 		if (function.external)
 			throwErrorAtLocation(term.location, "external functions currently unsupported", context);
 
-		std::cout << function.name;
+		auto &outputStream = context.logger.outputStream();
+
+		outputStream << output::Function(function.name);
 
 		if (function.arguments.empty())
 			return;
 
-		std::cout << "(";
+		outputStream << "(";
 
 		for (auto i = function.arguments.cbegin(); i != function.arguments.cend(); i++)
 		{
 			if (i != function.arguments.cbegin())
-				std::cout << ",";
+				outputStream << ", ";
 
 			const auto &argument = *i;
 
@@ -171,10 +175,12 @@ struct TermPrintSubstitutedVisitor
 
 			assert(matchingTerm != context.headTerms.cend());
 
-			std::cout << AuxiliaryHeadVariablePrefix << (matchingTerm - context.headTerms.cbegin());
+			const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(matchingTerm - context.headTerms.cbegin());
+
+			outputStream << output::Variable(variableName.c_str());
 		}
 
-		std::cout << ")";
+		outputStream << ")";
 	}
 
 	void visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, Context &context)
@@ -189,7 +195,7 @@ struct LiteralPrintSubstitutedVisitor
 {
 	void visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, Context &context)
 	{
-		std::cout << (boolean.value == true ? "true" : "false");
+		context.logger.outputStream() << boolean;
 	}
 
 	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, Context &context)
@@ -217,7 +223,7 @@ struct HeadLiteralPrintSubstitutedVisitor
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
 			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported", context);
 		else if (literal.sign == Clingo::AST::Sign::Negation)
-			std::cout << "not ";
+			context.logger.outputStream() << Clingo::AST::Sign::Negation << " ";
 
 		literal.data.accept(LiteralPrintSubstitutedVisitor(), literal, context);
 	}
@@ -232,7 +238,7 @@ struct HeadLiteralPrintSubstitutedVisitor
 				throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
 
 			if (i != disjunction.elements.cbegin())
-				std::cout << " or ";
+				context.logger.outputStream() << " " << output::Keyword("or") << " ";
 
 			visit(conditionLiteral.literal, headLiteral, context);
 		}

@@ -96,4 +96,12 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "V1 in X and V2 in #inf and exists X1, X2 (X1 in X and X2 in #sup and q(X1, X2)) -> p(V1, V2)\n");
 	}
+
+	SECTION("strings")
+	{
+		input << "p(X, \"foo\") :- q(X, \"bar\").";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in X and V2 in \"foo\" and exists X1, X2 (X1 in X and X2 in \"bar\" and q(X1, X2)) -> p(V1, V2)\n");
+	}
 }

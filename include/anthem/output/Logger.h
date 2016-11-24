@@ -23,12 +23,6 @@ class Logger
 	public:
 		Logger();
 
-		Logger(const Logger &other) = default;
-		Logger &operator=(const Logger &other) = default;
-
-		Logger(Logger &&other) = default;
-		Logger &operator=(Logger &&other) = default;
-
 		ColorStream &outputStream();
 		ColorStream &errorStream();
 

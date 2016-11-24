@@ -65,7 +65,7 @@ struct TermPrintVisitor
 			if (i != function.arguments.cbegin())
 				outputStream << ", ";
 
-			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(i - function.arguments.cbegin());
+			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + i - function.arguments.cbegin());
 
 			outputStream << output::Variable(variableName.c_str());
 		}
@@ -79,7 +79,7 @@ struct TermPrintVisitor
 			if (i != function.arguments.cbegin())
 				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
-			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + (i - function.arguments.cbegin()));
+			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + i - function.arguments.cbegin());
 
 			outputStream
 				<< output::Variable(variableName.c_str())
@@ -99,7 +99,7 @@ struct TermPrintVisitor
 			if (i != function.arguments.cbegin())
 				outputStream << ", ";
 
-			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + (i - function.arguments.cbegin()));
+			const auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(context.auxiliaryBodyLiteralID + i - function.arguments.cbegin());
 
 			outputStream << output::Variable(variableName.c_str());
 		}

@@ -54,7 +54,7 @@ struct StatementVisitor
 		}
 
 		if (rule.body.empty() && context.headTerms.empty())
-			outputStream << output::Boolean("true");
+			outputStream << Clingo::AST::Boolean({true});
 		else
 		{
 			// Print translated body literals
@@ -63,7 +63,7 @@ struct StatementVisitor
 				const auto &bodyLiteral = *i;
 
 				if (!context.headTerms.empty())
-					std::cout << " and ";
+					outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
 				if (bodyLiteral.sign != Clingo::AST::Sign::None)
 					throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported", context);

@@ -238,7 +238,7 @@ struct HeadLiteralPrintSubstitutedVisitor
 				throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
 
 			if (i != disjunction.elements.cbegin())
-				context.logger.outputStream() << " " << output::Keyword("or") << " ";
+				context.logger.outputStream() << " " << Clingo::AST::BinaryOperator::Or << " ";
 
 			visit(conditionLiteral.literal, headLiteral, context);
 		}

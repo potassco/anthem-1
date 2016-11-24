@@ -56,8 +56,8 @@ inline bool isPrefix(const char *prefix, const char *string)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr const auto AuxiliaryHeadVariablePrefix = "H";
-constexpr const auto AuxiliaryBodyVariablePrefix = "B";
+constexpr const auto AuxiliaryHeadVariablePrefix = "V";
+constexpr const auto AuxiliaryBodyVariablePrefix = "X";
 constexpr const auto UserVariablePrefix = "_";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

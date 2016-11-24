@@ -23,7 +23,7 @@ T1 location_cast(const T2 &location);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<>
-input::Location location_cast(const Clingo::Location &location)
+inline input::Location location_cast(const Clingo::Location &location)
 {
 	return {location.begin_file(), location.end_file(), location.begin_line(), location.end_line(),
 		location.begin_column(), location.end_column()};

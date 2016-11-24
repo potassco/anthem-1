@@ -19,7 +19,8 @@ struct StatementVisitor
 {
 	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
 	{
-		context.logger.log(output::Priority::Debug, program.name);
+		// TODO: refactor
+		context.logger.log(output::Priority::Debug, (std::string("[program] ") + program.name).c_str());
 
 		if (!program.parameters.empty())
 			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);

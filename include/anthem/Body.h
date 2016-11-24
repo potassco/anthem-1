@@ -90,7 +90,7 @@ struct TermPrintVisitor
 		outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
 		if (literal.sign == Clingo::AST::Sign::Negation)
-			std::cout << Clingo::AST::Sign::Negation << " ";
+			outputStream << Clingo::AST::Sign::Negation << " ";
 
 		outputStream << output::Function(function.name) << "(";
 

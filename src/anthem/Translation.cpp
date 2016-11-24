@@ -33,7 +33,7 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 void translate(const char *fileName, std::istream &stream, Context &context)
 {
 	// TODO: refactor
-	context.logger.log(output::Priority::Note, (std::string("reading ") + fileName).c_str());
+	context.logger.log(output::Priority::Info, (std::string("reading ") + fileName).c_str());
 
 	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
 

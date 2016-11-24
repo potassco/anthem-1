@@ -19,7 +19,7 @@ constexpr Format priorityFormat(Priority priority)
 	{
 		case Priority::Debug:
 			return {Color::Green, FontWeight::Bold};
-		case Priority::Note:
+		case Priority::Info:
 			return {Color::Cyan, FontWeight::Bold};
 		case Priority::Warning:
 			return {Color::Magenta, FontWeight::Bold};
@@ -38,8 +38,8 @@ constexpr const char *priorityName(Priority priority)
 	{
 		case Priority::Debug:
 			return "debug";
-		case Priority::Note:
-			return "note";
+		case Priority::Info:
+			return "info";
 		case Priority::Warning:
 			return "warning";
 		case Priority::Error:

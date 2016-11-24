@@ -15,7 +15,7 @@ namespace output
 enum class Priority
 {
 	Debug,
-	Note,
+	Info,
 	Warning,
 	Error
 };

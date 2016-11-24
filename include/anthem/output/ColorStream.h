@@ -50,7 +50,7 @@ class ColorStream
 				return true;
 
 			if (&m_stream == &std::cout)
-				return isatty(fileno(stdin));
+				return isatty(fileno(stdout));
 
 			if (&m_stream == &std::cerr)
 				return isatty(fileno(stderr));

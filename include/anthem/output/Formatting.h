@@ -1,5 +1,5 @@
-#ifndef __ANTHEM_OUTPUT__FORMATTING_H
-#define __ANTHEM_OUTPUT__FORMATTING_H
+#ifndef __ANTHEM__OUTPUT__FORMATTING_H
+#define __ANTHEM__OUTPUT__FORMATTING_H
 
 #include <iostream>
 

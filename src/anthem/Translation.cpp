@@ -44,7 +44,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		};
 
 	const auto logger =
-		[&context](const Clingo::WarningCode warningCode, const char *text)
+		[&context](const Clingo::WarningCode, const char *text)
 		{
 			context.logger.log(output::Priority::Error, text);
 		};

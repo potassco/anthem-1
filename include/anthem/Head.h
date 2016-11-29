@@ -18,7 +18,7 @@ namespace anthem
 
 struct TermCollectFunctionTermsVisitor
 {
-	void visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, Context &context)
+	void visit(const Clingo::Symbol &, const Clingo::AST::Term &term, Context &context)
 	{
 		throwErrorAtLocation(term.location, "“symbol” terms not allowed, function expected", context);
 	}
@@ -64,7 +64,7 @@ struct TermCollectFunctionTermsVisitor
 
 struct LiteralCollectFunctionTermsVisitor
 {
-	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, Context &context)
+	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, Context &)
 	{
 	}
 
@@ -124,7 +124,7 @@ struct HeadLiteralCollectFunctionTermsVisitor
 
 struct TermPrintSubstitutedVisitor
 {
-	void visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, Context &context)
+	void visit(const Clingo::Symbol &, const Clingo::AST::Term &term, Context &context)
 	{
 		throwErrorAtLocation(term.location, "“symbol” terms not allowed, function expected", context);
 	}

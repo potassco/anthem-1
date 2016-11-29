@@ -45,7 +45,7 @@ struct TermPrintVisitor
 	}
 
 	// TODO: check correctness
-	void visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &term, Context &context)
+	void visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &, Context &context)
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
 			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported", context);

@@ -4,7 +4,7 @@ project(anthem CXX)
 option(ANTHEM_BUILD_TESTS "Build unit tests" OFF)
 option(ANTHEM_BUILD_STATIC "Build static binaries" OFF)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wpedantic")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 set(CMAKE_CXX_STANDARD 14)

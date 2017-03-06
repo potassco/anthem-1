@@ -95,12 +95,12 @@ struct HeadLiteralCollectFunctionTermsVisitor
 
 	void visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
-		for (const auto &conditionLiteral : disjunction.elements)
+		for (const auto &conditionalLiteral : disjunction.elements)
 		{
-			if (!conditionLiteral.condition.empty())
+			if (!conditionalLiteral.condition.empty())
 				throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
 
-			conditionLiteral.literal.data.accept(LiteralCollectFunctionTermsVisitor(), conditionLiteral.literal, context);
+			conditionalLiteral.literal.data.accept(LiteralCollectFunctionTermsVisitor(), conditionalLiteral.literal, context);
 		}
 	}
 
@@ -232,15 +232,15 @@ struct HeadLiteralPrintSubstitutedVisitor
 	{
 		for (auto i = disjunction.elements.cbegin(); i != disjunction.elements.cend(); i++)
 		{
-			const auto &conditionLiteral = *i;
+			const auto &conditionalLiteral = *i;
 
-			if (!conditionLiteral.condition.empty())
+			if (!conditionalLiteral.condition.empty())
 				throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
 
 			if (i != disjunction.elements.cbegin())
 				context.logger.outputStream() << " " << Clingo::AST::BinaryOperator::Or << " ";
 
-			visit(conditionLiteral.literal, headLiteral, context);
+			visit(conditionalLiteral.literal, headLiteral, context);
 		}
 	}
 

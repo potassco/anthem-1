@@ -228,4 +228,12 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "V1 in (1..3) and V2 in N and V3 in (2..4) and (p(V1, V2) or q(V3)) -> p(V1, V2) or q(V3)\n");
 	}
+
+	SECTION("choice rule with body")
+	{
+		input << "{p(M, N); q(P)} :- s(M, N, P).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in M and V2 in N and V3 in P and exists X1, X2, X3 (X1 in M and X2 in N and X3 in P and s(X1, X2, X3)) and (p(V1, V2) or q(V3)) -> p(V1, V2) or q(V3)\n");
+	}
 }

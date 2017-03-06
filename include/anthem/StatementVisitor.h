@@ -36,40 +36,32 @@ struct StatementVisitor
 		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, context);
 
 		// Print auxiliary variables replacing the head atom’s arguments
-		if (!context.headTerms.empty())
+		for (auto i = context.headTerms.cbegin(); i != context.headTerms.cend(); i++)
 		{
-			for (auto i = context.headTerms.cbegin(); i != context.headTerms.cend(); i++)
-			{
-				const auto &headTerm = **i;
+			const auto &headTerm = **i;
 
-				if (i != context.headTerms.cbegin())
-					outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
+			if (i != context.headTerms.cbegin())
+				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
-				const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin() + 1);
+			const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin() + 1);
 
-				outputStream
-					<< output::Variable(variableName.c_str())
-					<< " " << output::Keyword("in") << " " << headTerm;
-			}
+			outputStream
+				<< output::Variable(variableName.c_str())
+				<< " " << output::Keyword("in") << " " << headTerm;
 		}
 
-		if (rule.body.empty() && context.headTerms.empty() && !context.isChoiceRule)
-			outputStream << Clingo::AST::Boolean({true});
-		else
+		// Print translated body literals
+		for (auto i = rule.body.cbegin(); i != rule.body.cend(); i++)
 		{
-			// Print translated body literals
-			for (auto i = rule.body.cbegin(); i != rule.body.cend(); i++)
-			{
-				const auto &bodyLiteral = *i;
+			const auto &bodyLiteral = *i;
 
-				if (!context.headTerms.empty() || i != rule.body.cbegin())
-					outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
+			if (!context.headTerms.empty() || i != rule.body.cbegin())
+				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
 
-				if (bodyLiteral.sign != Clingo::AST::Sign::None)
-					throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported", context);
+			if (bodyLiteral.sign != Clingo::AST::Sign::None)
+				throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported", context);
 
-				bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
-			}
+			bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
 		}
 
 		// Handle choice rules
@@ -88,6 +80,10 @@ struct StatementVisitor
 			if (context.numberOfHeadLiterals > 1 && !isFirstOutput)
 				outputStream << ")";
 		}
+
+		// Print “true” on the left side of the formula in case there is nothing else
+		if (rule.body.empty() && context.headTerms.empty() && !context.isChoiceRule)
+			outputStream << Clingo::AST::Boolean({true});
 
 		outputStream << " " << output::Operator("->") << " ";
 

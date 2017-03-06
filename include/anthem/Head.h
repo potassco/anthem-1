@@ -86,15 +86,20 @@ struct LiteralCollectFunctionTermsVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: rename, because not only terms are collected anymore
 struct HeadLiteralCollectFunctionTermsVisitor
 {
 	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, Context &context)
 	{
+		context.numberOfHeadLiterals = 1;
+
 		literal.data.accept(LiteralCollectFunctionTermsVisitor(), literal, context);
 	}
 
 	void visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
+		context.numberOfHeadLiterals = disjunction.elements.size();
+
 		for (const auto &conditionalLiteral : disjunction.elements)
 		{
 			if (!conditionalLiteral.condition.empty())
@@ -104,9 +109,21 @@ struct HeadLiteralCollectFunctionTermsVisitor
 		}
 	}
 
-	void visit(const Clingo::AST::Aggregate &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
+	void visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
-		throwErrorAtLocation(headLiteral.location, "“aggregate” head literals currently unsupported", context);
+		context.isChoiceRule = true;
+		context.numberOfHeadLiterals = aggregate.elements.size();
+
+		if (aggregate.left_guard || aggregate.right_guard)
+			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards not allowed", context);
+
+		for (const auto &conditionalLiteral : aggregate.elements)
+		{
+			if (!conditionalLiteral.condition.empty())
+				throwErrorAtLocation(headLiteral.location, "conditional literals in aggregates currently unsupported", context);
+
+			conditionalLiteral.literal.data.accept(LiteralCollectFunctionTermsVisitor(), conditionalLiteral.literal, context);
+		}
 	}
 
 	void visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
@@ -244,9 +261,23 @@ struct HeadLiteralPrintSubstitutedVisitor
 		}
 	}
 
-	void visit(const Clingo::AST::Aggregate &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
+	void visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
-		throwErrorAtLocation(headLiteral.location, "“aggregate” head literals currently unsupported", context);
+		if (aggregate.left_guard || aggregate.right_guard)
+			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards not allowed", context);
+
+		for (auto i = aggregate.elements.cbegin(); i != aggregate.elements.cend(); i++)
+		{
+			const auto &conditionalLiteral = *i;
+
+			if (!conditionalLiteral.condition.empty())
+				throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
+
+			if (i != aggregate.elements.cbegin())
+				context.logger.outputStream() << " " << Clingo::AST::BinaryOperator::Or << " ";
+
+			visit(conditionalLiteral.literal, headLiteral, context);
+		}
 	}
 
 	void visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)

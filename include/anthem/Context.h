@@ -19,12 +19,16 @@ struct Context
 	void reset()
 	{
 		headTerms.clear();
+		isChoiceRule = false;
+		numberOfHeadLiterals = 0;
 		auxiliaryBodyLiteralID = 1;
 	}
 
 	output::Logger logger;
 
 	std::vector<const Clingo::AST::Term *> headTerms;
+	bool isChoiceRule = false;
+	size_t numberOfHeadLiterals = 0;
 	size_t auxiliaryBodyLiteralID = 1;
 };
 

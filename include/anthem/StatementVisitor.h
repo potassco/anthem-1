@@ -53,7 +53,7 @@ struct StatementVisitor
 			}
 		}
 
-		if (rule.body.empty() && context.headTerms.empty())
+		if (rule.body.empty() && context.headTerms.empty() && !context.isChoiceRule)
 			outputStream << Clingo::AST::Boolean({true});
 		else
 		{
@@ -70,6 +70,23 @@ struct StatementVisitor
 
 				bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
 			}
+		}
+
+		// Handle choice rules
+		if (context.isChoiceRule)
+		{
+			const bool isFirstOutput = rule.body.empty() && context.headTerms.empty();
+
+			if (!isFirstOutput)
+				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
+
+			if (context.numberOfHeadLiterals > 1 && !isFirstOutput)
+				outputStream << "(";
+
+			rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, context);
+
+			if (context.numberOfHeadLiterals > 1 && !isFirstOutput)
+				outputStream << ")";
 		}
 
 		outputStream << " " << output::Operator("->") << " ";

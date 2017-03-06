@@ -1,6 +1,10 @@
 # Change Log
 
-## (unreleased)
+## 0.1.1 (2017-03-06)
+
+Features:
+
+* support for choice rules (without guards)
 
 ## 0.1.0 (2016-11-24)
 

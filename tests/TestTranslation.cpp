@@ -204,4 +204,28 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		REQUIRE(output.str() == "V1 in q(s(t(_X1))) and V2 in u(_X2) and exists X1, X2 (X1 in v(w(_X2)) and X2 in z(_X1) and u(X1, X2)) -> p(V1, V2)\n");
 	}
+
+	SECTION("choice rule (simple)")
+	{
+		input << "{p}.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "p -> p\n");
+	}
+
+	SECTION("choice rule (two elements)")
+	{
+		input << "{p; q}.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "p or q -> p or q\n");
+	}
+
+	SECTION("choice rule (n-ary elements)")
+	{
+		input << "{p(1..3, N); q(2..4)}.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "V1 in (1..3) and V2 in N and V3 in (2..4) and (p(V1, V2) or q(V3)) -> p(V1, V2) or q(V3)\n");
+	}
 }

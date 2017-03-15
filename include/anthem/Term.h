@@ -58,7 +58,7 @@ struct TermTranslateVisitor
 			case Clingo::SymbolType::String:
 				return std::make_unique<ast::String>(std::string(symbol.string()));
 			default:
-				throwErrorAtLocation(term.location, "only numeric “symbol” terms allowed", context);
+				throwErrorAtLocation(term.location, "symbol type not supported", context);
 		}
 
 		return std::experimental::nullopt;

@@ -1,10 +1,11 @@
 #ifndef __ANTHEM__STATEMENT_VISITOR_H
 #define __ANTHEM__STATEMENT_VISITOR_H
 
+#include <anthem/AST.h>
 #include <anthem/Body.h>
 #include <anthem/Head.h>
+#include <anthem/Term.h>
 #include <anthem/Utils.h>
-#include <anthem/output/ClingoOutput.h>
 
 namespace anthem
 {
@@ -17,37 +18,46 @@ namespace anthem
 
 struct StatementVisitor
 {
-	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
 	{
 		// TODO: refactor
 		context.logger.log(output::Priority::Debug, (std::string("[program] ") + program.name).c_str());
 
 		if (!program.parameters.empty())
 			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);
+
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
 	{
 		context.reset();
 
-		auto &outputStream = context.logger.outputStream();
-
 		// Concatenate all head terms
 		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, context);
+
+		auto antecedent = std::make_unique<ast::And>();
+
+		// Compute consequent
+		auto consequent = rule.head.data.accept(HeadLiteralTranslateToConsequentVisitor(), rule.head, context);
+
+		if (!consequent)
+		{
+			context.logger.log(output::Priority::Error, "could not translate formula consequent");
+			return std::experimental::nullopt;
+		}
 
 		// Print auxiliary variables replacing the head atom’s arguments
 		for (auto i = context.headTerms.cbegin(); i != context.headTerms.cend(); i++)
 		{
 			const auto &headTerm = **i;
 
-			if (i != context.headTerms.cbegin())
-				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
+			auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin() + 1);
+			auto element = std::make_unique<ast::Variable>(std::move(variableName), ast::Variable::Type::Reserved);
+			auto set = translate(headTerm, context);
+			auto in = std::make_unique<ast::In>(std::move(element), std::move(set));
 
-			const auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin() + 1);
-
-			outputStream
-				<< output::Variable(variableName.c_str())
-				<< " " << output::Keyword("in") << " " << headTerm;
+			antecedent->arguments.emplace_back(std::move(in));
 		}
 
 		// Print translated body literals
@@ -55,97 +65,94 @@ struct StatementVisitor
 		{
 			const auto &bodyLiteral = *i;
 
-			if (!context.headTerms.empty() || i != rule.body.cbegin())
-				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
-
 			if (bodyLiteral.sign != Clingo::AST::Sign::None)
 				throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported", context);
 
-			bodyLiteral.data.accept(BodyLiteralPrintVisitor(), bodyLiteral, context);
+			auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, context);
+
+			if (!argument)
+				throwErrorAtLocation(bodyLiteral.location, "could not translate body literal", context);
+
+			antecedent->arguments.emplace_back(std::move(argument.value()));
 		}
 
 		// Handle choice rules
 		if (context.isChoiceRule)
-		{
-			const bool isFirstOutput = rule.body.empty() && context.headTerms.empty();
+			antecedent->arguments.emplace_back(ast::deepCopy(consequent.value()));
 
-			if (!isFirstOutput)
-				outputStream << " " << Clingo::AST::BinaryOperator::And << " ";
+		// Use “true” as the consequent in case it is empty
+		if (antecedent->arguments.empty())
+			return std::make_unique<ast::Implies>(std::make_unique<ast::Boolean>(true), std::move(consequent.value()));
+		else if (antecedent->arguments.size() == 1)
+			return std::make_unique<ast::Implies>(std::move(antecedent->arguments[0]), std::move(consequent.value()));
 
-			if (context.numberOfHeadLiterals > 1 && !isFirstOutput)
-				outputStream << "(";
-
-			rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, context);
-
-			if (context.numberOfHeadLiterals > 1 && !isFirstOutput)
-				outputStream << ")";
-		}
-
-		// Print “true” on the left side of the formula in case there is nothing else
-		if (rule.body.empty() && context.headTerms.empty() && !context.isChoiceRule)
-			outputStream << Clingo::AST::Boolean({true});
-
-		outputStream << " " << output::Operator("->") << " ";
-
-		// Print consequent of the implication
-		rule.head.data.accept(HeadLiteralPrintSubstitutedVisitor(), rule.head, context);
-
-		outputStream << std::endl;
+		return std::make_unique<ast::Implies>(std::move(antecedent), std::move(consequent.value()));
 	}
 
-	void visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“definition” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::ShowSignature &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ShowSignature &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“show signature” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“show term” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::Minimize &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Minimize &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“minimize” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::Script &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Script &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“script” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::External &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::External &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“external” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::Edge &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Edge &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“edge” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::Heuristic &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Heuristic &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“heuristic” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::ProjectAtom &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ProjectAtom &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“project atom” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::ProjectSignature &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ProjectSignature &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“project signature” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 
-	void visit(const Clingo::AST::TheoryDefinition &, const Clingo::AST::Statement &statement, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::TheoryDefinition &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“theory definition” statements currently unsupported", context);
+		return std::experimental::nullopt;
 	}
 };
 

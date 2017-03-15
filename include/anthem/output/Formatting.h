@@ -118,7 +118,7 @@ struct Keyword
 inline ColorStream &operator<<(ColorStream &stream, const Keyword &keyword)
 {
 	return (stream
-		<< Format({Color::Blue, FontWeight::Bold})
+		<< Format({Color::Blue, FontWeight::Normal})
 		<< keyword.name
 		<< ResetFormat());
 }

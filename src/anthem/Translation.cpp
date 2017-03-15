@@ -8,6 +8,7 @@
 
 #include <anthem/Context.h>
 #include <anthem/StatementVisitor.h>
+#include <anthem/output/AST.h>
 
 namespace anthem
 {
@@ -40,7 +41,12 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 	const auto translateStatement =
 		[&context](const Clingo::AST::Statement &statement)
 		{
-			statement.data.accept(StatementVisitor(), statement, context);
+			const auto formula = statement.data.accept(StatementVisitor(), statement, context);
+
+			if (!formula)
+				return;
+
+			context.logger.outputStream() << formula.value() << std::endl;
 		};
 
 	const auto logger =

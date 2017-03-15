@@ -90,6 +90,14 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		REQUIRE(output.str() == "(#true -> p)\n");
 	}
 
+	SECTION("function")
+	{
+		input << ":- not p(I), I = 1..n.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "((exists X1 (X1 in I and not p(X1)) and exists X2, X3 (X2 in I and X3 in 1..n and X2 = X3)) -> #false)\n");
+	}
+
 	SECTION("disjunctive fact (no arguments)")
 	{
 		input << "q; p.";

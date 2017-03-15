@@ -57,6 +57,23 @@ struct TermTranslateVisitor
 				return std::make_unique<ast::SpecialInteger>(ast::SpecialInteger::Type::Supremum);
 			case Clingo::SymbolType::String:
 				return std::make_unique<ast::String>(std::string(symbol.string()));
+			case Clingo::SymbolType::Function:
+			{
+				auto function = std::make_unique<ast::Function>(symbol.name());
+				function->arguments.reserve(symbol.arguments().size());
+
+				for (const auto &argument : symbol.arguments())
+				{
+					auto translatedArgument = visit(argument, term, context);
+
+					if (!translatedArgument)
+						throwErrorAtLocation(term.location, "could not translate argument", context);
+
+					function->arguments.emplace_back(std::move(translatedArgument.value()));
+				}
+
+				return function;
+			}
 			default:
 				throwErrorAtLocation(term.location, "symbol type not supported", context);
 		}

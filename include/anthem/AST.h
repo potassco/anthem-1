@@ -95,6 +95,11 @@ struct Constant
 
 struct Function
 {
+	Function(std::string &&name)
+	:	name{std::move(name)}
+	{
+	}
+
 	Function(std::string &&name, std::vector<Term> &&arguments)
 	:	name{std::move(name)},
 		arguments{std::move(arguments)}

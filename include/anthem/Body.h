@@ -45,7 +45,7 @@ ast::VariablePointer makeAuxiliaryBodyVariable(const int i)
 	auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(i);
 
 	return std::make_unique<ast::Variable>(std::move(variableName), ast::Variable::Type::Reserved);
-};
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

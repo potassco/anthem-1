@@ -15,7 +15,7 @@ $ anthem [options] file...
 ## Building
 
 `anthem` requires [CMake](https://cmake.org/) and [Boost](http://www.boost.org/) for building.
-After installing the dependencies, `anthem` is built with a C++14 compiler (preferrably GCC ≥ 6.1 or clang ≥ 3.8).
+After installing the dependencies, `anthem` is built with a C++14 compiler (GCC ≥ 6.1 or clang ≥ 3.8).
 
 ```bash
 $ git clone https://github.com/potassco/anthem.git

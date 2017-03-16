@@ -7,6 +7,7 @@
 #include <clingo.hh>
 
 #include <anthem/Context.h>
+#include <anthem/Simplification.h>
 #include <anthem/StatementVisitor.h>
 #include <anthem/output/AST.h>
 
@@ -41,12 +42,19 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 	const auto translateStatement =
 		[&context](const Clingo::AST::Statement &statement)
 		{
-			const auto formula = statement.data.accept(StatementVisitor(), statement, context);
+			auto formula = statement.data.accept(StatementVisitor(), statement, context);
 
 			if (!formula)
 				return;
 
-			context.logger.outputStream() << formula.value() << std::endl;
+			if (!context.simplify)
+			{
+				context.logger.outputStream() << formula.value() << std::endl;
+				return;
+			}
+
+			auto simplifiedFormula = simplify(std::move(formula.value()));
+			context.logger.outputStream() << simplifiedFormula << std::endl;
 		};
 
 	const auto logger =

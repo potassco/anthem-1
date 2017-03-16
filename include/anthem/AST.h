@@ -397,168 +397,168 @@ const auto deepCopyVariantVector =
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-BinaryOperation deepCopy(const BinaryOperation &other)
+inline BinaryOperation deepCopy(const BinaryOperation &other)
 {
 	return BinaryOperation(other.operator_, deepCopy(other.left), deepCopy(other.right));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Boolean deepCopy(const Boolean &other)
+inline Boolean deepCopy(const Boolean &other)
 {
 	return Boolean(other.value);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Comparison deepCopy(const Comparison &other)
+inline Comparison deepCopy(const Comparison &other)
 {
 	return Comparison(other.operator_, deepCopy(other.left), deepCopy(other.right));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Constant deepCopy(const Constant &other)
+inline Constant deepCopy(const Constant &other)
 {
 	return Constant(std::string(other.name));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Function deepCopy(const Function &other)
+inline Function deepCopy(const Function &other)
 {
 	return Function(std::string(other.name), deepCopy(other.arguments));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Integer deepCopy(const Integer &other)
+inline Integer deepCopy(const Integer &other)
 {
 	return Integer(other.value);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Interval deepCopy(const Interval &other)
+inline Interval deepCopy(const Interval &other)
 {
 	return Interval(deepCopy(other.from), deepCopy(other.to));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Predicate deepCopy(const Predicate &other)
+inline Predicate deepCopy(const Predicate &other)
 {
 	return Predicate(std::string(other.name), deepCopy(other.arguments));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-SpecialInteger deepCopy(const SpecialInteger &other)
+inline SpecialInteger deepCopy(const SpecialInteger &other)
 {
 	return SpecialInteger(other.type);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-String deepCopy(const String &other)
+inline String deepCopy(const String &other)
 {
 	return String(std::string(other.text));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Variable deepCopy(const Variable &other)
+inline Variable deepCopy(const Variable &other)
 {
 	return Variable(std::string(other.name), other.type);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<VariablePointer> deepCopy(const std::vector<VariablePointer> &other)
+inline std::vector<VariablePointer> deepCopy(const std::vector<VariablePointer> &other)
 {
 	return deepCopyUniquePtrVector(other);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-And deepCopy(const And &other)
+inline And deepCopy(const And &other)
 {
 	return And(deepCopy(other.arguments));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Biconditional deepCopy(const Biconditional &other)
+inline Biconditional deepCopy(const Biconditional &other)
 {
 	return Biconditional(deepCopy(other.left), deepCopy(other.right));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Exists deepCopy(const Exists &other)
+inline Exists deepCopy(const Exists &other)
 {
 	return Exists(deepCopy(other.variables), deepCopy(other.argument));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ForAll deepCopy(const ForAll &other)
+inline ForAll deepCopy(const ForAll &other)
 {
 	return ForAll(deepCopy(other.variables), deepCopy(other.argument));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-In deepCopy(const In &other)
+inline In deepCopy(const In &other)
 {
 	return In(deepCopy(other.element), deepCopy(other.set));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Implies deepCopy(const Implies &other)
+inline Implies deepCopy(const Implies &other)
 {
 	return Implies(deepCopy(other.antecedent), deepCopy(other.consequent));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Not deepCopy(const Not &other)
+inline Not deepCopy(const Not &other)
 {
 	return Not(deepCopy(other.argument));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Or deepCopy(const Or &other)
+inline Or deepCopy(const Or &other)
 {
 	return Or(deepCopy(other.arguments));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Formula deepCopy(const Formula &formula)
+inline Formula deepCopy(const Formula &formula)
 {
 	return deepCopyVariant(formula);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Formula> deepCopy(const std::vector<Formula> &formulas)
+inline std::vector<Formula> deepCopy(const std::vector<Formula> &formulas)
 {
 	return deepCopyVariantVector(formulas);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Term deepCopy(const Term &term)
+inline Term deepCopy(const Term &term)
 {
 	return deepCopyVariant(term);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Term> deepCopy(const std::vector<Term> &terms)
+inline std::vector<Term> deepCopy(const std::vector<Term> &terms)
 {
 	return deepCopyVariantVector(terms);
 }

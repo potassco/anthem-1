@@ -30,6 +30,8 @@ struct Context
 	bool isChoiceRule = false;
 	size_t numberOfHeadLiterals = 0;
 	size_t auxiliaryBodyLiteralID = 1;
+
+	bool simplify = false;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

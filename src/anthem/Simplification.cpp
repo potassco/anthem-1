@@ -1,7 +1,5 @@
 #include <anthem/Simplification.h>
 
-#include <iostream>
-
 namespace anthem
 {
 
@@ -13,92 +11,139 @@ namespace anthem
 
 bool isPrimitiveTerm(const ast::Term &term)
 {
-	const auto handleBinaryOperation =
-		[](const ast::BinaryOperationPointer &)
-		{
-			return false;
-		};
-
-	const auto handleInterval =
-		[](const ast::IntervalPointer &)
-		{
-			return false;
-		};
-
-	const auto handleDefault =
-		[](const auto &)
-		{
-			return true;
-		};
-
-	return term.match(handleBinaryOperation, handleInterval, handleDefault);
+	return (!term.is<ast::BinaryOperation>() && !term.is<ast::Interval>());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool matchesVariable(const ast::Term &term, const ast::VariablePointer &variable)
+template<class T>
+struct RecursiveFormulaVisitor
 {
-	const auto handleVariable =
-		[&](const ast::VariablePointer &other)
-		{
-			return variable->name == other->name;
-		};
+	void visit(ast::And &and_, ast::Formula &formula)
+	{
+		for (auto &argument : and_.arguments)
+			argument.accept(*this, argument);
 
-	const auto handleDefault =
-		[](const auto &)
-		{
-			return false;
-		};
+		return T::accept(and_, formula);
+	}
 
-	return term.match(handleVariable, handleDefault);
+	void visit(ast::Biconditional &biconditional, ast::Formula &formula)
+	{
+		biconditional.left.accept(*this, biconditional.left);
+		biconditional.right.accept(*this, biconditional.right);
+
+		return T::accept(biconditional, formula);
+	}
+
+	void visit(ast::Boolean &boolean, ast::Formula &formula)
+	{
+		return T::accept(boolean, formula);
+	}
+
+	void visit(ast::Comparison &comparison, ast::Formula &formula)
+	{
+		return T::accept(comparison, formula);
+	}
+
+	void visit(ast::Exists &exists, ast::Formula &formula)
+	{
+		exists.argument.accept(*this, exists.argument);
+
+		return T::accept(exists, formula);
+	}
+
+	void visit(ast::ForAll &forAll, ast::Formula &formula)
+	{
+		forAll.argument.accept(*this, forAll.argument);
+
+		return T::accept(forAll, formula);
+	}
+
+	void visit(ast::Implies &implies, ast::Formula &formula)
+	{
+		implies.antecedent.accept(*this, implies.antecedent);
+		implies.consequent.accept(*this, implies.consequent);
+
+		return T::accept(implies, formula);
+	}
+
+	void visit(ast::In &in, ast::Formula &formula)
+	{
+		return T::accept(in, formula);
+	}
+
+	void visit(ast::Not &not_, ast::Formula &formula)
+	{
+		not_.argument.accept(*this, not_.argument);
+
+		return T::accept(not_, formula);
+	}
+
+	void visit(ast::Or &or_, ast::Formula &formula)
+	{
+		for (auto &argument : or_.arguments)
+			argument.accept(*this, argument);
+
+		return T::accept(or_, formula);
+	}
+
+	void visit(ast::Predicate &predicate, ast::Formula &formula)
+	{
+		return T::accept(predicate, formula);
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool matchesVariable(const ast::Term &term, const ast::Variable &variable)
+{
+	if (!term.is<ast::Variable>())
+		return false;
+
+	const auto otherVariable = term.get<ast::Variable>();
+
+	return variable.name == otherVariable.name;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::VariablePointer &variable)
+std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::Variable &variable)
 {
-	const auto handleComparison =
-		[&](ast::ComparisonPointer &comparison) -> std::experimental::optional<ast::Term>
-		{
-			if (comparison->operator_ != ast::Comparison::Operator::Equal)
-				return std::experimental::nullopt;
+	if (!formula.is<ast::Comparison>())
+		return std::experimental::nullopt;
 
-			if (matchesVariable(comparison->left, variable))
-				return std::move(comparison->right);
+	auto &comparison = formula.get<ast::Comparison>();
 
-			if (matchesVariable(comparison->right, variable))
-				return std::move(comparison->left);
+	if (comparison.operator_ != ast::Comparison::Operator::Equal)
+		return std::experimental::nullopt;
 
-			return std::experimental::nullopt;
-		};
+	if (matchesVariable(comparison.left, variable))
+		return std::move(comparison.right);
 
-	const auto handleDefault =
-		[](auto &) -> std::experimental::optional<ast::Term>
-		{
-			return std::experimental::nullopt;
-		};
+	if (matchesVariable(comparison.right, variable))
+		return std::move(comparison.left);
 
-	return formula.match(handleComparison, handleDefault);
+	return std::experimental::nullopt;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula simplify(ast::ExistsPointer &exists)
+void simplify(ast::Exists &exists, ast::Formula &formula)
 {
-	if (!exists->argument.is<ast::AndPointer>())
-		return std::move(exists);
+	if (!exists.argument.is<ast::And>())
+		return;
 
-	auto &conjunction = exists->argument.get_unchecked<ast::AndPointer>();
-	auto &arguments = conjunction->arguments;
+	auto &conjunction = exists.argument.get<ast::And>();
+	auto &arguments = conjunction.arguments;
 
 	// Check that formula is in normal form
-	if (!arguments.back().is<ast::PredicatePointer>())
-		return std::move(exists);
+	if (!arguments.back().is<ast::Predicate>())
+		return;
 
 	const auto replaceVariableInPredicateWithTerm =
-		[](ast::PredicatePointer &predicate, const ast::VariablePointer &variable, ast::Term &&term)
+		[](ast::Predicate &predicate, const ast::Variable &variable, ast::Term &term)
 		{
-			for (auto &argument : predicate->arguments)
+			for (auto &argument : predicate.arguments)
 			{
 				if (!matchesVariable(argument, variable))
 					continue;
@@ -109,7 +154,7 @@ ast::Formula simplify(ast::ExistsPointer &exists)
 		};
 
 	// Simplify formulas of type “exists X (X = t and F(Y))” to “F(t)”
-	for (auto i = exists->variables.begin(); i != exists->variables.end();)
+	for (auto i = exists.variables.begin(); i != exists.variables.end();)
 	{
 		auto &variable = *i;
 
@@ -123,10 +168,10 @@ ast::Formula simplify(ast::ExistsPointer &exists)
 			if (!assignedTerm)
 				continue;
 
-			auto &lastArgument = arguments.back().get_unchecked<ast::PredicatePointer>();
+			auto &lastArgument = arguments.back().get<ast::Predicate>();
 
 			// If this argument is an assignment of the variable to some other term, remove the assignment and replace the variable with the other term
-			replaceVariableInPredicateWithTerm(lastArgument, variable, std::move(assignedTerm.value()));
+			replaceVariableInPredicateWithTerm(lastArgument, variable, assignedTerm.value());
 
 			arguments.erase(j);
 			wasVariableReplaced = true;
@@ -135,107 +180,60 @@ ast::Formula simplify(ast::ExistsPointer &exists)
 
 		if (wasVariableReplaced)
 		{
-			i = exists->variables.erase(i);
+			i = exists.variables.erase(i);
 			continue;
 		}
 
 		i++;
 	}
 
-	if (exists->variables.empty())
+	// If there are still variables, do nothing more
+	if (!exists.variables.empty())
+		return;
+
+	assert(!conjunction.arguments.empty());
+
+	// If the argument is a conjunction with just one element, directly replace the input formula with the argument
+	if (conjunction.arguments.size() == 1)
 	{
-		assert(!conjunction->arguments.empty());
-
-		if (conjunction->arguments.size() == 1)
-			return std::move(conjunction->arguments.front());
-
-		return std::move(exists->argument);
+		auto test = std::move(conjunction.arguments.front());
+		formula = std::move(test);
+		return;
 	}
 
-	return std::move(exists);
+	// If there is more than one element in the conjunction, replace the input formula with the conjunction
+	formula = std::move(exists.argument);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula simplify(ast::Formula &&formula)
+struct SimplifyFormulaVisitor : public RecursiveFormulaVisitor<SimplifyFormulaVisitor>
 {
-	const auto handleAnd =
-		[&](ast::AndPointer &and_) -> ast::Formula
-		{
-			for (auto &argument : and_->arguments)
-				argument = simplify(std::move(argument));
+	static void accept(ast::Exists &exists, ast::Formula &formula)
+	{
+		simplify(exists, formula);
+	}
 
-			return std::move(and_);
-		};
+	static void accept(ast::In &in, ast::Formula &formula)
+	{
+		if (!isPrimitiveTerm(in.element) || !isPrimitiveTerm(in.set))
+			return;
 
-	const auto handleBiconditional =
-		[&](ast::BiconditionalPointer &biconditional) -> ast::Formula
-		{
-			biconditional->left = simplify(std::move(biconditional->left));
-			biconditional->right = simplify(std::move(biconditional->right));
+		// Simplify formulas of type “A in B” to “A = B” if A and B are primitive
+		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
+	}
 
-			return std::move(biconditional);
-		};
+	template<class T>
+	static void accept(T &, ast::Formula &)
+	{
+	}
+};
 
-	const auto handleExists =
-		[&](ast::ExistsPointer &exists) -> ast::Formula
-		{
-			exists->argument = simplify(std::move(exists->argument));
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			return simplify(exists);
-		};
-
-	const auto handleForAll =
-		[&](ast::ForAllPointer &forAll) -> ast::Formula
-		{
-			forAll->argument = simplify(std::move(forAll->argument));
-
-			return std::move(forAll);
-		};
-
-	const auto handleImplies =
-		[&](ast::ImpliesPointer &implies) -> ast::Formula
-		{
-			implies->antecedent = simplify(std::move(implies->antecedent));
-			implies->consequent = simplify(std::move(implies->consequent));
-
-			return std::move(implies);
-		};
-
-	const auto handleIn =
-		[](ast::InPointer &in) -> ast::Formula
-		{
-			if (!isPrimitiveTerm(in->element) || !isPrimitiveTerm(in->set))
-				return std::move(in);
-
-			// Simplify formulas of type “A in B” to “A = B” if A and B are primitive
-			return std::make_unique<ast::Comparison>(ast::Comparison::Operator::Equal, std::move(in->element), std::move(in->set));
-		};
-
-	const auto handleNot =
-		[&](ast::NotPointer &not_) -> ast::Formula
-		{
-			not_->argument = simplify(std::move(not_->argument));
-
-			return std::move(not_);
-		};
-
-	const auto handleOr =
-		[&](ast::OrPointer &or_) -> ast::Formula
-		{
-			for (auto &argument : or_->arguments)
-				argument = simplify(std::move(argument));
-
-			return std::move(or_);
-		};
-
-	const auto handleDefault =
-		[&](auto &x) -> ast::Formula
-		{
-			return std::move(x);
-		};
-
-	return formula.match(handleAnd, handleBiconditional, handleExists, handleForAll, handleImplies, handleIn, handleNot, handleOr, handleDefault);
+void simplify(ast::Formula &formula)
+{
+	formula.accept(SimplifyFormulaVisitor(), formula);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

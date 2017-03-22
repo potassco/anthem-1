@@ -3,8 +3,9 @@
 
 #include <memory>
 #include <experimental/optional>
-#include <mapbox/variant.hpp>
 #include <vector>
+
+#include <clingo.hh>
 
 namespace anthem
 {
@@ -64,34 +65,34 @@ using VariablePointer = std::unique_ptr<Variable>;
 // Variants
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-using FormulaT = mapbox::util::variant<
-	AndPointer,
-	BiconditionalPointer,
-	BooleanPointer,
-	ComparisonPointer,
-	ExistsPointer,
-	ForAllPointer,
-	ImpliesPointer,
-	InPointer,
-	NotPointer,
-	OrPointer,
-	PredicatePointer>;
+using FormulaT = Clingo::Variant<
+	And,
+	Biconditional,
+	Boolean,
+	Comparison,
+	Exists,
+	ForAll,
+	Implies,
+	In,
+	Not,
+	Or,
+	Predicate>;
 
 class Formula : public FormulaT
 {
 	using FormulaT::FormulaT;
 };
 
-using TermT = mapbox::util::variant<
-	BinaryOperationPointer,
-	BooleanPointer,
-	ConstantPointer,
-	FunctionPointer,
-	IntegerPointer,
-	IntervalPointer,
-	SpecialIntegerPointer,
-	StringPointer,
-	VariablePointer>;
+using TermT = Clingo::Variant<
+	BinaryOperation,
+	Boolean,
+	Constant,
+	Function,
+	Integer,
+	Interval,
+	SpecialInteger,
+	String,
+	Variable>;
 
 class Term : public TermT
 {

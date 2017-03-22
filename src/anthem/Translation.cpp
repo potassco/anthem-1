@@ -53,8 +53,8 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 				return;
 			}
 
-			auto simplifiedFormula = simplify(std::move(formula.value()));
-			context.logger.outputStream() << simplifiedFormula << std::endl;
+			simplify(formula.value());
+			context.logger.outputStream() << formula.value() << std::endl;
 		};
 
 	const auto logger =

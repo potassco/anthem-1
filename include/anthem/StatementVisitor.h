@@ -36,7 +36,7 @@ struct StatementVisitor
 		// Concatenate all head terms
 		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, context);
 
-		auto antecedent = std::make_unique<ast::And>();
+		ast::And antecedent;
 
 		// Compute consequent
 		auto consequent = rule.head.data.accept(HeadLiteralTranslateToConsequentVisitor(), rule.head, context);
@@ -53,11 +53,11 @@ struct StatementVisitor
 			const auto &headTerm = **i;
 
 			auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i - context.headTerms.cbegin() + 1);
-			auto element = std::make_unique<ast::Variable>(std::move(variableName), ast::Variable::Type::Reserved);
+			auto element = ast::Variable(std::move(variableName), ast::Variable::Type::Reserved);
 			auto set = translate(headTerm, context);
-			auto in = std::make_unique<ast::In>(std::move(element), std::move(set));
+			auto in = ast::In(std::move(element), std::move(set));
 
-			antecedent->arguments.emplace_back(std::move(in));
+			antecedent.arguments.emplace_back(std::move(in));
 		}
 
 		// Print translated body literals
@@ -73,20 +73,20 @@ struct StatementVisitor
 			if (!argument)
 				throwErrorAtLocation(bodyLiteral.location, "could not translate body literal", context);
 
-			antecedent->arguments.emplace_back(std::move(argument.value()));
+			antecedent.arguments.emplace_back(std::move(argument.value()));
 		}
 
 		// Handle choice rules
 		if (context.isChoiceRule)
-			antecedent->arguments.emplace_back(ast::deepCopy(consequent.value()));
+			antecedent.arguments.emplace_back(ast::deepCopy(consequent.value()));
 
 		// Use “true” as the consequent in case it is empty
-		if (antecedent->arguments.empty())
-			return std::make_unique<ast::Implies>(std::make_unique<ast::Boolean>(true), std::move(consequent.value()));
-		else if (antecedent->arguments.size() == 1)
-			return std::make_unique<ast::Implies>(std::move(antecedent->arguments[0]), std::move(consequent.value()));
+		if (antecedent.arguments.empty())
+			return ast::Formula::make<ast::Implies>(ast::Boolean(true), std::move(consequent.value()));
+		else if (antecedent.arguments.size() == 1)
+			return ast::Formula::make<ast::Implies>(std::move(antecedent.arguments[0]), std::move(consequent.value()));
 
-		return std::make_unique<ast::Implies>(std::move(antecedent), std::move(consequent.value()));
+		return ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent.value()));
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)

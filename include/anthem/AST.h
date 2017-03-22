@@ -253,13 +253,13 @@ struct Biconditional
 
 struct Exists
 {
-	Exists(std::vector<VariablePointer> &&variables, Formula &&argument)
+	Exists(std::vector<Variable> &&variables, Formula &&argument)
 	:	variables{std::move(variables)},
 		argument{std::move(argument)}
 	{
 	}
 
-	std::vector<VariablePointer> variables;
+	std::vector<Variable> variables;
 	Formula argument;
 };
 
@@ -267,13 +267,13 @@ struct Exists
 
 struct ForAll
 {
-	ForAll(std::vector<VariablePointer> &&variables, Formula &&argument)
+	ForAll(std::vector<Variable> &&variables, Formula &&argument)
 	:	variables{std::move(variables)},
 		argument{std::move(argument)}
 	{
 	}
 
-	std::vector<VariablePointer> variables;
+	std::vector<Variable> variables;
 	Formula argument;
 };
 
@@ -332,7 +332,7 @@ Predicate deepCopy(const Predicate &other);
 SpecialInteger deepCopy(const SpecialInteger &other);
 String deepCopy(const String &other);
 Variable deepCopy(const Variable &other);
-std::vector<VariablePointer> deepCopy(const std::vector<VariablePointer> &other);
+std::vector<Variable> deepCopy(const std::vector<Variable> &other);
 And deepCopy(const And &other);
 Biconditional deepCopy(const Biconditional &other);
 Exists deepCopy(const Exists &other);
@@ -347,7 +347,7 @@ Term deepCopy(const Term &term);
 std::vector<Term> deepCopy(const std::vector<Term> &terms);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
 const auto deepCopyUniquePtr =
 	[](const auto &uniquePtr) -> typename std::decay<decltype(uniquePtr)>::type
 	{
@@ -370,13 +370,27 @@ const auto deepCopyUniquePtrVector =
 
 		return result;
 	};
+*/
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<class Variant>
+struct VariantDeepCopyVisitor
+{
+	template<class T>
+	Variant visit(const T &x)
+	{
+		return deepCopy(x);
+	}
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const auto deepCopyVariant =
 	[](const auto &variant) -> typename std::decay<decltype(variant)>::type
 	{
-		return variant.match([](const auto &x) -> typename std::decay<decltype(variant)>::type {return deepCopyUniquePtr(x);});
+		using VariantType = typename std::decay<decltype(variant)>::type;
+
+		return variant.accept(VariantDeepCopyVisitor<VariantType>());
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -391,6 +405,22 @@ const auto deepCopyVariantVector =
 
 		for (const auto &variant : variantVector)
 			result.emplace_back(deepCopyVariant(variant));
+
+		return result;
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const auto deepCopyVector =
+	[](const auto &vector) -> typename std::decay<decltype(vector)>::type
+	{
+		using Type = typename std::decay<decltype(vector)>::type::value_type;
+
+		std::vector<Type> result;
+		result.reserve(vector.size());
+
+		for (const auto &element : vector)
+			result.emplace_back(deepCopy(element));
 
 		return result;
 	};
@@ -474,9 +504,9 @@ inline Variable deepCopy(const Variable &other)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline std::vector<VariablePointer> deepCopy(const std::vector<VariablePointer> &other)
+inline std::vector<Variable> deepCopy(const std::vector<Variable> &other)
 {
-	return deepCopyUniquePtrVector(other);
+	return deepCopyVector(other);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

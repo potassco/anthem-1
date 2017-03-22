@@ -188,10 +188,10 @@ struct FunctionTermTranslateVisitor
 			assert(matchingTerm != context.headTerms.cend());
 
 			auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(matchingTerm - context.headTerms.cbegin() + 1);
-			arguments.emplace_back(std::make_unique<ast::Variable>(std::move(variableName), ast::Variable::Type::Reserved));
+			arguments.emplace_back(ast::Variable(std::move(variableName), ast::Variable::Type::Reserved));
 		}
 
-		return std::make_unique<ast::Predicate>(function.name, std::move(arguments));
+		return ast::Formula::make<ast::Predicate>(function.name, std::move(arguments));
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, Context &context)
@@ -207,7 +207,7 @@ struct LiteralTranslateVisitor
 {
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, Context &)
 	{
-		return std::make_unique<ast::Boolean>(boolean.value);
+		return ast::Formula::make<ast::Boolean>(boolean.value);
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, Context &context)
@@ -245,7 +245,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 		if (!translatedLiteral)
 			return std::experimental::nullopt;
 
-		return std::make_unique<ast::Not>(std::move(translatedLiteral.value()));
+		return ast::Formula::make<ast::Not>(std::move(translatedLiteral.value()));
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
@@ -266,7 +266,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 			arguments.emplace_back(std::move(argument.value()));
 		}
 
-		return std::make_unique<ast::Or>(std::move(arguments));
+		return ast::Formula::make<ast::Or>(std::move(arguments));
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
@@ -299,7 +299,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 			arguments.emplace_back(std::move(argument.value()));
 		}
 
-		return std::make_unique<ast::Or>(std::move(arguments));
+		return ast::Formula::make<ast::Or>(std::move(arguments));
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)

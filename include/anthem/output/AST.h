@@ -48,7 +48,7 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Term &term);
 // Primitives
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, BinaryOperation::Operator operator_)
+inline output::ColorStream &operator<<(output::ColorStream &stream, BinaryOperation::Operator operator_)
 {
 	switch (operator_)
 	{
@@ -69,14 +69,14 @@ output::ColorStream &operator<<(output::ColorStream &stream, BinaryOperation::Op
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const BinaryOperation &binaryOperation)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const BinaryOperation &binaryOperation)
 {
 	return (stream << "(" << binaryOperation.left << " " << binaryOperation.operator_ << " " << binaryOperation.right << ")");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Boolean &boolean)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Boolean &boolean)
 {
 	if (boolean.value)
 		return (stream << output::Boolean("#true"));
@@ -86,7 +86,7 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Boolean &bool
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, Comparison::Operator operator_)
+inline output::ColorStream &operator<<(output::ColorStream &stream, Comparison::Operator operator_)
 {
 	switch (operator_)
 	{
@@ -109,21 +109,21 @@ output::ColorStream &operator<<(output::ColorStream &stream, Comparison::Operato
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Comparison &comparison)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Comparison &comparison)
 {
 	return (stream << comparison.left << " " << comparison.operator_ << " " << comparison.right);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Constant &constant)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Constant &constant)
 {
 	return (stream << constant.name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Function &function)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Function &function)
 {
 	stream << function.name;
 
@@ -148,28 +148,28 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Function &fun
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const In &in)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const In &in)
 {
 	return (stream << in.element << " " << output::Keyword("in") << " " << in.set);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Integer &integer)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Integer &integer)
 {
 	return (stream << output::Number<int>(integer.value));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Interval &interval)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Interval &interval)
 {
 	return (stream << interval.from << ".." << interval.to);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Predicate &predicate)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Predicate &predicate)
 {
 	stream << predicate.name;
 
@@ -191,7 +191,7 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Predicate &pr
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const SpecialInteger &specialInteger)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const SpecialInteger &specialInteger)
 {
 	switch (specialInteger.type)
 	{
@@ -206,14 +206,14 @@ output::ColorStream &operator<<(output::ColorStream &stream, const SpecialIntege
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const String &string)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const String &string)
 {
 	return (stream << output::String(string.text.c_str()));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Variable &variable)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Variable &variable)
 {
 	assert(!variable.name.empty());
 	assert(variable.name[0] >= 65 && variable.name[0] <= 90);
@@ -230,7 +230,7 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Variable &var
 // Expressions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const And &and_)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const And &and_)
 {
 	stream << "(";
 
@@ -247,14 +247,14 @@ output::ColorStream &operator<<(output::ColorStream &stream, const And &and_)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Biconditional &biconditional)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Biconditional &biconditional)
 {
 	return (stream << "(" << biconditional.left << " <-> " << biconditional.right << ")");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Exists &exists)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Exists &exists)
 {
 	stream << output::Keyword("exists") << " ";
 
@@ -263,7 +263,7 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Exists &exist
 		if (i != exists.variables.cbegin())
 			stream << ", ";
 
-		stream << (**i);
+		stream << (*i);
 	}
 
 	return (stream << " " << exists.argument);
@@ -271,7 +271,7 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Exists &exist
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const ForAll &forAll)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const ForAll &forAll)
 {
 	stream << output::Keyword("forall") << " ";
 
@@ -280,7 +280,7 @@ output::ColorStream &operator<<(output::ColorStream &stream, const ForAll &forAl
 		if (i != forAll.variables.cbegin())
 			stream << ", ";
 
-		stream << (**i);
+		stream << (*i);
 	}
 
 	return (stream << " " << forAll.argument);
@@ -288,21 +288,21 @@ output::ColorStream &operator<<(output::ColorStream &stream, const ForAll &forAl
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Implies &implies)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Implies &implies)
 {
 	return (stream << "(" << implies.antecedent << " -> " << implies.consequent << ")");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Not &not_)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Not &not_)
 {
 	return (stream << output::Keyword("not ") << not_.argument);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Or &or_)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Or &or_)
 {
 	stream << "(";
 
@@ -321,20 +321,28 @@ output::ColorStream &operator<<(output::ColorStream &stream, const Or &or_)
 // Variants
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Formula &formula)
+template<class Variant>
+struct VariantPrintVisitor
 {
-	formula.match([&](const auto &x){stream << *x;});
+	template<class T>
+	output::ColorStream &visit(const T &x, output::ColorStream &stream)
+	{
+		return (stream << x);
+	}
+};
 
-	return stream;
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Formula &formula)
+{
+	return formula.accept(VariantPrintVisitor<ast::Formula>(), stream);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Term &term)
+inline output::ColorStream &operator<<(output::ColorStream &stream, const Term &term)
 {
-	term.match([&](const auto &x){stream << *x;});
-
-	return stream;
+	return term.accept(VariantPrintVisitor<ast::Term>(), stream);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

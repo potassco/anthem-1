@@ -40,11 +40,11 @@ ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOp
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::VariablePointer makeAuxiliaryBodyVariable(const int i)
+ast::Variable makeAuxiliaryBodyVariable(const int i)
 {
 	auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(i);
 
-	return std::make_unique<ast::Variable>(std::move(variableName), ast::Variable::Type::Reserved);
+	return ast::Variable(std::move(variableName), ast::Variable::Type::Reserved);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,36 +88,36 @@ struct BodyTermTranslateVisitor
 			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported", context);
 
 		if (function.arguments.empty())
-			return std::make_unique<ast::Predicate>(std::string(function.name));
+			return ast::Formula::make<ast::Predicate>(std::string(function.name));
 
-		std::vector<ast::VariablePointer> variables;
+		std::vector<ast::Variable> variables;
 		variables.reserve(function.arguments.size());
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
 			variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i));
 
-		auto conjunction = std::make_unique<ast::And>();
+		ast::And conjunction;
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
 		{
 			const auto &argument = function.arguments[i];
-			conjunction->arguments.emplace_back(std::make_unique<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i), translate(argument, context)));
+			conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i), translate(argument, context)));
 		}
 
-		auto predicate = std::make_unique<ast::Predicate>(std::string(function.name));
-		predicate->arguments.reserve(function.arguments.size());
+		ast::Predicate predicate(std::string(function.name));
+		predicate.arguments.reserve(function.arguments.size());
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
-			predicate->arguments.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i));
+			predicate.arguments.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i));
 
 		if (literal.sign == Clingo::AST::Sign::None)
-			conjunction->arguments.emplace_back(std::move(predicate));
+			conjunction.arguments.emplace_back(std::move(predicate));
 		else
-			conjunction->arguments.emplace_back(std::make_unique<ast::Not>(std::move(predicate)));
+			conjunction.arguments.emplace_back(ast::Formula::make<ast::Not>(std::move(predicate)));
 
 		context.auxiliaryBodyLiteralID += function.arguments.size();
 
-		return std::make_unique<ast::Exists>(std::move(variables), std::move(conjunction));
+		return ast::Formula::make<ast::Exists>(std::move(variables), std::move(conjunction));
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Pool &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
@@ -150,20 +150,20 @@ struct BodyLiteralTranslateVisitor
 
 		const auto operator_ = translate(comparison.comparison);
 
-		std::vector<ast::VariablePointer> variables;
+		std::vector<ast::Variable> variables;
 		variables.reserve(2);
 		variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID));
 		variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1));
 
-		auto conjunction = std::make_unique<ast::And>();
-		conjunction->arguments.reserve(3);
-		conjunction->arguments.emplace_back(std::make_unique<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID), translate(comparison.left, context)));
-		conjunction->arguments.emplace_back(std::make_unique<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1), translate(comparison.right, context)));
-		conjunction->arguments.emplace_back(std::make_unique<ast::Comparison>(operator_, makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID), makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1)));
+		ast::And conjunction;
+		conjunction.arguments.reserve(3);
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID), translate(comparison.left, context)));
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1), translate(comparison.right, context)));
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::Comparison>(operator_, makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID), makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1)));
 
 		context.auxiliaryBodyLiteralID += 2;
 
-		return std::make_unique<ast::Exists>(std::move(variables), std::move(conjunction));
+		return ast::Formula::make<ast::Exists>(std::move(variables), std::move(conjunction));
 	}
 
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, Context &context)

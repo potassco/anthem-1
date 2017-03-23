@@ -14,7 +14,8 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 	std::stringstream errors;
 
 	anthem::output::Logger logger(output, errors);
-	anthem::Context context = {logger, {}, 1};
+	anthem::Context context = {logger, {}};
+	context.simplify = false;
 
 	SECTION("simple example 1")
 	{

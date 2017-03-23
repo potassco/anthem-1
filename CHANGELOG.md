@@ -4,7 +4,7 @@
 
 Features:
 
-* basic simplification of output formulas (optional)
+* simplification of output formulas (optional)
 * command-line option `--simplify` to turn on simplification
 
 Bug Fixes:

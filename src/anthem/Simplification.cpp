@@ -19,77 +19,88 @@ bool isPrimitiveTerm(const ast::Term &term)
 template<class T>
 struct RecursiveFormulaVisitor
 {
-	void visit(ast::And &and_, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::And &and_, ast::Formula &formula, Arguments &&... arguments)
 	{
 		for (auto &argument : and_.arguments)
-			argument.accept(*this, argument);
+			argument.accept(*this, argument, std::forward<Arguments>(arguments)...);
 
-		return T::accept(and_, formula);
+		return T::accept(and_, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Biconditional &biconditional, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Biconditional &biconditional, ast::Formula &formula, Arguments &&... arguments)
 	{
-		biconditional.left.accept(*this, biconditional.left);
-		biconditional.right.accept(*this, biconditional.right);
+		biconditional.left.accept(*this, biconditional.left, std::forward<Arguments>(arguments)...);
+		biconditional.right.accept(*this, biconditional.right, std::forward<Arguments>(arguments)...);
 
-		return T::accept(biconditional, formula);
+		return T::accept(biconditional, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Boolean &boolean, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Boolean &boolean, ast::Formula &formula, Arguments &&... arguments)
 	{
-		return T::accept(boolean, formula);
+		return T::accept(boolean, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Comparison &comparison, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Comparison &comparison, ast::Formula &formula, Arguments &&... arguments)
 	{
-		return T::accept(comparison, formula);
+		return T::accept(comparison, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Exists &exists, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Exists &exists, ast::Formula &formula, Arguments &&... arguments)
 	{
-		exists.argument.accept(*this, exists.argument);
+		exists.argument.accept(*this, exists.argument, std::forward<Arguments>(arguments)...);
 
-		return T::accept(exists, formula);
+		return T::accept(exists, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::ForAll &forAll, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::ForAll &forAll, ast::Formula &formula, Arguments &&... arguments)
 	{
-		forAll.argument.accept(*this, forAll.argument);
+		forAll.argument.accept(*this, forAll.argument, std::forward<Arguments>(arguments)...);
 
-		return T::accept(forAll, formula);
+		return T::accept(forAll, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Implies &implies, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Implies &implies, ast::Formula &formula, Arguments &&... arguments)
 	{
-		implies.antecedent.accept(*this, implies.antecedent);
-		implies.consequent.accept(*this, implies.consequent);
+		implies.antecedent.accept(*this, implies.antecedent, std::forward<Arguments>(arguments)...);
+		implies.consequent.accept(*this, implies.consequent, std::forward<Arguments>(arguments)...);
 
-		return T::accept(implies, formula);
+		return T::accept(implies, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::In &in, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::In &in, ast::Formula &formula, Arguments &&... arguments)
 	{
-		return T::accept(in, formula);
+		return T::accept(in, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Not &not_, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Not &not_, ast::Formula &formula, Arguments &&... arguments)
 	{
-		not_.argument.accept(*this, not_.argument);
+		not_.argument.accept(*this, not_.argument, std::forward<Arguments>(arguments)...);
 
-		return T::accept(not_, formula);
+		return T::accept(not_, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Or &or_, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Or &or_, ast::Formula &formula, Arguments &&... arguments)
 	{
 		for (auto &argument : or_.arguments)
-			argument.accept(*this, argument);
+			argument.accept(*this, argument, std::forward<Arguments>(arguments)...);
 
-		return T::accept(or_, formula);
+		return T::accept(or_, formula, std::forward<Arguments>(arguments)...);
 	}
 
-	void visit(ast::Predicate &predicate, ast::Formula &formula)
+	template <class... Arguments>
+	void visit(ast::Predicate &predicate, ast::Formula &formula, Arguments &&... arguments)
 	{
-		return T::accept(predicate, formula);
+		return T::accept(predicate, formula, std::forward<Arguments>(arguments)...);
 	}
 };
 
@@ -128,6 +139,28 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct ReplaceVariableWithTermVisitor : public RecursiveFormulaVisitor<ReplaceVariableWithTermVisitor>
+{
+	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, ast::Term &&term)
+	{
+		for (auto &argument : predicate.arguments)
+		{
+			if (!matchesVariable(argument, variable))
+				continue;
+
+			argument = std::move(term);
+			return;
+		}
+	}
+
+	template<class T>
+	static void accept(T &, ast::Formula &, const ast::Variable &, ast::Term &&)
+	{
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void simplify(ast::Exists &exists, ast::Formula &formula)
 {
 	if (!exists.argument.is<ast::And>())
@@ -137,21 +170,8 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	auto &arguments = conjunction.arguments;
 
 	// Check that formula is in normal form
-	if (!arguments.back().is<ast::Predicate>())
+	if (!arguments.back().is<ast::Predicate>() && !arguments.back().is<ast::Not>())
 		return;
-
-	const auto replaceVariableInPredicateWithTerm =
-		[](ast::Predicate &predicate, const ast::Variable &variable, ast::Term &term)
-		{
-			for (auto &argument : predicate.arguments)
-			{
-				if (!matchesVariable(argument, variable))
-					continue;
-
-				argument = std::move(term);
-				break;
-			}
-		};
 
 	// Simplify formulas of type “exists X (X = t and F(Y))” to “F(t)”
 	for (auto i = exists.variables.begin(); i != exists.variables.end();)
@@ -168,10 +188,8 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 			if (!assignedTerm)
 				continue;
 
-			auto &lastArgument = arguments.back().get<ast::Predicate>();
-
 			// If this argument is an assignment of the variable to some other term, remove the assignment and replace the variable with the other term
-			replaceVariableInPredicateWithTerm(lastArgument, variable, assignedTerm.value());
+			arguments.back().accept(ReplaceVariableWithTermVisitor(), arguments.back(), variable, std::move(assignedTerm.value()));
 
 			arguments.erase(j);
 			wasVariableReplaced = true;
@@ -196,8 +214,9 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	// If the argument is a conjunction with just one element, directly replace the input formula with the argument
 	if (conjunction.arguments.size() == 1)
 	{
-		auto test = std::move(conjunction.arguments.front());
-		formula = std::move(test);
+		// TODO: remove workaround
+		auto tmp = std::move(conjunction.arguments.front());
+		formula = std::move(tmp);
 		return;
 	}
 

@@ -18,7 +18,7 @@ namespace anthem
 
 struct StatementVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
 	{
 		// TODO: refactor
 		context.logger.log(output::Priority::Debug, (std::string("[program] ") + program.name).c_str());
@@ -26,10 +26,10 @@ struct StatementVisitor
 		if (!program.parameters.empty())
 			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);
 
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
 	{
 		context.reset();
 
@@ -44,7 +44,7 @@ struct StatementVisitor
 		if (!consequent)
 		{
 			context.logger.log(output::Priority::Error, "could not translate formula consequent");
-			return std::experimental::nullopt;
+			return {};
 		}
 
 		// Print auxiliary variables replacing the head atom’s arguments
@@ -82,77 +82,77 @@ struct StatementVisitor
 
 		// Use “true” as the consequent in case it is empty
 		if (antecedent.arguments.empty())
-			return ast::Formula::make<ast::Implies>(ast::Boolean(true), std::move(consequent.value()));
+			return {ast::Formula::make<ast::Implies>(ast::Boolean(true), std::move(consequent.value()))};
 		else if (antecedent.arguments.size() == 1)
-			return ast::Formula::make<ast::Implies>(std::move(antecedent.arguments[0]), std::move(consequent.value()));
+			return {ast::Formula::make<ast::Implies>(std::move(antecedent.arguments[0]), std::move(consequent.value()))};
 
-		return ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent.value()));
+		return {ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent.value()))};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“definition” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ShowSignature &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::ShowSignature &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“show signature” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“show term” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Minimize &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::Minimize &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“minimize” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Script &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::Script &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“script” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::External &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::External &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“external” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Edge &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::Edge &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“edge” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Heuristic &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::Heuristic &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“heuristic” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ProjectAtom &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::ProjectAtom &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“project atom” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ProjectSignature &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::ProjectSignature &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“project signature” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::TheoryDefinition &, const Clingo::AST::Statement &statement, Context &context)
+	std::vector<ast::Formula> visit(const Clingo::AST::TheoryDefinition &, const Clingo::AST::Statement &statement, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "“theory definition” statements currently unsupported", context);
-		return std::experimental::nullopt;
+		return {};
 	}
 };
 

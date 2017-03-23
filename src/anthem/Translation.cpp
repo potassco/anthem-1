@@ -39,22 +39,31 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
 
-	const auto translateStatement =
-		[&context](const Clingo::AST::Statement &statement)
+	bool isFirstStatement = true;
+
+	const auto printFormula =
+		[&context, &isFirstStatement](const ast::Formula &formula)
 		{
-			auto formula = statement.data.accept(StatementVisitor(), statement, context);
+			if (!isFirstStatement)
+				context.logger.outputStream() << std::endl;
 
-			if (!formula)
-				return;
+			context.logger.outputStream() << formula << std::endl;
 
-			if (!context.simplify)
+			isFirstStatement = false;
+		};
+
+	const auto translateStatement =
+		[&context, &printFormula](const Clingo::AST::Statement &statement)
+		{
+			auto formulas = statement.data.accept(StatementVisitor(), statement, context);
+
+			for (auto &formula : formulas)
 			{
-				context.logger.outputStream() << formula.value() << std::endl;
-				return;
-			}
+				if (context.simplify)
+					simplify(formula);
 
-			simplify(formula.value());
-			context.logger.outputStream() << formula.value() << std::endl;
+				printFormula(formula);
+			}
 		};
 
 	const auto logger =

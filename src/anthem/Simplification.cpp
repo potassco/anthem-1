@@ -57,25 +57,42 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Replaces the first occurrence of a variable with a term in a given formula
+// Replaces all occurrences of a variable with a term in a given formula
 struct ReplaceVariableWithTermVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableWithTermVisitor>
 {
-	// Perform replacement in predicates only
-	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, ast::Term &&term)
+	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::Variable &variable, ast::Term &term)
+	{
+		if (matchesVariable(comparison.left, variable))
+			comparison.left = ast::deepCopy(term);
+
+		if (matchesVariable(comparison.right, variable))
+			comparison.right = ast::deepCopy(term);
+	}
+
+	static void accept(ast::In &in, ast::Formula &, const ast::Variable &variable, ast::Term &term)
+	{
+		if (matchesVariable(in.element, variable))
+			in.element = ast::deepCopy(term);
+
+		if (matchesVariable(in.set, variable))
+			in.set = ast::deepCopy(term);
+	}
+
+	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, ast::Term &term)
 	{
 		for (auto &argument : predicate.arguments)
 		{
 			if (!matchesVariable(argument, variable))
 				continue;
 
-			argument = std::move(term);
-			return;
+			// TODO: optimize (one less deep copy possible)
+			argument = ast::deepCopy(term);
 		}
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(T &, ast::Formula &, const ast::Variable &, ast::Term &&)
+	static void accept(T &, ast::Formula &, const ast::Variable &, ast::Term &)
 	{
 	}
 };
@@ -92,10 +109,6 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	auto &conjunction = exists.argument.get<ast::And>();
 	auto &arguments = conjunction.arguments;
 
-	// Check that formula is in normal form
-	if (!arguments.back().is<ast::Predicate>() && !arguments.back().is<ast::Not>())
-		return;
-
 	// Simplify formulas of type “exists X (X = t and F(X))” to “F(t)”
 	for (auto i = exists.variables.begin(); i != exists.variables.end();)
 	{
@@ -106,13 +119,15 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 		for (auto j = arguments.begin(); j != arguments.end(); j++)
 		{
 			auto &argument = *j;
+			// Find term that is equivalent to the given variable
 			auto assignedTerm = extractAssignedTerm(argument, variable);
 
 			if (!assignedTerm)
 				continue;
 
-			// If this argument is an assignment of the variable to some other term, remove the assignment and replace the variable with the other term
-			arguments.back().accept(ReplaceVariableWithTermVisitor(), arguments.back(), variable, std::move(assignedTerm.value()));
+			// Replace all occurrences of the variable with the equivalent term
+			for (auto &otherArgument : arguments)
+				otherArgument.accept(ReplaceVariableWithTermVisitor(), otherArgument, variable, assignedTerm.value());
 
 			arguments.erase(j);
 			wasVariableReplaced = true;

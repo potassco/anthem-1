@@ -2,6 +2,11 @@
 
 ## (unreleased)
 
+Features:
+
+* basic simplification of output formulas (optional)
+* command-line option `--simplify` to turn on simplification
+
 Internal:
 
 * explicit syntax tree representation for first-order formulas

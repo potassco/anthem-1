@@ -9,8 +9,10 @@
 ## Usage
 
 ```bash
-$ anthem [options] file...
+$ anthem [--simplify] file...
 ```
+
+With the option `--simplify`, output formulas are simplified by applying several basic transformation rules.
 
 ## Building
 

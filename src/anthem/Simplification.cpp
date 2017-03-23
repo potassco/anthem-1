@@ -1,5 +1,7 @@
 #include <anthem/Simplification.h>
 
+#include <anthem/ASTVisitors.h>
+
 namespace anthem
 {
 
@@ -13,96 +15,6 @@ bool isPrimitiveTerm(const ast::Term &term)
 {
 	return (!term.is<ast::BinaryOperation>() && !term.is<ast::Interval>());
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template<class T>
-struct RecursiveFormulaVisitor
-{
-	template <class... Arguments>
-	void visit(ast::And &and_, ast::Formula &formula, Arguments &&... arguments)
-	{
-		for (auto &argument : and_.arguments)
-			argument.accept(*this, argument, std::forward<Arguments>(arguments)...);
-
-		return T::accept(and_, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Biconditional &biconditional, ast::Formula &formula, Arguments &&... arguments)
-	{
-		biconditional.left.accept(*this, biconditional.left, std::forward<Arguments>(arguments)...);
-		biconditional.right.accept(*this, biconditional.right, std::forward<Arguments>(arguments)...);
-
-		return T::accept(biconditional, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Boolean &boolean, ast::Formula &formula, Arguments &&... arguments)
-	{
-		return T::accept(boolean, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Comparison &comparison, ast::Formula &formula, Arguments &&... arguments)
-	{
-		return T::accept(comparison, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Exists &exists, ast::Formula &formula, Arguments &&... arguments)
-	{
-		exists.argument.accept(*this, exists.argument, std::forward<Arguments>(arguments)...);
-
-		return T::accept(exists, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::ForAll &forAll, ast::Formula &formula, Arguments &&... arguments)
-	{
-		forAll.argument.accept(*this, forAll.argument, std::forward<Arguments>(arguments)...);
-
-		return T::accept(forAll, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Implies &implies, ast::Formula &formula, Arguments &&... arguments)
-	{
-		implies.antecedent.accept(*this, implies.antecedent, std::forward<Arguments>(arguments)...);
-		implies.consequent.accept(*this, implies.consequent, std::forward<Arguments>(arguments)...);
-
-		return T::accept(implies, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::In &in, ast::Formula &formula, Arguments &&... arguments)
-	{
-		return T::accept(in, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Not &not_, ast::Formula &formula, Arguments &&... arguments)
-	{
-		not_.argument.accept(*this, not_.argument, std::forward<Arguments>(arguments)...);
-
-		return T::accept(not_, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Or &or_, ast::Formula &formula, Arguments &&... arguments)
-	{
-		for (auto &argument : or_.arguments)
-			argument.accept(*this, argument, std::forward<Arguments>(arguments)...);
-
-		return T::accept(or_, formula, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
-	void visit(ast::Predicate &predicate, ast::Formula &formula, Arguments &&... arguments)
-	{
-		return T::accept(predicate, formula, std::forward<Arguments>(arguments)...);
-	}
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -139,7 +51,7 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct ReplaceVariableWithTermVisitor : public RecursiveFormulaVisitor<ReplaceVariableWithTermVisitor>
+struct ReplaceVariableWithTermVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableWithTermVisitor>
 {
 	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, ast::Term &&term)
 	{
@@ -226,7 +138,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct SimplifyFormulaVisitor : public RecursiveFormulaVisitor<SimplifyFormulaVisitor>
+struct SimplifyFormulaVisitor : public ast::RecursiveFormulaVisitor<SimplifyFormulaVisitor>
 {
 	static void accept(ast::Exists &exists, ast::Formula &formula)
 	{

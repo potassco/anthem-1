@@ -57,9 +57,10 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Replaces all occurrences of a variable with a term in a given formula
+// Replaces the first occurrence of a variable with a term in a given formula
 struct ReplaceVariableWithTermVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableWithTermVisitor>
 {
+	// Perform replacement in predicates only
 	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, ast::Term &&term)
 	{
 		for (auto &argument : predicate.arguments)
@@ -72,6 +73,7 @@ struct ReplaceVariableWithTermVisitor : public ast::RecursiveFormulaVisitor<Repl
 		}
 	}
 
+	// Ignore all other types of expressions
 	template<class T>
 	static void accept(T &, ast::Formula &, const ast::Variable &, ast::Term &&)
 	{
@@ -165,6 +167,7 @@ struct SimplifyFormulaVisitor : public ast::RecursiveFormulaVisitor<SimplifyForm
 		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
 	}
 
+	// Do nothing for all other types of expressions
 	template<class T>
 	static void accept(T &, ast::Formula &)
 	{

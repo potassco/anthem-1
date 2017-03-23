@@ -11,6 +11,9 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Determins whether a term is primitive
+// All terms but binary operations and interval are primitive
+// With primitive terms t, “X in t” and “X = t” are equivalent
 bool isPrimitiveTerm(const ast::Term &term)
 {
 	return (!term.is<ast::BinaryOperation>() && !term.is<ast::Interval>());
@@ -18,6 +21,7 @@ bool isPrimitiveTerm(const ast::Term &term)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Determines whether a term is a specific variable
 bool matchesVariable(const ast::Term &term, const ast::Variable &variable)
 {
 	if (!term.is<ast::Variable>())
@@ -30,6 +34,8 @@ bool matchesVariable(const ast::Term &term, const ast::Variable &variable)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Extracts the term t if the given formula is of the form “X = t” and X matches the given variable
+// The input formula is not usable if a term is returned
 std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::Variable &variable)
 {
 	if (!formula.is<ast::Comparison>())
@@ -51,6 +57,7 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Replaces all occurrences of a variable with a term in a given formula
 struct ReplaceVariableWithTermVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableWithTermVisitor>
 {
 	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, ast::Term &&term)
@@ -73,6 +80,8 @@ struct ReplaceVariableWithTermVisitor : public ast::RecursiveFormulaVisitor<Repl
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Simplifies exists statements by using the equivalence “exists X (X = t and F(X))” == “F(t)”
+// The exists statement has to be of the form “exists <variables> <conjunction>”
 void simplify(ast::Exists &exists, ast::Formula &formula)
 {
 	if (!exists.argument.is<ast::And>())
@@ -85,7 +94,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	if (!arguments.back().is<ast::Predicate>() && !arguments.back().is<ast::Not>())
 		return;
 
-	// Simplify formulas of type “exists X (X = t and F(Y))” to “F(t)”
+	// Simplify formulas of type “exists X (X = t and F(X))” to “F(t)”
 	for (auto i = exists.variables.begin(); i != exists.variables.end();)
 	{
 		auto &variable = *i;
@@ -117,13 +126,13 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 		i++;
 	}
 
-	// If there are still variables, do nothing more
+	// If there are still remaining variables, simplification is over
 	if (!exists.variables.empty())
 		return;
 
 	assert(!conjunction.arguments.empty());
 
-	// If the argument is a conjunction with just one element, directly replace the input formula with the argument
+	// If the argument now is a conjunction with just one element, directly replace the input formula with the argument
 	if (conjunction.arguments.size() == 1)
 	{
 		// TODO: remove workaround
@@ -138,19 +147,21 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Performs the different simplification techniques
 struct SimplifyFormulaVisitor : public ast::RecursiveFormulaVisitor<SimplifyFormulaVisitor>
 {
+	// Forward exists statements to the dedicated simplification function
 	static void accept(ast::Exists &exists, ast::Formula &formula)
 	{
 		simplify(exists, formula);
 	}
 
+	// Simplify formulas of type “A in B” to “A = B” if A and B are primitive
 	static void accept(ast::In &in, ast::Formula &formula)
 	{
 		if (!isPrimitiveTerm(in.element) || !isPrimitiveTerm(in.set))
 			return;
 
-		// Simplify formulas of type “A in B” to “A = B” if A and B are primitive
 		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
 	}
 

@@ -47,7 +47,7 @@ struct StatementVisitor
 			return {};
 		}
 
-		// Print auxiliary variables replacing the head atom’s arguments
+		// Generate auxiliary variables replacing the head atom’s arguments
 		for (auto i = context.headTerms.cbegin(); i != context.headTerms.cend(); i++)
 		{
 			const auto &headTerm = **i;
@@ -60,7 +60,7 @@ struct StatementVisitor
 			antecedent.arguments.emplace_back(std::move(in));
 		}
 
-		// Print translated body literals
+		// Translate body literals
 		for (auto i = rule.body.cbegin(); i != rule.body.cend(); i++)
 		{
 			const auto &bodyLiteral = *i;
@@ -76,17 +76,56 @@ struct StatementVisitor
 			antecedent.arguments.emplace_back(std::move(argument.value()));
 		}
 
-		// Handle choice rules
-		if (context.isChoiceRule)
-			antecedent.arguments.emplace_back(ast::deepCopy(consequent.value()));
+		std::vector<ast::Formula> formulas;
 
-		// Use “true” as the consequent in case it is empty
-		if (antecedent.arguments.empty())
-			return {ast::Formula::make<ast::Implies>(ast::Boolean(true), std::move(consequent.value()))};
-		else if (antecedent.arguments.size() == 1)
-			return {ast::Formula::make<ast::Implies>(std::move(antecedent.arguments[0]), std::move(consequent.value()))};
+		if (!context.isChoiceRule)
+			formulas.emplace_back(ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent.value())));
+		else
+		{
+			const auto createFormula =
+				[&](ast::Formula &argument, bool isLastOne)
+				{
+					auto consequent = std::move(argument);
 
-		return {ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent.value()))};
+					if (!isLastOne)
+						formulas.emplace_back(ast::Formula::make<ast::Implies>(ast::deepCopy(antecedent), std::move(consequent)));
+					else
+						formulas.emplace_back(ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent)));
+
+					auto &implies = formulas.back().get<ast::Implies>();
+					auto &antecedent = implies.antecedent.get<ast::And>();
+					antecedent.arguments.emplace_back(ast::deepCopy(implies.consequent));
+				};
+
+			if (consequent.value().is<ast::Or>())
+			{
+				auto &disjunction = consequent.value().get<ast::Or>();
+
+				for (auto &argument : disjunction.arguments)
+					createFormula(argument, &argument == &disjunction.arguments.back());
+			}
+			// TODO: check whether this is really correct for all possible consequent types
+			else
+				createFormula(consequent.value(), true);
+		}
+
+		for (auto &formula : formulas)
+		{
+			auto &implies = formula.get<ast::Implies>();
+			auto &antecedent = implies.antecedent.get<ast::And>();
+
+			// Use “true” as the consequent in case it is empty
+			if (antecedent.arguments.empty())
+				implies.antecedent = ast::Formula::make<ast::Boolean>(true);
+			else if (antecedent.arguments.size() == 1)
+			{
+				// TODO: remove workaround
+				auto tmp = std::move(antecedent.arguments[0]);
+				implies.antecedent = std::move(tmp);
+			}
+		}
+
+		return formulas;
 	}
 
 	std::vector<ast::Formula> visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)

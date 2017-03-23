@@ -226,7 +226,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{p; q}.";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "((p or q) -> (p or q))\n");
+		REQUIRE(output.str() == "(p -> p)\n(q -> q)\n");
 	}
 
 	SECTION("choice rule (n-ary elements)")
@@ -234,7 +234,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{p(1..3, N); q(2..4)}.";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "((V1 in 1..3 and V2 in N and V3 in 2..4 and (p(V1, V2) or q(V3))) -> (p(V1, V2) or q(V3)))\n");
+		REQUIRE(output.str() == "((V1 in 1..3 and V2 in N and V3 in 2..4 and p(V1, V2)) -> p(V1, V2))\n((V1 in 1..3 and V2 in N and V3 in 2..4 and q(V3)) -> q(V3))\n");
 	}
 
 	SECTION("choice rule with body")
@@ -242,7 +242,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{p(M, N); q(P)} :- s(M, N, P).";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "((V1 in M and V2 in N and V3 in P and exists X1, X2, X3 (X1 in M and X2 in N and X3 in P and s(X1, X2, X3)) and (p(V1, V2) or q(V3))) -> (p(V1, V2) or q(V3)))\n");
+		REQUIRE(output.str() == "((V1 in M and V2 in N and V3 in P and exists X1, X2, X3 (X1 in M and X2 in N and X3 in P and s(X1, X2, X3)) and p(V1, V2)) -> p(V1, V2))\n((V1 in M and V2 in N and V3 in P and exists X1, X2, X3 (X1 in M and X2 in N and X3 in P and s(X1, X2, X3)) and q(V3)) -> q(V3))\n");
 	}
 
 	SECTION("choice rule with negation")
@@ -258,6 +258,6 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{not p(X, 1); not s} :- not q(X, 2).";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and (not p(V1, V2) or not s)) -> (not p(V1, V2) or not s))\n");
+		REQUIRE(output.str() == "((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and not p(V1, V2)) -> not p(V1, V2))\n((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and not s) -> not s)\n");
 	}
 }

@@ -41,29 +41,24 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	bool isFirstStatement = true;
 
-	const auto printFormula =
-		[&context, &isFirstStatement](const ast::Formula &formula)
-		{
-			if (!isFirstStatement)
-				context.logger.outputStream() << std::endl;
-
-			context.logger.outputStream() << formula << std::endl;
-
-			isFirstStatement = false;
-		};
-
 	const auto translateStatement =
-		[&context, &printFormula](const Clingo::AST::Statement &statement)
+		[&context, &isFirstStatement](const Clingo::AST::Statement &statement)
 		{
 			auto formulas = statement.data.accept(StatementVisitor(), statement, context);
+
+			if (!isFirstStatement)
+				context.logger.outputStream() << std::endl;
 
 			for (auto &formula : formulas)
 			{
 				if (context.simplify)
 					simplify(formula);
 
-				printFormula(formula);
+				context.logger.outputStream() << formula << std::endl;
 			}
+
+			if (!formulas.empty())
+				isFirstStatement = false;
 		};
 
 	const auto logger =

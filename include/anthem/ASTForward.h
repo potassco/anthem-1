@@ -65,7 +65,7 @@ using VariablePointer = std::unique_ptr<Variable>;
 // Variants
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-using FormulaT = Clingo::Variant<
+using Formula = Clingo::Variant<
 	And,
 	Biconditional,
 	Boolean,
@@ -78,12 +78,7 @@ using FormulaT = Clingo::Variant<
 	Or,
 	Predicate>;
 
-class Formula : public FormulaT
-{
-	using FormulaT::FormulaT;
-};
-
-using TermT = Clingo::Variant<
+using Term = Clingo::Variant<
 	BinaryOperation,
 	Boolean,
 	Constant,
@@ -93,11 +88,6 @@ using TermT = Clingo::Variant<
 	SpecialInteger,
 	String,
 	Variable>;
-
-class Term : public TermT
-{
-	using TermT::TermT;
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

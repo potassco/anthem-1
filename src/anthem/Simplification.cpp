@@ -57,42 +57,48 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Replaces all occurrences of a variable with a term in a given formula
-struct ReplaceVariableWithTermVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableWithTermVisitor>
+// Replaces all occurrences of a variable in a given term with another term
+struct ReplaceVariableInTermVisitor : public ast::RecursiveTermVisitor<ReplaceVariableInTermVisitor>
 {
-	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::Variable &variable, ast::Term &term)
+	static void accept(ast::Variable &variable, ast::Term &term, const ast::Variable &variableToReplace, const ast::Term &replacementTerm)
 	{
-		if (matchesVariable(comparison.left, variable))
-			comparison.left = ast::deepCopy(term);
-
-		if (matchesVariable(comparison.right, variable))
-			comparison.right = ast::deepCopy(term);
-	}
-
-	static void accept(ast::In &in, ast::Formula &, const ast::Variable &variable, ast::Term &term)
-	{
-		if (matchesVariable(in.element, variable))
-			in.element = ast::deepCopy(term);
-
-		if (matchesVariable(in.set, variable))
-			in.set = ast::deepCopy(term);
-	}
-
-	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, ast::Term &term)
-	{
-		for (auto &argument : predicate.arguments)
-		{
-			if (!matchesVariable(argument, variable))
-				continue;
-
-			// TODO: optimize (one less deep copy possible)
-			argument = ast::deepCopy(term);
-		}
+		if (variable.name == variableToReplace.name)
+			term = ast::deepCopy(replacementTerm);
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(T &, ast::Formula &, const ast::Variable &, ast::Term &)
+	static void accept(T &, ast::Term &, const ast::Variable &, const ast::Term &)
+	{
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Replaces all occurrences of a variable in a given formula with a term
+struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableInFormulaVisitor>
+{
+	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::Variable &variable, const ast::Term &term)
+	{
+		comparison.left.accept(ReplaceVariableInTermVisitor(), comparison.left, variable, term);
+		comparison.right.accept(ReplaceVariableInTermVisitor(), comparison.left, variable, term);
+	}
+
+	static void accept(ast::In &in, ast::Formula &, const ast::Variable &variable, const ast::Term &term)
+	{
+		in.element.accept(ReplaceVariableInTermVisitor(), in.element, variable, term);
+		in.set.accept(ReplaceVariableInTermVisitor(), in.set, variable, term);
+	}
+
+	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, const ast::Term &term)
+	{
+		for (auto &argument : predicate.arguments)
+			argument.accept(ReplaceVariableInTermVisitor(), argument, variable, term);
+	}
+
+	// Ignore all other types of expressions
+	template<class T>
+	static void accept(T &, ast::Formula &, const ast::Variable &, const ast::Term &)
 	{
 	}
 };
@@ -116,6 +122,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 
 		bool wasVariableReplaced = false;
 
+		// TODO: refactor
 		for (auto j = arguments.begin(); j != arguments.end(); j++)
 		{
 			auto &argument = *j;
@@ -126,8 +133,14 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 				continue;
 
 			// Replace all occurrences of the variable with the equivalent term
-			for (auto &otherArgument : arguments)
-				otherArgument.accept(ReplaceVariableWithTermVisitor(), otherArgument, variable, assignedTerm.value());
+			for (auto k = arguments.begin(); k != arguments.end(); k++)
+			{
+				if (k == j)
+					continue;
+
+				auto &otherArgument = *k;
+				otherArgument.accept(ReplaceVariableInFormulaVisitor(), otherArgument, variable, assignedTerm.value());
+			}
 
 			arguments.erase(j);
 			wasVariableReplaced = true;

@@ -107,6 +107,75 @@ struct RecursiveFormulaVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<class T>
+struct RecursiveTermVisitor
+{
+	template <class... Arguments>
+	void visit(ast::BinaryOperation &binaryOperation, ast::Term &term, Arguments &&... arguments)
+	{
+		binaryOperation.left.accept(*this, binaryOperation.left, std::forward<Arguments>(arguments)...);
+		binaryOperation.right.accept(*this, binaryOperation.left, std::forward<Arguments>(arguments)...);
+
+		return T::accept(binaryOperation, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::Boolean &boolean, ast::Term &term, Arguments &&... arguments)
+	{
+		return T::accept(boolean, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::Constant &constant, ast::Term &term, Arguments &&... arguments)
+	{
+		return T::accept(constant, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::Function &function, ast::Term &term, Arguments &&... arguments)
+	{
+		for (auto &argument : function.arguments)
+			argument.accept(*this, argument, std::forward<Arguments>(arguments)...);
+
+		return T::accept(function, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::Integer &integer, ast::Term &term, Arguments &&... arguments)
+	{
+		return T::accept(integer, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::Interval &interval, ast::Term &term, Arguments &&... arguments)
+	{
+		interval.from.accept(*this, interval.from, std::forward<Arguments>(arguments)...);
+		interval.to.accept(*this, interval.to, std::forward<Arguments>(arguments)...);
+
+		return T::accept(interval, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::SpecialInteger &specialInteger, ast::Term &term, Arguments &&... arguments)
+	{
+		return T::accept(specialInteger, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::String &string, ast::Term &term, Arguments &&... arguments)
+	{
+		return T::accept(string, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
+	void visit(ast::Variable &variable, ast::Term &term, Arguments &&... arguments)
+	{
+		return T::accept(variable, term, std::forward<Arguments>(arguments)...);
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 }
 }
 

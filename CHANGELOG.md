@@ -7,6 +7,10 @@ Features:
 * basic simplification of output formulas (optional)
 * command-line option `--simplify` to turn on simplification
 
+Bug Fixes:
+
+* fixes incorrectly translated choice rules with multiple elements in the head aggregate
+
 Internal:
 
 * explicit syntax tree representation for first-order formulas

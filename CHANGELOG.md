@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+Bug Fixes:
+
+* fixes incorrectly simplified rules with comparisons
+
 ## 0.1.2 (2017-03-23)
 
 Features:

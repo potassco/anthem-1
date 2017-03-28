@@ -41,4 +41,12 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplified]")
 
 		REQUIRE(output.str() == "((not covered(I) and I in 1..n) -> #false)\n");
 	}
+
+	SECTION("comparisons")
+	{
+		input << ":- M > N.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "(M > N -> #false)\n");
+	}
 }

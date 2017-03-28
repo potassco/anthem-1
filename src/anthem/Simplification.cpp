@@ -81,7 +81,7 @@ struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<Rep
 	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::Variable &variable, const ast::Term &term)
 	{
 		comparison.left.accept(ReplaceVariableInTermVisitor(), comparison.left, variable, term);
-		comparison.right.accept(ReplaceVariableInTermVisitor(), comparison.left, variable, term);
+		comparison.right.accept(ReplaceVariableInTermVisitor(), comparison.right, variable, term);
 	}
 
 	static void accept(ast::In &in, ast::Formula &, const ast::Variable &variable, const ast::Term &term)

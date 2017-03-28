@@ -21,7 +21,7 @@ struct Context
 		headTerms.clear();
 		isChoiceRule = false;
 		numberOfHeadLiterals = 0;
-		auxiliaryBodyLiteralID = 1;
+		auxiliaryBodyVariableID = 1;
 	}
 
 	output::Logger logger;
@@ -29,7 +29,7 @@ struct Context
 	std::vector<const Clingo::AST::Term *> headTerms;
 	bool isChoiceRule = false;
 	size_t numberOfHeadLiterals = 0;
-	size_t auxiliaryBodyLiteralID = 1;
+	size_t auxiliaryBodyVariableID = 1;
 
 	bool simplify = false;
 };

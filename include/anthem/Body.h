@@ -40,7 +40,7 @@ ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOp
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Variable makeAuxiliaryBodyVariable(const int i)
+ast::Variable makeAuxiliaryBodyVariable(int i)
 {
 	auto variableName = std::string(AuxiliaryBodyVariablePrefix) + std::to_string(i);
 
@@ -94,28 +94,28 @@ struct BodyTermTranslateVisitor
 		variables.reserve(function.arguments.size());
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
-			variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i));
+			variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID + i));
 
 		ast::And conjunction;
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
 		{
 			const auto &argument = function.arguments[i];
-			conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i), translate(argument, context)));
+			conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID + i), translate(argument, context)));
 		}
 
 		ast::Predicate predicate(std::string(function.name));
 		predicate.arguments.reserve(function.arguments.size());
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
-			predicate.arguments.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + i));
+			predicate.arguments.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID + i));
 
 		if (literal.sign == Clingo::AST::Sign::None)
 			conjunction.arguments.emplace_back(std::move(predicate));
 		else
 			conjunction.arguments.emplace_back(ast::Formula::make<ast::Not>(std::move(predicate)));
 
-		context.auxiliaryBodyLiteralID += function.arguments.size();
+		context.auxiliaryBodyVariableID += function.arguments.size();
 
 		return ast::Formula::make<ast::Exists>(std::move(variables), std::move(conjunction));
 	}
@@ -154,16 +154,16 @@ struct BodyLiteralTranslateVisitor
 
 		std::vector<ast::Variable> variables;
 		variables.reserve(2);
-		variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID));
-		variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1));
+		variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID));
+		variables.emplace_back(makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID + 1));
 
 		ast::And conjunction;
 		conjunction.arguments.reserve(3);
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID), translate(comparison.left, context)));
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1), translate(comparison.right, context)));
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::Comparison>(operator_, makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID), makeAuxiliaryBodyVariable(context.auxiliaryBodyLiteralID + 1)));
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID), translate(comparison.left, context)));
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID + 1), translate(comparison.right, context)));
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::Comparison>(operator_, makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID), makeAuxiliaryBodyVariable(context.auxiliaryBodyVariableID + 1)));
 
-		context.auxiliaryBodyLiteralID += 2;
+		context.auxiliaryBodyVariableID += 2;
 
 		return ast::Formula::make<ast::Exists>(std::move(variables), std::move(conjunction));
 	}

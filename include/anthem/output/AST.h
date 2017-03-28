@@ -216,7 +216,6 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const String
 inline output::ColorStream &operator<<(output::ColorStream &stream, const Variable &variable)
 {
 	assert(!variable.name.empty());
-	assert(variable.name[0] >= 65 && variable.name[0] <= 90);
 
 	if (variable.type == ast::Variable::Type::Reserved || !isReservedVariableName(variable.name.c_str()))
 		return (stream << output::Variable(variable.name.c_str()));

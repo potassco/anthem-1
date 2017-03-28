@@ -18,31 +18,6 @@ namespace anthem
 
 struct TermCollectFunctionTermsVisitor
 {
-	void visit(const Clingo::Symbol &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“symbol” terms not allowed, function expected", context);
-	}
-
-	void visit(const Clingo::AST::Variable &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“variable” terms currently unsupported, function expected", context);
-	}
-
-	void visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported, function expected", context);
-	}
-
-	void visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“binary operation” terms currently unsupported, function expected", context);
-	}
-
-	void visit(const Clingo::AST::Interval &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“interval” terms currently unsupported, function expected", context);
-	}
-
 	void visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context)
 	{
 		if (function.external)
@@ -54,9 +29,10 @@ struct TermCollectFunctionTermsVisitor
 			context.headTerms.emplace_back(&argument);
 	}
 
-	void visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, Context &context)
+	template<class T>
+	void visit(const T &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“pool” terms currently unsupported, function expected", context);
+		throwErrorAtLocation(term.location, "term currently unsupported in this context, function expected", context);
 	}
 };
 
@@ -73,12 +49,8 @@ struct LiteralCollectFunctionTermsVisitor
 		term.data.accept(TermCollectFunctionTermsVisitor(), term, context);
 	}
 
-	void visit(const Clingo::AST::Comparison &, const Clingo::AST::Literal &literal, Context &context)
-	{
-		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals", context);
-	}
-
-	void visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, Context &context)
+	template<class T>
+	void visit(const T &, const Clingo::AST::Literal &literal, Context &context)
 	{
 		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals", context);
 	}
@@ -115,7 +87,7 @@ struct HeadLiteralCollectFunctionTermsVisitor
 		context.numberOfHeadLiterals = aggregate.elements.size();
 
 		if (aggregate.left_guard || aggregate.right_guard)
-			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards not allowed", context);
+			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards currently unsupported", context);
 
 		for (const auto &conditionalLiteral : aggregate.elements)
 		{
@@ -126,14 +98,10 @@ struct HeadLiteralCollectFunctionTermsVisitor
 		}
 	}
 
-	void visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
+	template<class T>
+	void visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
-		throwErrorAtLocation(headLiteral.location, "“head aggregate” head literals currently unsupported", context);
-	}
-
-	void visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
-	{
-		throwErrorAtLocation(headLiteral.location, "“theory” head literals currently unsupported", context);
+		throwErrorAtLocation(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate", context);
 	}
 };
 
@@ -141,36 +109,6 @@ struct HeadLiteralCollectFunctionTermsVisitor
 
 struct FunctionTermTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::Symbol &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“symbol” terms not allowed, function expected", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Variable &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“variable” terms currently unsupported, function expected", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported, function expected", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“binary operation” terms currently unsupported, function expected", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Interval &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“interval” terms currently unsupported, function expected", context);
-		return std::experimental::nullopt;
-	}
-
 	// TODO: check correctness
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context)
 	{
@@ -194,9 +132,10 @@ struct FunctionTermTranslateVisitor
 		return ast::Formula::make<ast::Predicate>(function.name, std::move(arguments));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, Context &context)
+	template<class T>
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“pool” terms currently unsupported, function expected", context);
+		throwErrorAtLocation(term.location, "term currently unsupported in this context, function expected", context);
 		return std::experimental::nullopt;
 	}
 };
@@ -215,13 +154,8 @@ struct LiteralTranslateVisitor
 		return term.data.accept(FunctionTermTranslateVisitor(), term, context);
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Comparison &, const Clingo::AST::Literal &literal, Context &context)
-	{
-		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, Context &context)
+	template<class T>
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, Context &context)
 	{
 		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals", context);
 		return std::experimental::nullopt;
@@ -272,7 +206,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
 		if (aggregate.left_guard || aggregate.right_guard)
-			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards not allowed", context);
+			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards currently unsupported", context);
 
 		const auto translateConditionalLiteral =
 			[&](const auto &conditionalLiteral)
@@ -302,15 +236,10 @@ struct HeadLiteralTranslateToConsequentVisitor
 		return ast::Formula::make<ast::Or>(std::move(arguments));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::HeadAggregate &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
+	template<class T>
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
-		throwErrorAtLocation(headLiteral.location, "“head aggregate” head literals currently unsupported", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
-	{
-		throwErrorAtLocation(headLiteral.location, "“theory” head literals currently unsupported", context);
+		throwErrorAtLocation(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate", context);
 		return std::experimental::nullopt;
 	}
 };

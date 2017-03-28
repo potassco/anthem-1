@@ -51,36 +51,6 @@ ast::Variable makeAuxiliaryBodyVariable(int i)
 
 struct BodyTermTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::Symbol &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“symbol” terms currently unsupported in this context", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Variable &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“variable” terms currently unsupported in this context", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported in this context", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::BinaryOperation &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“binary operation” terms currently unsupported in this context", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Interval &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
-	{
-		throwErrorAtLocation(term.location, "“interval” terms currently unsupported in this context", context);
-		return std::experimental::nullopt;
-	}
-
 	// TODO: refactor
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &, Context &context)
 	{
@@ -120,9 +90,10 @@ struct BodyTermTranslateVisitor
 		return ast::Formula::make<ast::Exists>(std::move(variables), std::move(conjunction));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Pool &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
+	template<class T>
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, Context &context)
 	{
-		throwErrorAtLocation(term.location, "“pool” terms currently unsupported", context);
+		throwErrorAtLocation(term.location, "term currently unsupported in this context, expected function", context);
 		return std::experimental::nullopt;
 	}
 };
@@ -131,16 +102,9 @@ struct BodyTermTranslateVisitor
 
 struct BodyLiteralTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &literal, Context &context)
-	{
-		throwErrorAtLocation(literal.location, "“boolean” literals currently unsupported in this context", context);
-		return std::experimental::nullopt;
-	}
-
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, Context &context)
 	{
 		return term.data.accept(BodyTermTranslateVisitor(), literal, term, context);
-		return std::experimental::nullopt;
 	}
 
 	// TODO: refactor
@@ -148,7 +112,7 @@ struct BodyLiteralTranslateVisitor
 	{
 		// Comparisons should never have a sign, because these are converted to positive comparisons by clingo
 		if (literal.sign != Clingo::AST::Sign::None)
-			throwErrorAtLocation(literal.location, "negated comparisons in body currently unsupported", context);
+			throwErrorAtLocation(literal.location, "negated comparisons currently unsupported", context);
 
 		const auto operator_ = translate(comparison.comparison);
 
@@ -168,9 +132,10 @@ struct BodyLiteralTranslateVisitor
 		return ast::Formula::make<ast::Exists>(std::move(variables), std::move(conjunction));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::CSPLiteral &, const Clingo::AST::Literal &literal, Context &context)
+	template<class T>
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, Context &context)
 	{
-		throwErrorAtLocation(literal.location, "CSP literals currently unsupported", context);
+		throwErrorAtLocation(literal.location, "literal currently unsupported in this context, expected function or term", context);
 		return std::experimental::nullopt;
 	}
 };
@@ -184,33 +149,10 @@ struct BodyBodyLiteralTranslateVisitor
 		return literal.data.accept(BodyLiteralTranslateVisitor(), literal, context);
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::ConditionalLiteral &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
+	template<class T>
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
 	{
-		throwErrorAtLocation(bodyLiteral.location, "“conditional literal” body literals currently unsupported", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Aggregate &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
-	{
-		throwErrorAtLocation(bodyLiteral.location, "“aggregate” body literals currently unsupported", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::BodyAggregate &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
-	{
-		throwErrorAtLocation(bodyLiteral.location, "“body aggregate” body literals currently unsupported", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::TheoryAtom &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
-	{
-		throwErrorAtLocation(bodyLiteral.location, "“theory atom” body literals currently unsupported", context);
-		return std::experimental::nullopt;
-	}
-
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Disjoint &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
-	{
-		throwErrorAtLocation(bodyLiteral.location, "“disjoint” body literals currently unsupported", context);
+		throwErrorAtLocation(bodyLiteral.location, "body literal currently unsupported in this context, expected literal", context);
 		return std::experimental::nullopt;
 	}
 };

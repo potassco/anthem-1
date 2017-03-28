@@ -146,6 +146,7 @@ struct BodyLiteralTranslateVisitor
 	// TODO: refactor
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context)
 	{
+		// Comparisons should never have a sign, because these are converted to positive comparisons by clingo
 		if (literal.sign != Clingo::AST::Sign::None)
 			throwErrorAtLocation(literal.location, "negated comparisons in body currently unsupported", context);
 

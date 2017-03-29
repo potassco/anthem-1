@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+Features:
+
+* support for anonymous variables
+
 Bug Fixes:
 
 * fixes incorrectly simplified rules with comparisons

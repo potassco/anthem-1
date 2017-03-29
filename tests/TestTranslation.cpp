@@ -69,10 +69,10 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 	SECTION("escaping conflicting variable names")
 	{
-		input << "p(X1, V1) :- q(X1), q(V1).";
+		input << "p(X1, V1, A1) :- q(X1), q(V1), q(A1).";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "((V1 in _X1 and V2 in _V1 and exists X1 (X1 in _X1 and q(X1)) and exists X2 (X2 in _V1 and q(X2))) -> p(V1, V2))\n");
+		REQUIRE(output.str() == "((V1 in _X1 and V2 in _V1 and V3 in _A1 and exists X1 (X1 in _X1 and q(X1)) and exists X2 (X2 in _V1 and q(X2)) and exists X3 (X3 in _A1 and q(X3))) -> p(V1, V2, V3))\n");
 	}
 
 	SECTION("fact")
@@ -201,8 +201,8 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "f; q(A1, A2); p(A3, r(A4)); g(g(A5)) :- g(A3), f, q(A4, A1), p(A2, A5).";
 		anthem::translate("input", input, context);
 
-		REQUIRE(output.str() == "((V1 in A1 and V2 in A2 and V3 in A3 and V4 in r(A4) and V5 in g(A5)"
-		        " and exists X1 (X1 in A3 and g(X1)) and f and exists X2, X3 (X2 in A4 and X3 in A1 and q(X2, X3)) and exists X4, X5 (X4 in A2 and X5 in A5 and p(X4, X5)))"
+		REQUIRE(output.str() == "((V1 in _A1 and V2 in _A2 and V3 in _A3 and V4 in r(_A4) and V5 in g(_A5)"
+		        " and exists X1 (X1 in _A3 and g(X1)) and f and exists X2, X3 (X2 in _A4 and X3 in _A1 and q(X2, X3)) and exists X4, X5 (X4 in _A2 and X5 in _A5 and p(X4, X5)))"
 		        " -> (q(V1, V2) or p(V3, V4) or g(V5) or f))\n");
 	}
 
@@ -260,5 +260,13 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		anthem::translate("input", input, context);
 
 		REQUIRE(output.str() == "((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and not p(V1, V2)) -> not p(V1, V2))\n((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and not s) -> not s)\n");
+	}
+
+	SECTION("anonymous variables")
+	{
+		input << "p(_, _) :- q(_, _).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "((V1 in A1 and V2 in A2 and exists X1, X2 (X1 in A3 and X2 in A4 and q(X1, X2))) -> p(V1, V2))\n");
 	}
 }

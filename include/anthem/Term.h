@@ -83,8 +83,16 @@ struct TermTranslateVisitor
 		return std::experimental::nullopt;
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, Context &)
+	std::experimental::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, Context &context)
 	{
+		if (strcmp(variable.name, "_") == 0)
+		{
+			std::string variableName = AnonymousVariablePrefix + std::to_string(context.anonymousVariableID);
+			context.anonymousVariableID++;
+
+			return ast::Term::make<ast::Variable>(std::move(variableName), ast::Variable::Type::Reserved);
+		}
+
 		return ast::Term::make<ast::Variable>(std::string(variable.name), ast::Variable::Type::UserDefined);
 	}
 

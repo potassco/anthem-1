@@ -22,6 +22,7 @@ struct Context
 		isChoiceRule = false;
 		numberOfHeadLiterals = 0;
 		auxiliaryBodyVariableID = 1;
+		anonymousVariableID = 1;
 	}
 
 	output::Logger logger;
@@ -30,6 +31,7 @@ struct Context
 	bool isChoiceRule = false;
 	size_t numberOfHeadLiterals = 0;
 	size_t auxiliaryBodyVariableID = 1;
+	size_t anonymousVariableID = 1;
 
 	bool simplify = false;
 };

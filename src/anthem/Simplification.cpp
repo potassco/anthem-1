@@ -12,7 +12,7 @@ namespace anthem
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Determins whether a term is primitive
-// All terms but binary operations and interval are primitive
+// All terms but binary operations and intervals are primitive
 // With primitive terms t, “X in t” and “X = t” are equivalent
 bool isPrimitiveTerm(const ast::Term &term)
 {

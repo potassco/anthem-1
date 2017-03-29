@@ -76,8 +76,6 @@ struct TermTranslateVisitor
 
 				return std::move(function);
 			}
-			default:
-				throwErrorAtLocation(term.location, "symbol type not supported", context);
 		}
 
 		return std::experimental::nullopt;

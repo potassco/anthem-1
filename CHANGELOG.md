@@ -9,6 +9,7 @@ Features:
 Bug Fixes:
 
 * fixes incorrectly simplified rules with comparisons
+* fixes misleading error message concerning negated, unsupported body literals
 
 ## 0.1.2 (2017-03-23)
 

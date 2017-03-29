@@ -144,8 +144,11 @@ struct BodyLiteralTranslateVisitor
 
 struct BodyBodyLiteralTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &, Context &context)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context)
 	{
+		if (bodyLiteral.sign != Clingo::AST::Sign::None)
+			throwErrorAtLocation(bodyLiteral.location, "only positive body literals supported currently", context);
+
 		return literal.data.accept(BodyLiteralTranslateVisitor(), literal, context);
 	}
 

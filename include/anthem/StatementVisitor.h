@@ -65,9 +65,6 @@ struct StatementVisitor
 		{
 			const auto &bodyLiteral = *i;
 
-			if (bodyLiteral.sign != Clingo::AST::Sign::None)
-				throwErrorAtLocation(bodyLiteral.location, "only positive literals currently supported", context);
-
 			auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, context);
 
 			if (!argument)

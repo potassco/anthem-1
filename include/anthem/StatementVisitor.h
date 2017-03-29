@@ -128,69 +128,10 @@ struct StatementVisitor
 		return formulas;
 	}
 
-	std::vector<ast::Formula> visit(const Clingo::AST::Definition &, const Clingo::AST::Statement &statement, Context &context)
+	template<class T>
+	std::vector<ast::Formula> visit(const T &, const Clingo::AST::Statement &statement, Context &context)
 	{
-		throwErrorAtLocation(statement.location, "“definition” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::ShowSignature &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“show signature” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“show term” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::Minimize &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“minimize” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::Script &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“script” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::External &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“external” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::Edge &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“edge” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::Heuristic &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“heuristic” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::ProjectAtom &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“project atom” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::ProjectSignature &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“project signature” statements currently unsupported", context);
-		return {};
-	}
-
-	std::vector<ast::Formula> visit(const Clingo::AST::TheoryDefinition &, const Clingo::AST::Statement &statement, Context &context)
-	{
-		throwErrorAtLocation(statement.location, "“theory definition” statements currently unsupported", context);
+		throwErrorAtLocation(statement.location, "statement currently unsupported, expected rule", context);
 		return {};
 	}
 };

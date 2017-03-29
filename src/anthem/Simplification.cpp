@@ -11,16 +11,6 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Determins whether a term is primitive
-// All terms but binary operations and intervals are primitive
-// With primitive terms t, “X in t” and “X = t” are equivalent
-bool isPrimitiveTerm(const ast::Term &term)
-{
-	return (!term.is<ast::BinaryOperation>() && !term.is<ast::Interval>());
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // Determines whether a term is a specific variable
 bool matchesVariable(const ast::Term &term, const ast::Variable &variable)
 {
@@ -189,7 +179,9 @@ struct SimplifyFormulaVisitor : public ast::RecursiveFormulaVisitor<SimplifyForm
 	// Simplify formulas of type “A in B” to “A = B” if A and B are primitive
 	static void accept(ast::In &in, ast::Formula &formula)
 	{
-		if (!isPrimitiveTerm(in.element) || !isPrimitiveTerm(in.set))
+		assert(ast::isPrimitive(in.element));
+
+		if (!ast::isPrimitive(in.element) || !ast::isPrimitive(in.set))
 			return;
 
 		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));

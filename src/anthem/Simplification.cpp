@@ -155,9 +155,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	// If the argument now is a conjunction with just one element, directly replace the input formula with the argument
 	if (conjunction.arguments.size() == 1)
 	{
-		// TODO: remove workaround
-		auto tmp = std::move(conjunction.arguments.front());
-		formula = std::move(tmp);
+		formula = std::move(conjunction.arguments.front());
 		return;
 	}
 

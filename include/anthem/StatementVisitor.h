@@ -115,11 +115,7 @@ struct StatementVisitor
 			if (antecedent.arguments.empty())
 				implies.antecedent = ast::Formula::make<ast::Boolean>(true);
 			else if (antecedent.arguments.size() == 1)
-			{
-				// TODO: remove workaround
-				auto tmp = std::move(antecedent.arguments[0]);
-				implies.antecedent = std::move(tmp);
-			}
+				implies.antecedent = std::move(antecedent.arguments[0]);;
 		}
 
 		return formulas;

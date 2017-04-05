@@ -6,6 +6,7 @@
 
 #include <clingo.hh>
 
+#include <anthem/Completion.h>
 #include <anthem/Context.h>
 #include <anthem/Simplification.h>
 #include <anthem/StatementVisitor.h>
@@ -54,6 +55,9 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		};
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
+
+	if (context.complete)
+		complete(formulas);
 
 	for (auto i = formulas.begin(); i != formulas.end(); i++)
 	{

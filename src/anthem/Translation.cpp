@@ -39,26 +39,12 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
 
-	bool isFirstStatement = true;
+	std::vector<ast::Formula> formulas;
 
 	const auto translateStatement =
-		[&context, &isFirstStatement](const Clingo::AST::Statement &statement)
+		[&formulas, &context](const Clingo::AST::Statement &statement)
 		{
-			auto formulas = statement.data.accept(StatementVisitor(), statement, context);
-
-			if (!isFirstStatement)
-				context.logger.outputStream() << std::endl;
-
-			for (auto &formula : formulas)
-			{
-				if (context.simplify)
-					simplify(formula);
-
-				context.logger.outputStream() << formula << std::endl;
-			}
-
-			if (!formulas.empty())
-				isFirstStatement = false;
+			statement.data.accept(StatementVisitor(), statement, formulas, context);
 		};
 
 	const auto logger =
@@ -68,6 +54,16 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		};
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
+
+	for (auto i = formulas.begin(); i != formulas.end(); i++)
+	{
+		auto &formula = *i;
+
+		if (context.simplify)
+			simplify(formula);
+
+		context.logger.outputStream() << formula << std::endl;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

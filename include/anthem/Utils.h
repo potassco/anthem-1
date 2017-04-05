@@ -36,6 +36,7 @@ inline void throwErrorAtLocation(const Clingo::Location &clingoLocation, const c
 {
 	const auto location = location_cast<input::Location>(clingoLocation);
 
+	// TODO: think about removing this to avoid double error messages
 	context.logger.log(output::Priority::Error, location, errorMessage);
 
 	throw std::runtime_error(errorMessage);

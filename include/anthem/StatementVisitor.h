@@ -16,20 +16,35 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Replaces empty and 1-element conjunctions in the antecedent of normal-form formulas
+inline void reduce(ast::Implies &implies)
+{
+	if (!implies.antecedent.is<ast::And>())
+		return;
+
+	auto &antecedent = implies.antecedent.get<ast::And>();
+
+	// Use “true” as the consequent in case it is empty
+	if (antecedent.arguments.empty())
+		implies.antecedent = ast::Formula::make<ast::Boolean>(true);
+	else if (antecedent.arguments.size() == 1)
+		implies.antecedent = std::move(antecedent.arguments[0]);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct StatementVisitor
 {
-	std::vector<ast::Formula> visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, Context &context)
+	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, std::vector<ast::Formula> &, Context &context)
 	{
 		// TODO: refactor
 		context.logger.log(output::Priority::Debug, (std::string("[program] ") + program.name).c_str());
 
 		if (!program.parameters.empty())
 			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);
-
-		return {};
 	}
 
-	std::vector<ast::Formula> visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context)
+	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::Formula> &formulas, Context &context)
 	{
 		context.reset();
 
@@ -43,8 +58,9 @@ struct StatementVisitor
 
 		if (!consequent)
 		{
+			// TODO: think about throwing an exception instead
 			context.logger.log(output::Priority::Error, "could not translate formula consequent");
-			return {};
+			return;
 		}
 
 		// Generate auxiliary variables replacing the head atom’s arguments
@@ -73,10 +89,11 @@ struct StatementVisitor
 			antecedent.arguments.emplace_back(std::move(argument.value()));
 		}
 
-		std::vector<ast::Formula> formulas;
-
 		if (!context.isChoiceRule)
+		{
 			formulas.emplace_back(ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent.value())));
+			reduce(formulas.back().get<ast::Implies>());
+		}
 		else
 		{
 			const auto createFormula =
@@ -92,6 +109,8 @@ struct StatementVisitor
 					auto &implies = formulas.back().get<ast::Implies>();
 					auto &antecedent = implies.antecedent.get<ast::And>();
 					antecedent.arguments.emplace_back(ast::deepCopy(implies.consequent));
+
+					reduce(implies);
 				};
 
 			if (consequent.value().is<ast::Or>())
@@ -105,27 +124,12 @@ struct StatementVisitor
 			else
 				createFormula(consequent.value(), true);
 		}
-
-		for (auto &formula : formulas)
-		{
-			auto &implies = formula.get<ast::Implies>();
-			auto &antecedent = implies.antecedent.get<ast::And>();
-
-			// Use “true” as the consequent in case it is empty
-			if (antecedent.arguments.empty())
-				implies.antecedent = ast::Formula::make<ast::Boolean>(true);
-			else if (antecedent.arguments.size() == 1)
-				implies.antecedent = std::move(antecedent.arguments[0]);;
-		}
-
-		return formulas;
 	}
 
 	template<class T>
-	std::vector<ast::Formula> visit(const T &, const Clingo::AST::Statement &statement, Context &context)
+	void visit(const T &, const Clingo::AST::Statement &statement, std::vector<ast::Formula> &, Context &context)
 	{
 		throwErrorAtLocation(statement.location, "statement currently unsupported, expected rule", context);
-		return {};
 	}
 };
 

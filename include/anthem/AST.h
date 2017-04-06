@@ -174,6 +174,11 @@ struct Predicate
 	{
 	}
 
+	std::size_t arity() const
+	{
+		return arguments.size();
+	}
+
 	std::string name;
 	std::vector<Term> arguments;
 };

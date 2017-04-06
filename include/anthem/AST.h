@@ -356,31 +356,6 @@ Term deepCopy(const Term &term);
 std::vector<Term> deepCopy(const std::vector<Term> &terms);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-const auto deepCopyUniquePtr =
-	[](const auto &uniquePtr) -> typename std::decay<decltype(uniquePtr)>::type
-	{
-		using Type = typename std::decay<decltype(uniquePtr)>::type::element_type;
-		return std::make_unique<Type>(deepCopy(*uniquePtr));
-	};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-const auto deepCopyUniquePtrVector =
-	[](const auto &uniquePtrVector) -> typename std::decay<decltype(uniquePtrVector)>::type
-	{
-		using Type = typename std::decay<decltype(uniquePtrVector)>::type::value_type;
-
-		std::vector<Type> result;
-		result.reserve(uniquePtrVector.size());
-
-		for (const auto &uniquePtr : uniquePtrVector)
-			result.emplace_back(deepCopyUniquePtr(uniquePtr));
-
-		return result;
-	};
-*/
-////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Variant>
 struct VariantDeepCopyVisitor

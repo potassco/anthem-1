@@ -175,6 +175,14 @@ struct CollectFreeVariablesVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula)
+{
+	ast::VariableStack variableStack;
+	return collectFreeVariables(formula, variableStack);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula, ast::VariableStack &variableStack)
 {
 	std::vector<ast::Variable> freeVariables;

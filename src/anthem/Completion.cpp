@@ -32,7 +32,10 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 		auto &formula = formulas[i];
 		assert(formula.is<ast::Implies>());
 		auto &implies = formula.get<ast::Implies>();
-		assert(implies.consequent.is<ast::Predicate>());
+
+		if (!implies.consequent.is<ast::Predicate>())
+			continue;
+
 		auto &otherPredicate = implies.consequent.get<ast::Predicate>();
 
 		if (predicate.arity() != otherPredicate.arity() || predicate.name != otherPredicate.name)
@@ -60,7 +63,13 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 		auto &formula = formulas[i];
 		assert(formula.is<ast::Implies>());
 		auto &implies = formula.get<ast::Implies>();
-		assert(implies.consequent.is<ast::Predicate>());
+
+		if (!implies.consequent.is<ast::Predicate>())
+		{
+			i++;
+			continue;
+		}
+
 		auto &otherPredicate = implies.consequent.get<ast::Predicate>();
 
 		if (predicate.arity() != otherPredicate.arity() || predicate.name != otherPredicate.name)
@@ -107,6 +116,30 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void completeBoolean(ast::Formula &formula)
+{
+	assert(formula.is<ast::Implies>());
+	auto &implies = formula.get<ast::Implies>();
+	assert(implies.consequent.is<ast::Boolean>());
+	auto &boolean = implies.consequent.get<ast::Boolean>();
+
+	auto variables = ast::collectFreeVariables(implies.antecedent);
+
+	auto argument = (boolean.value == true)
+		? std::move(implies.antecedent)
+		: ast::Formula::make<ast::Not>(std::move(implies.antecedent));
+
+	if (variables.empty())
+	{
+		formula = std::move(argument);
+		return;
+	}
+
+	formula = ast::Formula::make<ast::ForAll>(std::move(variables), std::move(argument));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void complete(std::vector<ast::Formula> &formulas)
 {
 	for (const auto &formula : formulas)
@@ -116,17 +149,22 @@ void complete(std::vector<ast::Formula> &formulas)
 
 		auto &implies = formula.get<ast::Implies>();
 
-		if (!implies.consequent.is<ast::Predicate>())
-			throw std::runtime_error("cannot perform completion, only single predicates supported as formula consequent currently");
+		if (!implies.consequent.is<ast::Predicate>() && !implies.consequent.is<ast::Boolean>())
+			throw std::runtime_error("cannot perform completion, only single predicates and Booleans supported as formula consequent currently");
 	}
 
 	for (std::size_t i = 0; i < formulas.size(); i++)
 	{
 		auto &formula = formulas[i];
 		auto &implies = formula.get<ast::Implies>();
-		auto &predicate = implies.consequent.get<ast::Predicate>();
 
-		completePredicate(predicate, formulas, i);
+		if (implies.consequent.is<ast::Predicate>())
+		{
+			auto &predicate = implies.consequent.get<ast::Predicate>();
+			completePredicate(predicate, formulas, i);
+		}
+		else if (implies.consequent.is<ast::Boolean>())
+			completeBoolean(formula);
 	}
 }
 

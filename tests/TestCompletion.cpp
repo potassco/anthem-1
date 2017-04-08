@@ -81,5 +81,19 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		CHECK(output.str() == "not h\n");
 	}
 
+	SECTION("example")
+	{
+		input << "{in(1..n, 1..r)}.\n"
+			"covered(I) :- in(I, S).\n"
+			":- I = 1..n, not covered(I).\n"
+			":- in(I, S), in(J, S), in(I + J, S).";
+		REQUIRE_NOTHROW(anthem::translate("input", input, context));
+
+		CHECK(output.str() == "forall V1, V2 (in(V1, V2) <-> (V1 in 1..n and V2 in 1..r and in(V1, V2)))\n"
+			"forall V1 (covered(V1) <-> exists I, S (V1 = I and in(I, S)))\n"
+			"forall I not (I in 1..n and not covered(I))\n"
+			"forall I, S, J not (in(I, S) and in(J, S) and exists X5 (X5 in (I + J) and in(X5, S)))\n");
+	}
+
 	// TODO: test collecting free variables
 }

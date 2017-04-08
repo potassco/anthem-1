@@ -21,9 +21,9 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 	SECTION("predicte in single rule head")
 	{
 		input << "p :- q.";
-		anthem::translate("input", input, context);
+		REQUIRE_NOTHROW(anthem::translate("input", input, context));
 
-		REQUIRE(output.str() == "(p <-> q)\n");
+		CHECK(output.str() == "(p <-> q)\n");
 	}
 
 	SECTION("predicate in multiple rule heads")
@@ -31,9 +31,9 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		input << "p :- q.\n"
 			"p :- r.\n"
 			"p :- s.";
-		anthem::translate("input", input, context);
+		REQUIRE_NOTHROW(anthem::translate("input", input, context));
 
-		REQUIRE(output.str() == "(p <-> (q or r or s))\n");
+		CHECK(output.str() == "(p <-> (q or r or s))\n");
 	}
 
 	SECTION("multiple predicates are correctly separated")
@@ -43,26 +43,30 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"p :- q.\n"
 			"r :- t.\n"
 			"q :- r.";
-		anthem::translate("input", input, context);
+		REQUIRE_NOTHROW(anthem::translate("input", input, context));
 
-		REQUIRE(output.str() == "(p <-> (s or q))\n(q <-> (t or r))\n(r <-> t)\n");
+		CHECK(output.str() == "(p <-> (s or q))\n(q <-> (t or r))\n(r <-> t)\n");
 	}
 
 	SECTION("integrity constraints")
 	{
 		input << ":- q.\n"
-			":- s(5).";
-		anthem::translate("input", input, context);
+			":- s(5).\n"
+			"#false :- t\n"
+			"#false :- v(5).";
+		REQUIRE_NOTHROW(anthem::translate("input", input, context));
 
-		REQUIRE(output.str() == "not q\nnot s(5)\n");
+		CHECK(output.str() == "not q\nnot s(5)\nnot t\nnot v(5)");
 	}
 
 	SECTION("facts")
 	{
 		input << "q.\n"
-			"r.";
-		anthem::translate("input", input, context);
+			"r.\n"
+			"t :- #true.\n"
+			"s :- #true.";
+		REQUIRE_NOTHROW(anthem::translate("input", input, context));
 
-		REQUIRE(output.str() == "(q <-> #true)\n(r <-> #true)\n");
+		CHECK(output.str() == "q\nr\nt\ns\n");
 	}
 }

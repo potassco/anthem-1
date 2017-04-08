@@ -69,4 +69,17 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 
 		CHECK(output.str() == "q\nr\nt\ns\n");
 	}
+
+	SECTION("useless implications")
+	{
+		input << "#true :- p, q(N), t(1, 2).\n"
+			"#true.\n"
+			"h :- #false.";
+		REQUIRE_NOTHROW(anthem::translate("input", input, context));
+
+		// TODO: implement completion for unused predicates
+		CHECK(output.str() == "not h\n");
+	}
+
+	// TODO: test collecting free variables
 }

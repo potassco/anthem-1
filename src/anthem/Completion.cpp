@@ -24,10 +24,10 @@ void checkMatchingPredicates(const ast::Term &lhs, const ast::Term &rhs)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula> &formulas, std::size_t formulasBegin)
+void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula> &formulas, std::size_t &formulaIndex)
 {
 	// Check that predicate is in normal form
-	for (auto i = formulasBegin; i < formulas.size(); i++)
+	for (auto i = formulaIndex; i < formulas.size(); i++)
 	{
 		auto &formula = formulas[i];
 		assert(formula.is<ast::Implies>());
@@ -58,7 +58,7 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 	auto or_ = ast::Formula::make<ast::Or>();
 
 	// Build the conjunction of all formulas with the predicate as consequent
-	for (auto i = formulasBegin; i < formulas.size();)
+	for (auto i = formulaIndex; i < formulas.size();)
 	{
 		auto &formula = formulas[i];
 		assert(formula.is<ast::Implies>());
@@ -91,33 +91,53 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 			or_.get<ast::Or>().arguments.emplace_back(std::move(exists));
 		}
 
-		if (i > formulasBegin)
+		if (i > formulaIndex)
 			formulas.erase(formulas.begin() + i);
 		else
 			i++;
 	}
 
-	if (or_.get<ast::Or>().arguments.size() == 1)
-		or_ = or_.get<ast::Or>().arguments.front();
+	auto biconditionalRight = std::move(or_);
+
+	// If the disjunction contains only one element, drop the enclosing disjunction
+	if (biconditionalRight.get<ast::Or>().arguments.size() == 1)
+		biconditionalRight = biconditionalRight.get<ast::Or>().arguments.front();
+
+	// If the biconditional would be of the form “F <-> true” or “F <-> false,” simplify the output
+	if (biconditionalRight.is<ast::Boolean>())
+	{
+		const auto &boolean = biconditionalRight.get<ast::Boolean>();
+
+		if (boolean.value == true)
+			formulas[formulaIndex] = ast::deepCopy(predicate);
+		else
+			formulas[formulaIndex] = ast::Formula::make<ast::Not>(ast::deepCopy(predicate));
+
+		formulaIndex++;
+		return;
+	}
 
 	// Build the biconditional within the completed formula
-	auto biconditional = ast::Formula::make<ast::Biconditional>(ast::deepCopy(predicate), std::move(or_));
+	auto biconditional = ast::Formula::make<ast::Biconditional>(ast::deepCopy(predicate), std::move(biconditionalRight));
 
 	if (predicate.arguments.empty())
 	{
-		formulas[formulasBegin] = std::move(biconditional);
+		formulas[formulaIndex] = std::move(biconditional);
+		formulaIndex++;
 		return;
 	}
 
 	auto completedFormula = ast::Formula::make<ast::ForAll>(std::move(variables), std::move(biconditional));
 
-	formulas[formulasBegin] = std::move(completedFormula);
+	formulas[formulaIndex] = std::move(completedFormula);
+	formulaIndex++;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void completeBoolean(ast::Formula &formula)
+void completeBoolean(std::vector<ast::Formula> &formulas, std::size_t &formulaIndex)
 {
+	auto &formula = formulas[formulaIndex];
 	assert(formula.is<ast::Implies>());
 	auto &implies = formula.get<ast::Implies>();
 	assert(implies.consequent.is<ast::Boolean>());
@@ -125,17 +145,24 @@ void completeBoolean(ast::Formula &formula)
 
 	auto variables = ast::collectFreeVariables(implies.antecedent);
 
-	auto argument = (boolean.value == true)
-		? std::move(implies.antecedent)
-		: ast::Formula::make<ast::Not>(std::move(implies.antecedent));
+	// Implications of the form “T -> true” are useless
+	if (boolean.value == true)
+	{
+		formulas.erase(formulas.begin() + formulaIndex);
+		return;
+	}
+
+	auto argument = ast::Formula::make<ast::Not>(std::move(implies.antecedent));
 
 	if (variables.empty())
 	{
 		formula = std::move(argument);
+		formulaIndex++;
 		return;
 	}
 
 	formula = ast::Formula::make<ast::ForAll>(std::move(variables), std::move(argument));
+	formulaIndex++;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +180,7 @@ void complete(std::vector<ast::Formula> &formulas)
 			throw std::runtime_error("cannot perform completion, only single predicates and Booleans supported as formula consequent currently");
 	}
 
-	for (std::size_t i = 0; i < formulas.size(); i++)
+	for (std::size_t i = 0; i < formulas.size();)
 	{
 		auto &formula = formulas[i];
 		auto &implies = formula.get<ast::Implies>();
@@ -164,7 +191,7 @@ void complete(std::vector<ast::Formula> &formulas)
 			completePredicate(predicate, formulas, i);
 		}
 		else if (implies.consequent.is<ast::Boolean>())
-			completeBoolean(formula);
+			completeBoolean(formulas, i);
 	}
 }
 

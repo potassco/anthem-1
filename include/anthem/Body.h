@@ -102,6 +102,11 @@ struct BodyTermTranslateVisitor
 
 struct BodyLiteralTranslateVisitor
 {
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, Context &)
+	{
+		return ast::Formula::make<ast::Boolean>(boolean.value);
+	}
+
 	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, Context &context)
 	{
 		return term.data.accept(BodyTermTranslateVisitor(), literal, term, context);

@@ -16,6 +16,7 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context = {logger, {}};
 	context.simplify = true;
+	context.complete = false;
 
 	SECTION("example 1")
 	{

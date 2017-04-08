@@ -52,11 +52,11 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 	{
 		input << ":- q.\n"
 			":- s(5).\n"
-			"#false :- t\n"
+			"#false :- t.\n"
 			"#false :- v(5).";
 		REQUIRE_NOTHROW(anthem::translate("input", input, context));
 
-		CHECK(output.str() == "not q\nnot s(5)\nnot t\nnot v(5)");
+		CHECK(output.str() == "not q\nnot s(5)\nnot t\nnot v(5)\n");
 	}
 
 	SECTION("facts")

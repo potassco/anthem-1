@@ -1,5 +1,6 @@
 #include <anthem/Completion.h>
 
+#include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
 
 namespace anthem
@@ -41,6 +42,16 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 			checkMatchingPredicates(predicate.arguments[i], otherPredicate.arguments[i]);
 	}
 
+	// Copy the predicate’s arguments for the completed formula
+	std::vector<ast::Variable> variables;
+	variables.reserve(predicate.arguments.size());
+
+	for (const auto &argument : predicate.arguments)
+	{
+		assert(argument.is<ast::Variable>());
+		variables.emplace_back(ast::deepCopy(argument.get<ast::Variable>()));
+	}
+
 	auto or_ = ast::Formula::make<ast::Or>();
 
 	// Build the conjunction of all formulas with the predicate as consequent
@@ -58,17 +69,27 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 			continue;
 		}
 
-		// TODO: implement variable lists
-		std::vector<ast::Variable> variables = {ast::Variable("dummy", ast::Variable::Type::UserDefined)};
-		auto exists = ast::Formula::make<ast::Exists>(std::move(variables), std::move(implies.antecedent));
+		ast::VariableStack variableStack;
+		variableStack.push(&variables);
 
-		or_.get<ast::Or>().arguments.emplace_back(exists);
+		auto variables = ast::collectFreeVariables(implies.antecedent, variableStack);
+
+		if (variables.empty())
+			or_.get<ast::Or>().arguments.emplace_back(std::move(implies.antecedent));
+		else
+		{
+			auto exists = ast::Formula::make<ast::Exists>(std::move(variables), std::move(implies.antecedent));
+			or_.get<ast::Or>().arguments.emplace_back(std::move(exists));
+		}
 
 		if (i > formulasBegin)
 			formulas.erase(formulas.begin() + i);
 		else
 			i++;
 	}
+
+	if (or_.get<ast::Or>().arguments.size() == 1)
+		or_ = or_.get<ast::Or>().arguments.front();
 
 	// Build the biconditional within the completed formula
 	auto biconditional = ast::Formula::make<ast::Biconditional>(ast::deepCopy(predicate), std::move(or_));
@@ -77,16 +98,6 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 	{
 		formulas[formulasBegin] = std::move(biconditional);
 		return;
-	}
-
-	// Copy the predicate’s arguments for the completed formula
-	std::vector<ast::Variable> variables;
-	variables.reserve(predicate.arguments.size());
-
-	for (const auto &argument : predicate.arguments)
-	{
-		assert(argument.is<ast::Variable>());
-		variables.emplace_back(ast::deepCopy(argument.get<ast::Variable>()));
 	}
 
 	auto completedFormula = ast::Formula::make<ast::ForAll>(std::move(variables), std::move(biconditional));

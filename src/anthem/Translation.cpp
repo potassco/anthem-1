@@ -56,18 +56,15 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
 
+	if (context.simplify)
+		for (auto &formula : formulas)
+			simplify(formula);
+
 	if (context.complete)
 		complete(formulas);
 
-	for (auto i = formulas.begin(); i != formulas.end(); i++)
-	{
-		auto &formula = *i;
-
-		if (context.simplify)
-			simplify(formula);
-
+	for (const auto &formula : formulas)
 		context.logger.outputStream() << formula << std::endl;
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -70,6 +70,15 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 			i++;
 	}
 
+	// Build the biconditional within the completed formula
+	auto biconditional = ast::Formula::make<ast::Biconditional>(ast::deepCopy(predicate), std::move(or_));
+
+	if (predicate.arguments.empty())
+	{
+		formulas[formulasBegin] = std::move(biconditional);
+		return;
+	}
+
 	// Copy the predicate’s arguments for the completed formula
 	std::vector<ast::Variable> variables;
 	variables.reserve(predicate.arguments.size());
@@ -80,11 +89,8 @@ void completePredicate(const ast::Predicate &predicate, std::vector<ast::Formula
 		variables.emplace_back(ast::deepCopy(argument.get<ast::Variable>()));
 	}
 
-	// Build the completed formula
-	auto biconditional = ast::Formula::make<ast::Biconditional>(ast::deepCopy(predicate), std::move(or_));
 	auto completedFormula = ast::Formula::make<ast::ForAll>(std::move(variables), std::move(biconditional));
 
-	// TODO: reduce formula, for instance, if there are no variables in the for-all expression
 	formulas[formulasBegin] = std::move(completedFormula);
 }
 

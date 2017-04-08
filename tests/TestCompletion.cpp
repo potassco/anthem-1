@@ -47,4 +47,22 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 
 		REQUIRE(output.str() == "(p <-> (s or q))\n(q <-> (t or r))\n(r <-> t)\n");
 	}
+
+	SECTION("integrity constraints")
+	{
+		input << ":- q.\n"
+			":- s(5).";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "not q\nnot s(5)\n");
+	}
+
+	SECTION("facts")
+	{
+		input << "q.\n"
+			"r.";
+		anthem::translate("input", input, context);
+
+		REQUIRE(output.str() == "(q <-> #true)\n(r <-> #true)\n");
+	}
 }

@@ -7,7 +7,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-TEST_CASE("[simplification] Rules are simplified correctly", "[simplified]")
+TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 {
 	std::stringstream input;
 	std::stringstream output;

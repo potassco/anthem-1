@@ -18,7 +18,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 	context.simplify = true;
 	context.complete = true;
 
-	SECTION("predicte in single rule head")
+	SECTION("predicate in single rule head")
 	{
 		input << "p :- q.";
 		REQUIRE_NOTHROW(anthem::translate("input", input, context));

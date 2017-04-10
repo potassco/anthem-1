@@ -42,7 +42,7 @@ ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, c
 	for (const auto &formula : formulas)
 	{
 		assert(formula.is<ast::Implies>());
-		auto &implies = formula.get<ast::Implies>();
+		const auto &implies = formula.get<ast::Implies>();
 
 		if (!implies.consequent.is<ast::Predicate>())
 			continue;

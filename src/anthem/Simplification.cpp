@@ -17,7 +17,7 @@ bool matchesVariable(const ast::Term &term, const ast::Variable &variable)
 	if (!term.is<ast::Variable>())
 		return false;
 
-	const auto otherVariable = term.get<ast::Variable>();
+	const auto &otherVariable = term.get<ast::Variable>();
 
 	return variable.name == otherVariable.name;
 }

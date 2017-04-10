@@ -2,6 +2,11 @@
 
 ## (unreleased)
 
+Features
+
+* completion of input programs (optional)
+* command-line option `--complete` to turn on completion
+
 ## 0.1.3 (2017-03-30)
 
 Features:

@@ -194,5 +194,44 @@ std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula, ast
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct CollectPredicatesVisitor : public RecursiveFormulaVisitor<CollectPredicatesVisitor>
+{
+	static void accept(const ast::Predicate &predicate, const ast::Formula &, std::vector<const ast::Predicate *> &predicates)
+	{
+		const auto predicateMatches =
+			[&predicate](const auto *otherPredicate)
+			{
+				return matches(predicate, *otherPredicate);
+			};
+
+		if (std::find_if(predicates.cbegin(), predicates.cend(), predicateMatches) == predicates.cend())
+			predicates.emplace_back(&predicate);
+	}
+
+	// Ignore all other types of expressions
+	template<class T>
+	static void accept(const T &, const ast::Formula &, std::vector<const ast::Predicate *> &)
+	{
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool matches(const ast::Predicate &lhs, const ast::Predicate &rhs)
+{
+	return (lhs.name == rhs.name && lhs.arity() == rhs.arity());
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// TODO: remove const_cast
+void collectPredicates(const ast::Formula &formula, std::vector<const ast::Predicate *> &predicates)
+{
+	auto &formulaMutable = const_cast<ast::Formula &>(formula);
+	formulaMutable.accept(CollectPredicatesVisitor(), formulaMutable, predicates);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 }
 }

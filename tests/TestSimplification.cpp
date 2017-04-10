@@ -21,7 +21,7 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 	SECTION("example 1")
 	{
 		input << ":- in(I, S), in(J, S), in(I + J, S).";
-		REQUIRE_NOTHROW(anthem::translate("input", input, context));
+		anthem::translate("input", input, context);
 
 		CHECK(output.str() == "((in(I, S) and in(J, S) and exists X5 (X5 in (I + J) and in(X5, S))) -> #false)\n");
 	}
@@ -29,7 +29,7 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 	SECTION("example 2")
 	{
 		input << "covered(I) :- in(I, S).";
-		REQUIRE_NOTHROW(anthem::translate("input", input, context));
+		anthem::translate("input", input, context);
 
 		CHECK(output.str() == "((V1 = I and in(I, S)) -> covered(V1))\n");
 	}
@@ -37,7 +37,7 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 	SECTION("example 3")
 	{
 		input << ":- not covered(I), I = 1..n.";
-		REQUIRE_NOTHROW(anthem::translate("input", input, context));
+		anthem::translate("input", input, context);
 
 		CHECK(output.str() == "((not covered(I) and I in 1..n) -> #false)\n");
 	}
@@ -45,7 +45,7 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 	SECTION("comparisons")
 	{
 		input << ":- M > N.";
-		REQUIRE_NOTHROW(anthem::translate("input", input, context));
+		anthem::translate("input", input, context);
 
 		CHECK(output.str() == "(M > N -> #false)\n");
 	}

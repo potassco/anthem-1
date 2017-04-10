@@ -34,6 +34,9 @@ class VariableStack
 std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula);
 std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula, ast::VariableStack &variableStack);
 
+bool matches(const ast::Predicate &lhs, const ast::Predicate &rhs);
+void collectPredicates(const ast::Formula &formula, std::vector<const ast::Predicate *> &predicates);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }

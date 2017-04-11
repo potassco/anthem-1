@@ -2,7 +2,7 @@
 
 ## (unreleased)
 
-Features
+Features:
 
 * completion of input programs (optional)
 * command-line option `--complete` to turn on completion

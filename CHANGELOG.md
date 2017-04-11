@@ -1,6 +1,6 @@
 # Change Log
 
-## (unreleased)
+## 0.1.4 (2017-04-12)
 
 Features:
 

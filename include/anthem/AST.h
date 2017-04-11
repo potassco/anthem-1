@@ -111,8 +111,8 @@ struct Constant
 
 	Constant(const Constant &other) = delete;
 	Constant &operator=(const Constant &other) = delete;
-	Constant(Constant &&other) noexcept = default;
-	Constant &operator=(Constant &&other) noexcept = default;
+	Constant(Constant &&other) = default;
+	Constant &operator=(Constant &&other) = default;
 
 	std::string name;
 };
@@ -286,8 +286,8 @@ struct Variable
 
 	Variable(const Variable &other) = delete;
 	Variable &operator=(const Variable &other) = delete;
-	Variable(Variable &&other) noexcept = default;
-	Variable &operator=(Variable &&other) noexcept = default;
+	Variable(Variable &&other) = default;
+	Variable &operator=(Variable &&other) = default;
 
 	std::string name;
 	Type type;

@@ -188,7 +188,15 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		CHECK(output.str() == "((V1 in M and V2 in N and V3 in O and V4 in P and exists X1, X2 (X1 in M and X2 in N and X1 < X2) and exists X3, X4 (X3 in P and X4 in O and X3 != X4)) -> p(V1, V2, V3, V4))\n");
 	}
 
-	SECTION("single negation")
+	SECTION("single negation with 0-ary predicates")
+	{
+		input << "not p :- not q.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "(not q -> not p)\n");
+	}
+
+	SECTION("single negation with n-ary predicates")
 	{
 		input << "not p(X, 1) :- not q(X, 2).";
 		anthem::translate("input", input, context);

@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+Bug Fixes:
+
+* fixes lost signs with negated 0-ary predicates
+
 ## 0.1.4 (2017-04-12)
 
 Features:

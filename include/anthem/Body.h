@@ -58,7 +58,14 @@ struct BodyTermTranslateVisitor
 			throwErrorAtLocation(literal.location, "double-negated literals currently unsupported", context);
 
 		if (function.arguments.empty())
-			return ast::Formula::make<ast::Predicate>(std::string(function.name));
+		{
+			auto predicate = ast::Formula::make<ast::Predicate>(std::string(function.name));
+
+			if (literal.sign == Clingo::AST::Sign::None)
+				return std::move(predicate);
+			else if (literal.sign == Clingo::AST::Sign::Negation)
+				return ast::Formula::make<ast::Not>(std::move(predicate));
+		}
 
 		std::vector<ast::Variable> variables;
 		variables.reserve(function.arguments.size());
@@ -82,7 +89,7 @@ struct BodyTermTranslateVisitor
 
 		if (literal.sign == Clingo::AST::Sign::None)
 			conjunction.arguments.emplace_back(std::move(predicate));
-		else
+		else if (literal.sign == Clingo::AST::Sign::Negation)
 			conjunction.arguments.emplace_back(ast::Formula::make<ast::Not>(std::move(predicate)));
 
 		context.auxiliaryBodyVariableID += function.arguments.size();

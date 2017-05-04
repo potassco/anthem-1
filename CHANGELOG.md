@@ -1,6 +1,6 @@
 # Change Log
 
-## (unreleased)
+## 0.1.5 (2017-05-04)
 
 Bug Fixes:
 

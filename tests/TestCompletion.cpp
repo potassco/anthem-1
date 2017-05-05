@@ -122,7 +122,6 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"v :- #false.";
 		anthem::translate("input", input, context);
 
-		// TODO: implement completion for unused predicates
 		CHECK(output.str() ==
 			"not p\n"
 			"forall V1 not q(V1)\n"

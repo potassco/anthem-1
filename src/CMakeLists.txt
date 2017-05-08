@@ -22,7 +22,6 @@ set(sources
 
 set(includes
 	${PROJECT_SOURCE_DIR}/include
-	${PROJECT_SOURCE_DIR}/lib/variant/include
 )
 
 set(libraries

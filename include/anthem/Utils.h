@@ -75,6 +75,7 @@ inline bool isReservedVariableName(const char *variableName)
 
 	assert(std::strlen(AuxiliaryBodyVariablePrefix) == std::strlen(AuxiliaryHeadVariablePrefix));
 	assert(std::strlen(AuxiliaryBodyVariablePrefix) == std::strlen(AnonymousVariablePrefix));
+	assert(std::strlen(AuxiliaryBodyVariablePrefix) == std::strlen(UserVariablePrefix));
 
 	const auto prefixLength = std::strlen(AuxiliaryBodyVariablePrefix);
 

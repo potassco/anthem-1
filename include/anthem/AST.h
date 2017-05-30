@@ -290,7 +290,6 @@ struct Variable
 
 struct VariableDeclaration
 {
-	// TODO: remove
 	enum class Type
 	{
 		UserDefined,
@@ -298,9 +297,14 @@ struct VariableDeclaration
 		Body
 	};
 
+	explicit VariableDeclaration(Type type)
+	:	type{type}
+	{
+	}
+
 	explicit VariableDeclaration(std::string &&name, Type type)
-	:	name{std::move(name)},
-		type{type}
+	:	type{type},
+		name{std::move(name)}
 	{
 	}
 
@@ -309,8 +313,8 @@ struct VariableDeclaration
 	VariableDeclaration(VariableDeclaration &&other) = default;
 	VariableDeclaration &operator=(VariableDeclaration &&other) = default;
 
-	std::string name;
 	Type type;
+	std::string name;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

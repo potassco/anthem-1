@@ -40,16 +40,6 @@ ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOp
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::unique_ptr<ast::VariableDeclaration> makeBodyVariableDeclaration(int i)
-{
-	// TODO: drop name
-	auto variableName = "#" + std::string(BodyVariablePrefix) + std::to_string(i);
-
-	return std::make_unique<ast::VariableDeclaration>(std::move(variableName), ast::VariableDeclaration::Type::Body);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 struct BodyTermTranslateVisitor
 {
 	// TODO: refactor
@@ -75,7 +65,7 @@ struct BodyTermTranslateVisitor
 		variableStack.push(&parameters);
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
-			parameters.emplace_back(makeBodyVariableDeclaration(i + 1));
+			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 
 		ast::And conjunction;
 
@@ -134,8 +124,8 @@ struct BodyLiteralTranslateVisitor
 
 		std::vector<std::unique_ptr<ast::VariableDeclaration>> parameters;
 		parameters.reserve(2);
-		parameters.emplace_back(makeBodyVariableDeclaration(1));
-		parameters.emplace_back(makeBodyVariableDeclaration(2));
+		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 
 		ast::And conjunction;
 		conjunction.arguments.reserve(3);

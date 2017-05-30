@@ -26,7 +26,7 @@ class VariableStack
 		void push(Layer layer);
 		void pop();
 
-		std::experimental::optional<ast::VariableDeclaration *> findVariableDeclaration(const char *variableName) const;
+		std::experimental::optional<ast::VariableDeclaration *> findUserVariableDeclaration(const char *variableName) const;
 		bool contains(const ast::VariableDeclaration &variableDeclaration) const;
 
 	private:

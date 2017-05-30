@@ -85,7 +85,7 @@ struct TermTranslateVisitor
 
 	std::experimental::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, Context &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
-		const auto matchingVariableDeclaration = variableStack.findVariableDeclaration(variable.name);
+		const auto matchingVariableDeclaration = variableStack.findUserVariableDeclaration(variable.name);
 		const auto isAnonymousVariable = (strcmp(variable.name, "_") == 0);
 		const auto isUndeclaredUserVariable = !matchingVariableDeclaration;
 		const auto isUndeclared = isAnonymousVariable || isUndeclaredUserVariable;

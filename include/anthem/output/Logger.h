@@ -5,6 +5,7 @@
 
 #include <anthem/input/Location.h>
 #include <anthem/output/ColorStream.h>
+#include <anthem/output/FormatScope.h>
 #include <anthem/output/Priority.h>
 
 namespace anthem
@@ -32,8 +33,8 @@ class Logger
 		void setLogPriority(Priority logPriority);
 		void setColorPolicy(ColorStream::ColorPolicy colorPolicy);
 
-		void log(Priority priority, const char *message);
-		void log(Priority priority, const input::Location &location, const char *message);
+		FormatScope log(Priority priority);
+		FormatScope log(Priority priority, const input::Location &location);
 
 	private:
 		ColorStream m_outputStream;

@@ -31,13 +31,14 @@ inline input::Location location_cast(const Clingo::Location &location)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: refactor
 inline void throwErrorAtLocation(const Clingo::Location &clingoLocation, const char *errorMessage,
 	Context &context)
 {
 	const auto location = location_cast<input::Location>(clingoLocation);
 
 	// TODO: think about removing this to avoid double error messages
-	context.logger.log(output::Priority::Error, location, errorMessage);
+	context.logger.log(output::Priority::Error, location) << errorMessage;
 
 	throw std::runtime_error(errorMessage);
 }

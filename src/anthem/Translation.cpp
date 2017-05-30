@@ -35,8 +35,7 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 
 void translate(const char *fileName, std::istream &stream, Context &context)
 {
-	// TODO: refactor
-	context.logger.log(output::Priority::Info, (std::string("reading ") + fileName).c_str());
+	context.logger.log(output::Priority::Info) << "reading " << fileName;
 
 	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
 
@@ -51,7 +50,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 	const auto logger =
 		[&context](const Clingo::WarningCode, const char *text)
 		{
-			context.logger.log(output::Priority::Error, text);
+			context.logger.log(output::Priority::Error) << text;
 		};
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);

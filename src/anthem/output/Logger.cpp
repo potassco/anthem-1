@@ -1,6 +1,7 @@
 #include <anthem/output/Logger.h>
 
 #include <anthem/output/Formatting.h>
+#include <anthem/output/NullStream.h>
 
 namespace anthem
 {
@@ -92,28 +93,29 @@ void Logger::setColorPolicy(ColorStream::ColorPolicy colorPolicy)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Logger::log(Priority priority, const char *message)
+FormatScope Logger::log(Priority priority)
 {
 	const auto priorityID = static_cast<int>(priority);
 
 	if (priorityID < static_cast<int>(m_logPriority))
-		return;
+		return FormatScope(detail::nullStream);
 
 	m_errorStream
 		<< priorityFormat(priority) << priorityName(priority) << ":"
 		<< ResetFormat() << " "
-		<< MessageBodyFormat << message
-		<< ResetFormat() << std::endl;
+		<< MessageBodyFormat;
+
+	return FormatScope(m_errorStream);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Logger::log(Priority priority, const input::Location &location, const char *message)
+FormatScope Logger::log(Priority priority, const input::Location &location)
 {
 	const auto priorityID = static_cast<int>(priority);
 
 	if (priorityID < static_cast<int>(m_logPriority))
-		return;
+		return FormatScope(detail::nullStream);
 
 	m_errorStream
 		<< LocationFormat
@@ -121,8 +123,9 @@ void Logger::log(Priority priority, const input::Location &location, const char 
 		<< ResetFormat() << " "
 		<< priorityFormat(priority) << priorityName(priority) << ":"
 		<< ResetFormat() << " "
-		<< MessageBodyFormat << message
-		<< ResetFormat() << std::endl;
+		<< MessageBodyFormat;
+
+	return FormatScope(m_errorStream);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

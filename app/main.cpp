@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	}
 	catch (const po::error &e)
 	{
-		context.logger.log(anthem::output::Priority::Error, e.what());
+		context.logger.log(anthem::output::Priority::Error) << e.what();
 		printHelp();
 		return EXIT_FAILURE;
 	}
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 		context.logger.setColorPolicy(anthem::output::ColorStream::ColorPolicy::Always);
 	else
 	{
-		context.logger.log(anthem::output::Priority::Error, ("unknown color policy “" + colorPolicyString + "”").c_str());
+		context.logger.log(anthem::output::Priority::Error) << "unknown color policy “" << colorPolicyString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 	}
 	catch (const std::exception &e)
 	{
-		context.logger.log(anthem::output::Priority::Error, ("unknown log priorty “" + logPriorityString + "”").c_str());
+		context.logger.log(anthem::output::Priority::Error) << "unknown log priorty “" << logPriorityString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 	}
 	catch (const std::exception &e)
 	{
-		context.logger.log(anthem::output::Priority::Error, e.what());
+		context.logger.log(anthem::output::Priority::Error) << e.what();
 		return EXIT_FAILURE;
 	}
 

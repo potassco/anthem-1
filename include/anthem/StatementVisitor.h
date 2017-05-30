@@ -39,8 +39,7 @@ struct StatementVisitor
 {
 	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
 	{
-		// TODO: refactor
-		context.logger.log(output::Priority::Debug, (std::string("[program] ") + program.name).c_str());
+		context.logger.log(output::Priority::Debug) << "[program] " << program.name;
 
 		if (!program.parameters.empty())
 			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);
@@ -76,7 +75,7 @@ struct StatementVisitor
 		if (!consequent)
 		{
 			// TODO: think about throwing an exception instead
-			context.logger.log(output::Priority::Error, "could not translate formula consequent");
+			context.logger.log(output::Priority::Error) << "could not translate formula consequent";
 			return;
 		}
 

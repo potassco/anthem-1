@@ -218,7 +218,7 @@ Variable prepareCopy(const Variable &other)
 
 VariableDeclaration prepareCopy(const VariableDeclaration &other)
 {
-	return VariableDeclaration(std::string(other.name), other.type);
+	return VariableDeclaration(other.type, std::string(other.name));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -389,7 +389,7 @@ struct FixDanglingVariablesInTermVisitor
 			return;
 
 		// If the variable is dangling, declare it correctly and flag it for future replacement
-		auto newVariableDeclaration = std::make_unique<VariableDeclaration>(std::string(variable.declaration->name), variable.declaration->type);
+		auto newVariableDeclaration = std::make_unique<VariableDeclaration>(variable.declaration->type, std::string(variable.declaration->name));
 		scopedFormula.freeVariables.emplace_back(std::move(newVariableDeclaration));
 
 		replacements[variable.declaration] = scopedFormula.freeVariables.back().get();

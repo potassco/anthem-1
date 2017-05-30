@@ -93,7 +93,7 @@ struct TermTranslateVisitor
 		if (!isUndeclared)
 			return ast::Term::make<ast::Variable>(*matchingVariableDeclaration);
 
-		auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(std::string(variable.name), ast::VariableDeclaration::Type::UserDefined);
+		auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
 		ruleContext.freeVariables.emplace_back(std::move(variableDeclaration));
 
 		return ast::Term::make<ast::Variable>(ruleContext.freeVariables.back().get());

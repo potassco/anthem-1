@@ -302,7 +302,7 @@ struct VariableDeclaration
 	{
 	}
 
-	explicit VariableDeclaration(std::string &&name, Type type)
+	explicit VariableDeclaration(Type type, std::string &&name)
 	:	type{type},
 		name{std::move(name)}
 	{

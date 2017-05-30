@@ -55,7 +55,7 @@ bool VariableStack::contains(const ast::VariableDeclaration &variableDeclaration
 	const auto variableDeclarationMatches =
 		[&variableDeclaration](const auto &other)
 		{
-			return variableDeclaration.name == other->name;
+			return &variableDeclaration == other.get();
 		};
 
 	const auto layerContainsVariableDeclaration =

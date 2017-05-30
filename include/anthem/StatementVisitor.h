@@ -61,10 +61,7 @@ struct StatementVisitor
 
 		for (size_t i = 0; i < ruleContext.headTerms.size(); i++)
 		{
-			// TODO: drop name
-			auto variableName = "#" + std::string(HeadVariablePrefix) + std::to_string(ruleContext.freeVariables.size() + 1);
-			auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head, std::move(variableName));
-
+			auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head);
 			ruleContext.freeVariables.emplace_back(std::move(variableDeclaration));
 		}
 

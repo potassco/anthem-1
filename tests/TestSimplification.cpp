@@ -8,14 +8,14 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
+TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 {
 	std::stringstream input;
 	std::stringstream output;
 	std::stringstream errors;
 
 	anthem::output::Logger logger(output, errors);
-	anthem::Context context = {logger, {}};
+	anthem::Context context(std::move(logger));
 	context.simplify = true;
 	context.complete = false;
 
@@ -24,7 +24,7 @@
 		input << ":- in(I, S), in(J, S), in(I + J, S).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((in(I, S) and in(J, S) and exists X5 (X5 in (I + J) and in(X5, S))) -> #false)\n");
+		CHECK(output.str() == "((in(U1, U2) and in(U3, U2) and exists X1 (X1 in (U1 + U3) and in(X1, U2))) -> #false)\n");
 	}
 
 	SECTION("example 2")
@@ -32,7 +32,7 @@
 		input << "covered(I) :- in(I, S).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 = I and in(I, S)) -> covered(V1))\n");
+		CHECK(output.str() == "((V1 = U1 and in(U1, U2)) -> covered(V1))\n");
 	}
 
 	SECTION("example 3")
@@ -40,7 +40,7 @@
 		input << ":- not covered(I), I = 1..n.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((not covered(I) and I in 1..n) -> #false)\n");
+		CHECK(output.str() == "((not covered(U1) and U1 in 1..n) -> #false)\n");
 	}
 
 	SECTION("comparisons")
@@ -48,7 +48,6 @@
 		input << ":- M > N.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "(M > N -> #false)\n");
+		CHECK(output.str() == "(U1 > U2 -> #false)\n");
 	}
 }
-*/

@@ -2,6 +2,7 @@
 
 #include <experimental/optional>
 
+#include <anthem/ASTCopy.h>
 #include <anthem/ASTVisitors.h>
 
 namespace anthem
@@ -14,19 +15,19 @@ namespace anthem
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Determines whether a term is a specific variable
-bool matchesVariableDeclaration(const ast::Term &term, const ast::VariableDeclaration &variableDeclaration)
+bool matchesVariableDeclaration(const ast::Term &term, const ast::VariableDeclaration *variableDeclaration)
 {
 	if (!term.is<ast::Variable>())
 		return false;
 
-	return term.get<ast::Variable>().declaration == &variableDeclaration;
+	return term.get<ast::Variable>().declaration == variableDeclaration;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Extracts the term t if the given formula is of the form “X = t” and X matches the given variable
 // The input formula is not usable if a term is returned
-std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::VariableDeclaration &variableDeclaration)
+std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::VariableDeclaration *variableDeclaration)
 {
 	if (!formula.is<ast::Comparison>())
 		return std::experimental::nullopt;
@@ -50,16 +51,16 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 // Replaces all occurrences of a variable in a given term with another term
 struct ReplaceVariableInTermVisitor : public ast::RecursiveTermVisitor<ReplaceVariableInTermVisitor>
 {
-	static void accept(ast::Variable &, ast::Term &, const ast::VariableDeclaration &, const ast::Term &)
+	static void accept(ast::Variable &variable, ast::Term &term, const ast::VariableDeclaration *original, const ast::Term &replacement)
 	{
-		// TODO: reimplement
-		//if (variable.name == variableToReplace.name)
-		//	term = ast::deepCopy(replacementTerm);
+		if (variable.declaration == original)
+			// No dangling variables can result from this operation, and hence, fixing them is not necessary
+			term = ast::prepareCopy(replacement);
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(T &, ast::Term &, const ast::VariableDeclaration &, const ast::Term &)
+	static void accept(T &, ast::Term &, const ast::VariableDeclaration *, const ast::Term &)
 	{
 	}
 };
@@ -69,27 +70,27 @@ struct ReplaceVariableInTermVisitor : public ast::RecursiveTermVisitor<ReplaceVa
 // Replaces all occurrences of a variable in a given formula with a term
 struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableInFormulaVisitor>
 {
-	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::VariableDeclaration &variableDeclaration, const ast::Term &term)
+	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::VariableDeclaration *original, const ast::Term &replacement)
 	{
-		comparison.left.accept(ReplaceVariableInTermVisitor(), comparison.left, variableDeclaration, term);
-		comparison.right.accept(ReplaceVariableInTermVisitor(), comparison.right, variableDeclaration, term);
+		comparison.left.accept(ReplaceVariableInTermVisitor(), comparison.left, original, replacement);
+		comparison.right.accept(ReplaceVariableInTermVisitor(), comparison.right, original, replacement);
 	}
 
-	static void accept(ast::In &in, ast::Formula &, const ast::VariableDeclaration &variableDeclaration, const ast::Term &term)
+	static void accept(ast::In &in, ast::Formula &, const ast::VariableDeclaration *original, const ast::Term &term)
 	{
-		in.element.accept(ReplaceVariableInTermVisitor(), in.element, variableDeclaration, term);
-		in.set.accept(ReplaceVariableInTermVisitor(), in.set, variableDeclaration, term);
+		in.element.accept(ReplaceVariableInTermVisitor(), in.element, original, term);
+		in.set.accept(ReplaceVariableInTermVisitor(), in.set, original, term);
 	}
 
-	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::VariableDeclaration &variableDeclaration, const ast::Term &term)
+	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::VariableDeclaration *original, const ast::Term &replacement)
 	{
 		for (auto &argument : predicate.arguments)
-			argument.accept(ReplaceVariableInTermVisitor(), argument, variableDeclaration, term);
+			argument.accept(ReplaceVariableInTermVisitor(), argument, original, replacement);
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(T &, ast::Formula &, const ast::VariableDeclaration &, const ast::Term &)
+	static void accept(T &, ast::Formula &, const ast::VariableDeclaration *, const ast::Term &)
 	{
 	}
 };
@@ -109,7 +110,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	// Simplify formulas of type “exists X (X = t and F(X))” to “F(t)”
 	for (auto i = exists.variables.begin(); i != exists.variables.end();)
 	{
-		auto &variableDeclaration = *i->get();
+		const auto *variableDeclaration = i->get();
 
 		bool wasVariableReplaced = false;
 

@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+Features:
+
+* unique IDs for all variables (user-defined variables are renamed)
+
 ## 0.1.5 (2017-05-04)
 
 Bug Fixes:

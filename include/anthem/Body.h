@@ -62,10 +62,11 @@ struct BodyTermTranslateVisitor
 		std::vector<std::unique_ptr<ast::VariableDeclaration>> parameters;
 		parameters.reserve(function.arguments.size());
 
-		variableStack.push(&parameters);
-
 		for (size_t i = 0; i < function.arguments.size(); i++)
 			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+
+		// TODO: implement pushing with scoped guards to avoid bugs
+		variableStack.push(&parameters);
 
 		ast::And conjunction;
 
@@ -74,6 +75,8 @@ struct BodyTermTranslateVisitor
 			auto &argument = function.arguments[i];
 			conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[i].get()), translate(argument, context, ruleContext, variableStack)));
 		}
+
+		variableStack.pop();
 
 		ast::Predicate predicate(std::string(function.name));
 		predicate.arguments.reserve(function.arguments.size());

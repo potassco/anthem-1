@@ -29,7 +29,7 @@ void VariableStack::pop()
 
 std::experimental::optional<ast::VariableDeclaration *> VariableStack::findUserVariableDeclaration(const char *variableName) const
 {
-	const auto variableNameMatches =
+	const auto variableDeclarationMatches =
 		[&variableName](const auto &variableDeclaration)
 		{
 			return variableDeclaration->type == VariableDeclaration::Type::UserDefined
@@ -39,7 +39,7 @@ std::experimental::optional<ast::VariableDeclaration *> VariableStack::findUserV
 	for (auto i = m_layers.rbegin(); i != m_layers.rend(); i++)
 	{
 		auto &layer = **i;
-		const auto matchingVariableDeclaration = std::find_if(layer.begin(), layer.end(), variableNameMatches);
+		const auto matchingVariableDeclaration = std::find_if(layer.begin(), layer.end(), variableDeclarationMatches);
 
 		if (matchingVariableDeclaration != layer.end())
 			return matchingVariableDeclaration->get();

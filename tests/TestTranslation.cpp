@@ -181,6 +181,22 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		CHECK(output.str() == "((V1 in U1 and V2 in 1..10 and exists X1, X2 (X1 in U1 and X2 in 6..12 and q(X1, X2))) -> p(V1, V2))\n");
 	}
 
+	SECTION("intervals with variable")
+	{
+		input << ":- q(N), 1 = 1..N.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "((exists X1 (X1 in U1 and q(X1)) and exists X2, X3 (X2 in 1 and X3 in 1..U1 and X2 = X3)) -> #false)\n");
+	}
+
+	SECTION("intervals with two variables")
+	{
+		input << ":- q(M, N), M = 1..N.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "((exists X1, X2 (X1 in U1 and X2 in U2 and q(X1, X2)) and exists X3, X4 (X3 in U1 and X4 in 1..U2 and X3 = X4)) -> #false)\n");
+	}
+
 	SECTION("comparisons")
 	{
 		input << "p(M, N, O, P) :- M < N, P != O.";

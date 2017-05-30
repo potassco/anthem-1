@@ -57,39 +57,9 @@ inline bool isPrefix(const char *prefix, const char *string)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr const auto AuxiliaryHeadVariablePrefix = "V";
-constexpr const auto AuxiliaryBodyVariablePrefix = "X";
-constexpr const auto AnonymousVariablePrefix = "A";
-constexpr const auto UserVariablePrefix = "_";
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline bool isReservedVariableName(const char *variableName)
-{
-	if (!isPrefix(AuxiliaryBodyVariablePrefix, variableName)
-	    && !isPrefix(AuxiliaryHeadVariablePrefix, variableName)
-	    && !isPrefix(AnonymousVariablePrefix, variableName))
-	{
-		return false;
-	}
-
-	assert(std::strlen(AuxiliaryBodyVariablePrefix) == std::strlen(AuxiliaryHeadVariablePrefix));
-	assert(std::strlen(AuxiliaryBodyVariablePrefix) == std::strlen(AnonymousVariablePrefix));
-	assert(std::strlen(AuxiliaryBodyVariablePrefix) == std::strlen(UserVariablePrefix));
-
-	const auto prefixLength = std::strlen(AuxiliaryBodyVariablePrefix);
-
-	if (strlen(variableName) == prefixLength)
-		return false;
-
-	const char *suffix = variableName + prefixLength;
-
-	for (const auto *i = suffix; *i != '\0'; i++)
-		if (!std::isdigit(*i))
-			return false;
-
-	return true;
-}
+constexpr const auto HeadVariablePrefix = "V";
+constexpr const auto BodyVariablePrefix = "X";
+constexpr const auto UserVariablePrefix = "U";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

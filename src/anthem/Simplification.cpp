@@ -1,5 +1,7 @@
 #include <anthem/Simplification.h>
 
+#include <experimental/optional>
+
 #include <anthem/ASTVisitors.h>
 
 namespace anthem
@@ -12,21 +14,19 @@ namespace anthem
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Determines whether a term is a specific variable
-bool matchesVariable(const ast::Term &term, const ast::Variable &variable)
+bool matchesVariableDeclaration(const ast::Term &term, const ast::VariableDeclaration &variableDeclaration)
 {
 	if (!term.is<ast::Variable>())
 		return false;
 
-	const auto &otherVariable = term.get<ast::Variable>();
-
-	return variable.name == otherVariable.name;
+	return term.get<ast::Variable>().declaration == &variableDeclaration;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Extracts the term t if the given formula is of the form “X = t” and X matches the given variable
 // The input formula is not usable if a term is returned
-std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::Variable &variable)
+std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::VariableDeclaration &variableDeclaration)
 {
 	if (!formula.is<ast::Comparison>())
 		return std::experimental::nullopt;
@@ -36,10 +36,10 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 	if (comparison.operator_ != ast::Comparison::Operator::Equal)
 		return std::experimental::nullopt;
 
-	if (matchesVariable(comparison.left, variable))
+	if (matchesVariableDeclaration(comparison.left, variableDeclaration))
 		return std::move(comparison.right);
 
-	if (matchesVariable(comparison.right, variable))
+	if (matchesVariableDeclaration(comparison.right, variableDeclaration))
 		return std::move(comparison.left);
 
 	return std::experimental::nullopt;
@@ -50,15 +50,16 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 // Replaces all occurrences of a variable in a given term with another term
 struct ReplaceVariableInTermVisitor : public ast::RecursiveTermVisitor<ReplaceVariableInTermVisitor>
 {
-	static void accept(ast::Variable &variable, ast::Term &term, const ast::Variable &variableToReplace, const ast::Term &replacementTerm)
+	static void accept(ast::Variable &, ast::Term &, const ast::VariableDeclaration &, const ast::Term &)
 	{
-		if (variable.name == variableToReplace.name)
-			term = ast::deepCopy(replacementTerm);
+		// TODO: reimplement
+		//if (variable.name == variableToReplace.name)
+		//	term = ast::deepCopy(replacementTerm);
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(T &, ast::Term &, const ast::Variable &, const ast::Term &)
+	static void accept(T &, ast::Term &, const ast::VariableDeclaration &, const ast::Term &)
 	{
 	}
 };
@@ -68,27 +69,27 @@ struct ReplaceVariableInTermVisitor : public ast::RecursiveTermVisitor<ReplaceVa
 // Replaces all occurrences of a variable in a given formula with a term
 struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<ReplaceVariableInFormulaVisitor>
 {
-	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::Variable &variable, const ast::Term &term)
+	static void accept(ast::Comparison &comparison, ast::Formula &, const ast::VariableDeclaration &variableDeclaration, const ast::Term &term)
 	{
-		comparison.left.accept(ReplaceVariableInTermVisitor(), comparison.left, variable, term);
-		comparison.right.accept(ReplaceVariableInTermVisitor(), comparison.right, variable, term);
+		comparison.left.accept(ReplaceVariableInTermVisitor(), comparison.left, variableDeclaration, term);
+		comparison.right.accept(ReplaceVariableInTermVisitor(), comparison.right, variableDeclaration, term);
 	}
 
-	static void accept(ast::In &in, ast::Formula &, const ast::Variable &variable, const ast::Term &term)
+	static void accept(ast::In &in, ast::Formula &, const ast::VariableDeclaration &variableDeclaration, const ast::Term &term)
 	{
-		in.element.accept(ReplaceVariableInTermVisitor(), in.element, variable, term);
-		in.set.accept(ReplaceVariableInTermVisitor(), in.set, variable, term);
+		in.element.accept(ReplaceVariableInTermVisitor(), in.element, variableDeclaration, term);
+		in.set.accept(ReplaceVariableInTermVisitor(), in.set, variableDeclaration, term);
 	}
 
-	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::Variable &variable, const ast::Term &term)
+	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::VariableDeclaration &variableDeclaration, const ast::Term &term)
 	{
 		for (auto &argument : predicate.arguments)
-			argument.accept(ReplaceVariableInTermVisitor(), argument, variable, term);
+			argument.accept(ReplaceVariableInTermVisitor(), argument, variableDeclaration, term);
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(T &, ast::Formula &, const ast::Variable &, const ast::Term &)
+	static void accept(T &, ast::Formula &, const ast::VariableDeclaration &, const ast::Term &)
 	{
 	}
 };
@@ -108,7 +109,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	// Simplify formulas of type “exists X (X = t and F(X))” to “F(t)”
 	for (auto i = exists.variables.begin(); i != exists.variables.end();)
 	{
-		auto &variable = *i;
+		auto &variableDeclaration = *i->get();
 
 		bool wasVariableReplaced = false;
 
@@ -117,7 +118,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 		{
 			auto &argument = *j;
 			// Find term that is equivalent to the given variable
-			auto assignedTerm = extractAssignedTerm(argument, variable);
+			auto assignedTerm = extractAssignedTerm(argument, variableDeclaration);
 
 			if (!assignedTerm)
 				continue;
@@ -129,7 +130,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 					continue;
 
 				auto &otherArgument = *k;
-				otherArgument.accept(ReplaceVariableInFormulaVisitor(), otherArgument, variable, assignedTerm.value());
+				otherArgument.accept(ReplaceVariableInFormulaVisitor(), otherArgument, variableDeclaration, assignedTerm.value());
 			}
 
 			arguments.erase(j);

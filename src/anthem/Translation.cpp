@@ -40,12 +40,12 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
 
-	std::vector<ast::Formula> formulas;
+	std::vector<ast::ScopedFormula> scopedFormulas;
 
 	const auto translateStatement =
-		[&formulas, &context](const Clingo::AST::Statement &statement)
+		[&scopedFormulas, &context](const Clingo::AST::Statement &statement)
 		{
-			statement.data.accept(StatementVisitor(), statement, formulas, context);
+			statement.data.accept(StatementVisitor(), statement, scopedFormulas, context);
 		};
 
 	const auto logger =
@@ -57,14 +57,19 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
 
 	if (context.simplify)
-		for (auto &formula : formulas)
-			simplify(formula);
+		for (auto &scopedFormula : scopedFormulas)
+			simplify(scopedFormula.formula);
 
 	if (context.complete)
-		complete(formulas);
+		complete(scopedFormulas);
 
-	for (const auto &formula : formulas)
-		context.logger.outputStream() << formula << std::endl;
+	ast::PrintContext printContext;
+
+	for (const auto &scopedFormula : scopedFormulas)
+	{
+		ast::print(context.logger.outputStream(), scopedFormula.formula, printContext);
+		context.logger.outputStream() << std::endl;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

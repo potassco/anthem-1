@@ -2,6 +2,7 @@
 #define __ANTHEM__OUTPUT__AST_H
 
 #include <cassert>
+#include <map>
 
 #include <anthem/AST.h>
 #include <anthem/Utils.h>
@@ -19,36 +20,46 @@ namespace ast
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, BinaryOperation::Operator operator_);
-output::ColorStream &operator<<(output::ColorStream &stream, const BinaryOperation &binaryOperation);
-output::ColorStream &operator<<(output::ColorStream &stream, const Boolean &boolean);
-output::ColorStream &operator<<(output::ColorStream &stream, const Comparison &comparison);
-output::ColorStream &operator<<(output::ColorStream &stream, const Constant &constant);
-output::ColorStream &operator<<(output::ColorStream &stream, const Function &function);
-output::ColorStream &operator<<(output::ColorStream &stream, const In &in);
-output::ColorStream &operator<<(output::ColorStream &stream, const Integer &integer);
-output::ColorStream &operator<<(output::ColorStream &stream, const Interval &interval);
-output::ColorStream &operator<<(output::ColorStream &stream, const Predicate &predicate);
-output::ColorStream &operator<<(output::ColorStream &stream, const SpecialInteger &specialInteger);
-output::ColorStream &operator<<(output::ColorStream &stream, const String &string);
-output::ColorStream &operator<<(output::ColorStream &stream, const Variable &variable);
+struct PrintContext
+{
+	std::map<const ast::VariableDeclaration *, size_t> userVariableIDs;
+	std::map<const ast::VariableDeclaration *, size_t> headVariableIDs;
+	std::map<const ast::VariableDeclaration *, size_t> bodyVariableIDs;
+};
 
-output::ColorStream &operator<<(output::ColorStream &stream, const And &and_);
-output::ColorStream &operator<<(output::ColorStream &stream, const Biconditional &biconditional);
-output::ColorStream &operator<<(output::ColorStream &stream, const Exists &exists);
-output::ColorStream &operator<<(output::ColorStream &stream, const ForAll &forAll);
-output::ColorStream &operator<<(output::ColorStream &stream, const Implies &implies);
-output::ColorStream &operator<<(output::ColorStream &stream, const Not &not_);
-output::ColorStream &operator<<(output::ColorStream &stream, const Or &or_);
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &operator<<(output::ColorStream &stream, const Formula &formula);
-output::ColorStream &operator<<(output::ColorStream &stream, const Term &term);
+output::ColorStream &print(output::ColorStream &stream, const BinaryOperation::Operator operator_, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Variable &variable, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext);
+
+output::ColorStream &print(output::ColorStream &stream, const And &and_, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Biconditional &biconditional, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Implies &implies, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Or &or_, PrintContext &printContext);
+
+output::ColorStream &print(output::ColorStream &stream, const Formula &formula, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Term &term, PrintContext &printContext);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Primitives
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, BinaryOperation::Operator operator_)
+inline output::ColorStream &print(output::ColorStream &stream, BinaryOperation::Operator operator_, PrintContext &)
 {
 	switch (operator_)
 	{
@@ -69,14 +80,22 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, BinaryOperat
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const BinaryOperation &binaryOperation)
+inline output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext)
 {
-	return (stream << "(" << binaryOperation.left << " " << binaryOperation.operator_ << " " << binaryOperation.right << ")");
+	stream << "(";
+	print(stream, binaryOperation.left, printContext);
+	stream << " ";
+	print(stream, binaryOperation.operator_, printContext);
+	stream << " ";
+	print(stream, binaryOperation.right, printContext);
+	stream << ")";
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Boolean &boolean)
+inline output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &)
 {
 	if (boolean.value)
 		return (stream << output::Boolean("#true"));
@@ -86,7 +105,7 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const Boolea
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, Comparison::Operator operator_)
+inline output::ColorStream &print(output::ColorStream &stream, Comparison::Operator operator_, PrintContext &)
 {
 	switch (operator_)
 	{
@@ -109,21 +128,27 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, Comparison::
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Comparison &comparison)
+inline output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext)
 {
-	return (stream << comparison.left << " " << comparison.operator_ << " " << comparison.right);
+	print(stream, comparison.left, printContext);
+	stream << " ";
+	print(stream, comparison.operator_, printContext);
+	stream << " ";
+	print(stream, comparison.right, printContext);
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Constant &constant)
+inline output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &)
 {
 	return (stream << constant.name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Function &function)
+inline output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext)
 {
 	stream << function.name;
 
@@ -137,39 +162,49 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const Functi
 		if (i != function.arguments.cbegin())
 			stream << ", ";
 
-		stream << (*i);
+		print(stream, *i, printContext);
 	}
 
 	if (function.name.empty() && function.arguments.size() == 1)
 		stream << ",";
 
-	return (stream << ")");
+	stream << ")";
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const In &in)
+inline output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext)
 {
-	return (stream << in.element << " " << output::Keyword("in") << " " << in.set);
+	print(stream, in.element, printContext);
+	stream << " " << output::Keyword("in") << " ";
+	print(stream, in.set, printContext);
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Integer &integer)
+inline output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &)
 {
 	return (stream << output::Number<int>(integer.value));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Interval &interval)
+inline output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext)
 {
-	return (stream << interval.from << ".." << interval.to);
+	print(stream, interval.from, printContext);
+	stream << "..";
+	print(stream, interval.to, printContext);
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Predicate &predicate)
+inline output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext)
 {
 	stream << predicate.name;
 
@@ -183,15 +218,17 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const Predic
 		if (i != predicate.arguments.cbegin())
 			stream << ", ";
 
-		stream << (*i);
+		print(stream, *i, printContext);
 	}
 
-	return (stream << ")");
+	stream << ")";
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const SpecialInteger &specialInteger)
+inline output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &)
 {
 	switch (specialInteger.type)
 	{
@@ -206,31 +243,59 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const Specia
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const String &string)
+inline output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &)
 {
 	return (stream << output::String(string.text.c_str()));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Variable &variable)
+inline output::ColorStream &print(output::ColorStream &stream, const Variable &variable, PrintContext &printContext)
 {
-	assert(!variable.name.empty());
-	assert(variable.name != "_");
+	assert(variable.declaration != nullptr);
 
-	if (variable.type == ast::Variable::Type::Reserved || !isReservedVariableName(variable.name.c_str()))
-		return (stream << output::Variable(variable.name.c_str()));
+	return print(stream, *variable.declaration, printContext);
+}
 
-	const auto variableName = std::string(UserVariablePrefix) + variable.name;
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	return (stream << output::Variable(variableName.c_str()));
+inline output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext)
+{
+	const auto printVariableDeclaration =
+		[&stream, &variableDeclaration](const auto *prefix, auto &variableIDs) -> output::ColorStream &
+		{
+			auto matchingVariableID = variableIDs.find(&variableDeclaration);
+
+			if (matchingVariableID == variableIDs.cend())
+			{
+				auto emplaceResult = variableIDs.emplace(std::make_pair(&variableDeclaration, variableIDs.size() + 1));
+				assert(emplaceResult.second);
+				matchingVariableID = emplaceResult.first;
+			}
+
+			const auto variableName = std::string(prefix) + std::to_string(matchingVariableID->second);
+
+			return (stream << output::Variable(variableName.c_str()));
+		};
+
+	switch (variableDeclaration.type)
+	{
+		case VariableDeclaration::Type::UserDefined:
+			return printVariableDeclaration(UserVariablePrefix, printContext.userVariableIDs);
+		case VariableDeclaration::Type::Head:
+			return printVariableDeclaration(HeadVariablePrefix, printContext.headVariableIDs);
+		case VariableDeclaration::Type::Body:
+			return printVariableDeclaration(BodyVariablePrefix, printContext.bodyVariableIDs);
+	}
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Expressions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const And &and_)
+inline output::ColorStream &print(output::ColorStream &stream, const And &and_, PrintContext &printContext)
 {
 	stream << "(";
 
@@ -239,22 +304,30 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const And &a
 		if (i != and_.arguments.cbegin())
 			stream << " " << output::Keyword("and") << " ";
 
-		stream << (*i);
+		print(stream, *i, printContext);
 	}
 
-	return (stream << ")");
+	stream << ")";
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Biconditional &biconditional)
+inline output::ColorStream &print(output::ColorStream &stream, const Biconditional &biconditional, PrintContext &printContext)
 {
-	return (stream << "(" << biconditional.left << " <-> " << biconditional.right << ")");
+	stream << "(";
+	print(stream, biconditional.left, printContext);
+	stream << " <-> ";
+	print(stream, biconditional.right, printContext);
+	stream << ")";
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Exists &exists)
+inline output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext)
 {
 	stream << output::Keyword("exists") << " ";
 
@@ -263,15 +336,18 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const Exists
 		if (i != exists.variables.cbegin())
 			stream << ", ";
 
-		stream << (*i);
+		print(stream, **i, printContext);
 	}
 
-	return (stream << " " << exists.argument);
+	stream << " ";
+	print(stream, exists.argument, printContext);
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const ForAll &forAll)
+inline output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext)
 {
 	stream << output::Keyword("forall") << " ";
 
@@ -280,29 +356,41 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const ForAll
 		if (i != forAll.variables.cbegin())
 			stream << ", ";
 
-		stream << (*i);
+		print(stream, **i, printContext);
 	}
 
-	return (stream << " " << forAll.argument);
+	stream << " ";
+	print(stream, forAll.argument, printContext);
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Implies &implies)
+inline output::ColorStream &print(output::ColorStream &stream, const Implies &implies, PrintContext &printContext)
 {
-	return (stream << "(" << implies.antecedent << " -> " << implies.consequent << ")");
+	stream << "(";
+	print(stream, implies.antecedent, printContext);
+	stream << " -> ";
+	print(stream, implies.consequent, printContext);
+	stream << ")";
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Not &not_)
+inline output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext)
 {
-	return (stream << output::Keyword("not ") << not_.argument);
+	stream << output::Keyword("not") << " ";
+	print(stream, not_.argument, printContext);
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Or &or_)
+inline output::ColorStream &print(output::ColorStream &stream, const Or &or_, PrintContext &printContext)
 {
 	stream << "(";
 
@@ -311,10 +399,12 @@ inline output::ColorStream &operator<<(output::ColorStream &stream, const Or &or
 		if (i != or_.arguments.cbegin())
 			stream << " " << output::Keyword("or") << " ";
 
-		stream << (*i);
+		print(stream, *i, printContext);
 	}
 
-	return (stream << ")");
+	stream << ")";
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -325,24 +415,24 @@ template<class Variant>
 struct VariantPrintVisitor
 {
 	template<class T>
-	output::ColorStream &visit(const T &x, output::ColorStream &stream)
+	output::ColorStream &visit(const T &x, output::ColorStream &stream, PrintContext &printContext)
 	{
-		return (stream << x);
+		return print(stream, x, printContext);
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Formula &formula)
+inline output::ColorStream &print(output::ColorStream &stream, const Formula &formula, PrintContext &printContext)
 {
-	return formula.accept(VariantPrintVisitor<ast::Formula>(), stream);
+	return formula.accept(VariantPrintVisitor<ast::Formula>(), stream, printContext);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &operator<<(output::ColorStream &stream, const Term &term)
+inline output::ColorStream &print(output::ColorStream &stream, const Term &term, PrintContext &printContext)
 {
-	return term.accept(VariantPrintVisitor<ast::Term>(), stream);
+	return term.accept(VariantPrintVisitor<ast::Term>(), stream, printContext);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

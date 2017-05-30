@@ -110,6 +110,7 @@ struct RecursiveFormulaVisitor
 template<class T>
 struct RecursiveTermVisitor
 {
+	// TODO: return type is incorrect
 	template <class... Arguments>
 	void visit(ast::BinaryOperation &binaryOperation, ast::Term &term, Arguments &&... arguments)
 	{

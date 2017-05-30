@@ -27,21 +27,43 @@ void VariableStack::pop()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool VariableStack::contains(const ast::Variable &variable) const
+std::experimental::optional<ast::VariableDeclaration *> VariableStack::findVariableDeclaration(const char *variableName) const
 {
-	const auto variableMatches =
-		[&variable](const auto &otherVariable)
+	const auto variableNameMatches =
+		[&variableName](const auto &variableDeclaration)
 		{
-			return variable.name == otherVariable.name;
+			return variableDeclaration->name == variableName;
 		};
 
-	const auto layerContainsVariable =
-		[&variable, &variableMatches](const auto &layer)
+	for (auto i = m_layers.rbegin(); i != m_layers.rend(); i++)
+	{
+		auto &layer = **i;
+		const auto matchingVariableDeclaration = std::find_if(layer.begin(), layer.end(), variableNameMatches);
+
+		if (matchingVariableDeclaration != layer.end())
+			return matchingVariableDeclaration->get();
+	}
+
+	return std::experimental::nullopt;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool VariableStack::contains(const ast::VariableDeclaration &variableDeclaration) const
+{
+	const auto variableDeclarationMatches =
+		[&variableDeclaration](const auto &other)
 		{
-			return (std::find_if(layer->cbegin(), layer->cend(), variableMatches) != layer->cend());
+			return variableDeclaration.name == other->name;
 		};
 
-	return (std::find_if(m_layers.cbegin(), m_layers.cend(), layerContainsVariable) != m_layers.cend());
+	const auto layerContainsVariableDeclaration =
+		[&variableDeclaration, &variableDeclarationMatches](const auto &layer)
+		{
+			return (std::find_if(layer->cbegin(), layer->cend(), variableDeclarationMatches) != layer->cend());
+		};
+
+	return (std::find_if(m_layers.cbegin(), m_layers.cend(), layerContainsVariableDeclaration) != m_layers.cend());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,68 +74,68 @@ struct CollectFreeVariablesVisitor
 	// Formulas
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void visit(const ast::And &and_, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::And &and_, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
-		for (const auto &argument : and_.arguments)
+		for (auto &argument : and_.arguments)
 			argument.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Biconditional &biconditional, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Biconditional &biconditional, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		biconditional.left.accept(*this, variableStack, freeVariables);
 		biconditional.right.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Boolean &, VariableStack &, std::vector<ast::Variable> &)
+	void visit(ast::Boolean &, VariableStack &, std::vector<ast::VariableDeclaration *> &)
 	{
 	}
 
-	void visit(const ast::Comparison &comparison, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Comparison &comparison, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		comparison.left.accept(*this, variableStack, freeVariables);
 		comparison.right.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Exists &exists, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Exists &exists, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		variableStack.push(&exists.variables);
 		exists.argument.accept(*this, variableStack, freeVariables);
 		variableStack.pop();
 	}
 
-	void visit(const ast::ForAll &forAll, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::ForAll &forAll, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		variableStack.push(&forAll.variables);
 		forAll.argument.accept(*this, variableStack, freeVariables);
 		variableStack.pop();
 	}
 
-	void visit(const ast::Implies &implies, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Implies &implies, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		implies.antecedent.accept(*this, variableStack, freeVariables);
 		implies.consequent.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::In &in, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::In &in, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		in.element.accept(*this, variableStack, freeVariables);
 		in.set.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Not &not_, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Not &not_, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		not_.argument.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Or &or_, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Or &or_, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
-		for (const auto &argument : or_.arguments)
+		for (auto &argument : or_.arguments)
 			argument.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Predicate &predicate, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Predicate &predicate, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
-		for (const auto &argument : predicate.arguments)
+		for (auto &argument : predicate.arguments)
 			argument.accept(*this, variableStack, freeVariables);
 	}
 
@@ -121,61 +143,55 @@ struct CollectFreeVariablesVisitor
 	// Terms
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void visit(const ast::BinaryOperation &binaryOperation, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::BinaryOperation &binaryOperation, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		binaryOperation.left.accept(*this, variableStack, freeVariables);
 		binaryOperation.right.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Constant &, VariableStack &, std::vector<ast::Variable> &)
+	void visit(ast::Constant &, VariableStack &, std::vector<ast::VariableDeclaration *> &)
 	{
 	}
 
-	void visit(const ast::Function &function, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Function &function, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
-		for (const auto &argument : function.arguments)
+		for (auto &argument : function.arguments)
 			argument.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::Integer &, VariableStack &, std::vector<ast::Variable> &)
+	void visit(ast::Integer &, VariableStack &, std::vector<ast::VariableDeclaration *> &)
 	{
 	}
 
-	void visit(const ast::Interval &interval, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Interval &interval, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
 		interval.from.accept(*this, variableStack, freeVariables);
 		interval.to.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(const ast::SpecialInteger &, VariableStack &, std::vector<ast::Variable> &)
+	void visit(ast::SpecialInteger &, VariableStack &, std::vector<ast::VariableDeclaration *> &)
 	{
 	}
 
-	void visit(const ast::String &, VariableStack &, std::vector<ast::Variable> &)
+	void visit(ast::String &, VariableStack &, std::vector<ast::VariableDeclaration *> &)
 	{
 	}
 
-	void visit(const ast::Variable &variable, VariableStack &variableStack, std::vector<ast::Variable> &freeVariables)
+	void visit(ast::Variable &variable, VariableStack &variableStack, std::vector<ast::VariableDeclaration *> &freeVariables)
 	{
-		if (variableStack.contains(variable))
+		if (variableStack.contains(*variable.declaration))
 			return;
 
-		const auto &variableMatches =
-			[&variable](auto &otherVariable)
-			{
-				return variable.name == otherVariable.name;
-			};
-
-		if (std::find_if(freeVariables.cbegin(), freeVariables.cend(), variableMatches) != freeVariables.cend())
+		if (std::find(freeVariables.cbegin(), freeVariables.cend(), variable.declaration) != freeVariables.cend())
 			return;
 
-		freeVariables.emplace_back(ast::deepCopy(variable));
+		freeVariables.emplace_back(variable.declaration);
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula)
+std::vector<ast::VariableDeclaration *> collectFreeVariables(ast::Formula &formula)
 {
 	ast::VariableStack variableStack;
 	return collectFreeVariables(formula, variableStack);
@@ -183,9 +199,9 @@ std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ast::Variable> collectFreeVariables(const ast::Formula &formula, ast::VariableStack &variableStack)
+std::vector<ast::VariableDeclaration *> collectFreeVariables(ast::Formula &formula, ast::VariableStack &variableStack)
 {
-	std::vector<ast::Variable> freeVariables;
+	std::vector<ast::VariableDeclaration *> freeVariables;
 
 	formula.accept(CollectFreeVariablesVisitor(), variableStack, freeVariables);
 

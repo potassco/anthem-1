@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include <anthem/AST.h>
 #include <anthem/Context.h>
 #include <anthem/Translation.h>
 
@@ -14,7 +15,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 	std::stringstream errors;
 
 	anthem::output::Logger logger(output, errors);
-	anthem::Context context = {logger, {}};
+	anthem::Context context(std::move(logger));
 	context.simplify = false;
 	context.complete = false;
 
@@ -31,7 +32,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(N) :- N = 1..5.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in N and exists X1, X2 (X1 in N and X2 in 1..5 and X1 = X2)) -> p(V1))\n");
+		CHECK(output.str() == "((V1 in U1 and exists X1, X2 (X1 in U1 and X2 in 1..5 and X1 = X2)) -> p(V1))\n");
 	}
 
 	SECTION("simple example 3")
@@ -39,7 +40,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(N + 1) :- q(N).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in (N + 1) and exists X1 (X1 in N and q(X1))) -> p(V1))\n");
+		CHECK(output.str() == "((V1 in (U1 + 1) and exists X1 (X1 in U1 and q(X1))) -> p(V1))\n");
 	}
 
 	SECTION("n-ary head")
@@ -47,7 +48,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(N, 1, 2) :- N = 1..5.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in N and V2 in 1 and V3 in 2 and exists X1, X2 (X1 in N and X2 in 1..5 and X1 = X2)) -> p(V1, V2, V3))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in 1 and V3 in 2 and exists X1, X2 (X1 in U1 and X2 in 1..5 and X1 = X2)) -> p(V1, V2, V3))\n");
 	}
 
 	SECTION("disjunctive head")
@@ -56,7 +57,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "q(3, N); p(N, 1, 2) :- N = 1..5.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in N and V2 in 1 and V3 in 2 and V4 in 3 and V5 in N and exists X1, X2 (X1 in N and X2 in 1..5 and X1 = X2)) -> (p(V1, V2, V3) or q(V4, V5)))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in 1 and V3 in 2 and V4 in 3 and V5 in U1 and exists X1, X2 (X1 in U1 and X2 in 1..5 and X1 = X2)) -> (p(V1, V2, V3) or q(V4, V5)))\n");
 	}
 
 	SECTION("disjunctive head (alternative syntax)")
@@ -65,7 +66,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "q(3, N), p(N, 1, 2) :- N = 1..5.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in N and V2 in 1 and V3 in 2 and V4 in 3 and V5 in N and exists X1, X2 (X1 in N and X2 in 1..5 and X1 = X2)) -> (p(V1, V2, V3) or q(V4, V5)))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in 1 and V3 in 2 and V4 in 3 and V5 in U1 and exists X1, X2 (X1 in U1 and X2 in 1..5 and X1 = X2)) -> (p(V1, V2, V3) or q(V4, V5)))\n");
 	}
 
 	SECTION("escaping conflicting variable names")
@@ -73,7 +74,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(X1, V1, A1) :- q(X1), q(V1), q(A1).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in _X1 and V2 in _V1 and V3 in _A1 and exists X1 (X1 in _X1 and q(X1)) and exists X2 (X2 in _V1 and q(X2)) and exists X3 (X3 in _A1 and q(X3))) -> p(V1, V2, V3))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in U2 and V3 in U3 and exists X1 (X1 in U1 and q(X1)) and exists X2 (X2 in U2 and q(X2)) and exists X3 (X3 in U3 and q(X3))) -> p(V1, V2, V3))\n");
 	}
 
 	SECTION("fact")
@@ -97,7 +98,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << ":- not p(I), I = 1..n.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((exists X1 (X1 in I and not p(X1)) and exists X2, X3 (X2 in I and X3 in 1..n and X2 = X3)) -> #false)\n");
+		CHECK(output.str() == "((exists X1 (X1 in U1 and not p(X1)) and exists X2, X3 (X2 in U1 and X3 in 1..n and X2 = X3)) -> #false)\n");
 	}
 
 	SECTION("disjunctive fact (no arguments)")
@@ -145,7 +146,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(X, #inf) :- q(X, #sup).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in #inf and exists X1, X2 (X1 in X and X2 in #sup and q(X1, X2))) -> p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in #inf and exists X1, X2 (X1 in U1 and X2 in #sup and q(X1, X2))) -> p(V1, V2))\n");
 	}
 
 	SECTION("strings")
@@ -153,7 +154,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(X, \"foo\") :- q(X, \"bar\").";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in \"foo\" and exists X1, X2 (X1 in X and X2 in \"bar\" and q(X1, X2))) -> p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in \"foo\" and exists X1, X2 (X1 in U1 and X2 in \"bar\" and q(X1, X2))) -> p(V1, V2))\n");
 	}
 
 	SECTION("tuples")
@@ -161,7 +162,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(X, (1, 2, 3)) :- q(X, (4, 5)).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in (1, 2, 3) and exists X1, X2 (X1 in X and X2 in (4, 5) and q(X1, X2))) -> p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in (1, 2, 3) and exists X1, X2 (X1 in U1 and X2 in (4, 5) and q(X1, X2))) -> p(V1, V2))\n");
 	}
 
 	SECTION("1-ary tuples")
@@ -169,7 +170,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(X, (1,)) :- q(X, (2,)).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in (1,) and exists X1, X2 (X1 in X and X2 in (2,) and q(X1, X2))) -> p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in (1,) and exists X1, X2 (X1 in U1 and X2 in (2,) and q(X1, X2))) -> p(V1, V2))\n");
 	}
 
 	SECTION("intervals")
@@ -177,7 +178,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(X, 1..10) :- q(X, 6..12).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in 1..10 and exists X1, X2 (X1 in X and X2 in 6..12 and q(X1, X2))) -> p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in 1..10 and exists X1, X2 (X1 in U1 and X2 in 6..12 and q(X1, X2))) -> p(V1, V2))\n");
 	}
 
 	SECTION("comparisons")
@@ -185,7 +186,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(M, N, O, P) :- M < N, P != O.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in M and V2 in N and V3 in O and V4 in P and exists X1, X2 (X1 in M and X2 in N and X1 < X2) and exists X3, X4 (X3 in P and X4 in O and X3 != X4)) -> p(V1, V2, V3, V4))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in U2 and V3 in U3 and V4 in U4 and exists X1, X2 (X1 in U1 and X2 in U2 and X1 < X2) and exists X3, X4 (X3 in U4 and X4 in U3 and X3 != X4)) -> p(V1, V2, V3, V4))\n");
 	}
 
 	SECTION("single negation with 0-ary predicates")
@@ -201,7 +202,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "not p(X, 1) :- not q(X, 2).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2))) -> not p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in 1 and exists X1, X2 (X1 in U1 and X2 in 2 and not q(X1, X2))) -> not p(V1, V2))\n");
 	}
 
 	SECTION("variable numbering")
@@ -210,8 +211,8 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "f; q(A1, A2); p(A3, r(A4)); g(g(A5)) :- g(A3), f, q(A4, A1), p(A2, A5).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in _A1 and V2 in _A2 and V3 in _A3 and V4 in r(_A4) and V5 in g(_A5)"
-		        " and exists X1 (X1 in _A3 and g(X1)) and f and exists X2, X3 (X2 in _A4 and X3 in _A1 and q(X2, X3)) and exists X4, X5 (X4 in _A2 and X5 in _A5 and p(X4, X5)))"
+		CHECK(output.str() == "((V1 in U1 and V2 in U2 and V3 in U3 and V4 in r(U4) and V5 in g(U5)"
+		        " and exists X1 (X1 in U3 and g(X1)) and f and exists X2, X3 (X2 in U4 and X3 in U1 and q(X2, X3)) and exists X4, X5 (X4 in U2 and X5 in U5 and p(X4, X5)))"
 		        " -> (q(V1, V2) or p(V3, V4) or g(V5) or f))\n");
 	}
 
@@ -220,7 +221,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(q(s(t(X1))), u(X2)) :- u(v(w(X2)), z(X1)).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in q(s(t(_X1))) and V2 in u(_X2) and exists X1, X2 (X1 in v(w(_X2)) and X2 in z(_X1) and u(X1, X2))) -> p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in q(s(t(U1))) and V2 in u(U2) and exists X1, X2 (X1 in v(w(U2)) and X2 in z(U1) and u(X1, X2))) -> p(V1, V2))\n");
 	}
 
 	SECTION("choice rule (simple)")
@@ -244,7 +245,8 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{p(1..3, N); q(2..4)}.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in 1..3 and V2 in N and V3 in 2..4 and p(V1, V2)) -> p(V1, V2))\n((V1 in 1..3 and V2 in N and V3 in 2..4 and q(V3)) -> q(V3))\n");
+		// TODO: eliminate V5: not needed
+		CHECK(output.str() == "((V1 in 1..3 and V2 in U1 and V3 in 2..4 and p(V1, V2)) -> p(V1, V2))\n((V4 in 1..3 and V5 in U2 and V6 in 2..4 and q(V6)) -> q(V6))\n");
 	}
 
 	SECTION("choice rule with body")
@@ -252,7 +254,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{p(M, N); q(P)} :- s(M, N, P).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in M and V2 in N and V3 in P and exists X1, X2, X3 (X1 in M and X2 in N and X3 in P and s(X1, X2, X3)) and p(V1, V2)) -> p(V1, V2))\n((V1 in M and V2 in N and V3 in P and exists X1, X2, X3 (X1 in M and X2 in N and X3 in P and s(X1, X2, X3)) and q(V3)) -> q(V3))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in U2 and V3 in U3 and exists X1, X2, X3 (X1 in U1 and X2 in U2 and X3 in U3 and s(X1, X2, X3)) and p(V1, V2)) -> p(V1, V2))\n((V4 in U4 and V5 in U5 and V6 in U6 and exists X4, X5, X6 (X4 in U4 and X5 in U5 and X6 in U6 and s(X4, X5, X6)) and q(V6)) -> q(V6))\n");
 	}
 
 	SECTION("choice rule with negation")
@@ -260,7 +262,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{not p(X, 1)} :- not q(X, 2).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and not p(V1, V2)) -> not p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in 1 and exists X1, X2 (X1 in U1 and X2 in 2 and not q(X1, X2)) and not p(V1, V2)) -> not p(V1, V2))\n");
 	}
 
 	SECTION("choice rule with negation (two elements)")
@@ -268,7 +270,7 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "{not p(X, 1); not s} :- not q(X, 2).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and not p(V1, V2)) -> not p(V1, V2))\n((V1 in X and V2 in 1 and exists X1, X2 (X1 in X and X2 in 2 and not q(X1, X2)) and not s) -> not s)\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in 1 and exists X1, X2 (X1 in U1 and X2 in 2 and not q(X1, X2)) and not p(V1, V2)) -> not p(V1, V2))\n((V3 in U2 and V4 in 1 and exists X3, X4 (X3 in U2 and X4 in 2 and not q(X3, X4)) and not s) -> not s)\n");
 	}
 
 	SECTION("anonymous variables")
@@ -276,6 +278,6 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 		input << "p(_, _) :- q(_, _).";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((V1 in A1 and V2 in A2 and exists X1, X2 (X1 in A3 and X2 in A4 and q(X1, X2))) -> p(V1, V2))\n");
+		CHECK(output.str() == "((V1 in U1 and V2 in U2 and exists X1, X2 (X1 in U3 and X2 in U4 and q(X1, X2))) -> p(V1, V2))\n");
 	}
 }

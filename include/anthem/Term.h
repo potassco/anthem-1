@@ -4,6 +4,8 @@
 #include <algorithm>
 
 #include <anthem/AST.h>
+#include <anthem/ASTUtils.h>
+#include <anthem/RuleContext.h>
 #include <anthem/Utils.h>
 #include <anthem/output/Formatting.h>
 
@@ -39,13 +41,13 @@ ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOpera
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Term translate(const Clingo::AST::Term &term, Context &context);
+ast::Term translate(const Clingo::AST::Term &term, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct TermTranslateVisitor
 {
-	std::experimental::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, Context &context)
+	std::experimental::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		switch (symbol.type())
 		{
@@ -66,7 +68,7 @@ struct TermTranslateVisitor
 
 				for (const auto &argument : symbol.arguments())
 				{
-					auto translatedArgument = visit(argument, term, context);
+					auto translatedArgument = visit(argument, term, context, ruleContext, variableStack);
 
 					if (!translatedArgument)
 						throwErrorAtLocation(term.location, "could not translate argument", context);
@@ -81,43 +83,46 @@ struct TermTranslateVisitor
 		return std::experimental::nullopt;
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, Context &context)
+	std::experimental::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, Context &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
-		if (strcmp(variable.name, "_") == 0)
-		{
-			std::string variableName = AnonymousVariablePrefix + std::to_string(context.anonymousVariableID);
-			context.anonymousVariableID++;
+		const auto matchingVariableDeclaration = variableStack.findVariableDeclaration(variable.name);
+		const auto isAnonymousVariable = (strcmp(variable.name, "_") == 0);
+		const auto isUndeclaredUserVariable = !matchingVariableDeclaration;
+		const auto isUndeclared = isAnonymousVariable || isUndeclaredUserVariable;
 
-			return ast::Term::make<ast::Variable>(std::move(variableName), ast::Variable::Type::Reserved);
-		}
+		if (!isUndeclared)
+			return ast::Term::make<ast::Variable>(*matchingVariableDeclaration);
 
-		return ast::Term::make<ast::Variable>(std::string(variable.name), ast::Variable::Type::UserDefined);
+		auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(std::string(variable.name), ast::VariableDeclaration::Type::UserDefined);
+		ruleContext.freeVariables.emplace_back(std::move(variableDeclaration));
+
+		return ast::Term::make<ast::Variable>(ruleContext.freeVariables.back().get());
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, Context &context)
+	std::experimental::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, Context &context, RuleContext &, const ast::VariableStack &)
 	{
 		throwErrorAtLocation(term.location, "“unary operation” terms currently unsupported", context);
 		return std::experimental::nullopt;
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, Context &context)
+	std::experimental::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translate(binaryOperation.binary_operator, term, context);
-		auto left = translate(binaryOperation.left, context);
-		auto right = translate(binaryOperation.right, context);
+		auto left = translate(binaryOperation.left, context, ruleContext, variableStack);
+		auto right = translate(binaryOperation.right, context, ruleContext, variableStack);
 
 		return ast::Term::make<ast::BinaryOperation>(operator_, std::move(left), std::move(right));
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, Context &context)
+	std::experimental::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
-		auto left = translate(interval.left, context);
-		auto right = translate(interval.right, context);
+		auto left = translate(interval.left, context, ruleContext, variableStack);
+		auto right = translate(interval.right, context, ruleContext, variableStack);
 
 		return ast::Term::make<ast::Interval>(std::move(left), std::move(right));
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context)
+	std::experimental::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		if (function.external)
 			throwErrorAtLocation(term.location, "external functions currently unsupported", context);
@@ -126,12 +131,12 @@ struct TermTranslateVisitor
 		arguments.reserve(function.arguments.size());
 
 		for (const auto &argument : function.arguments)
-			arguments.emplace_back(translate(argument, context));
+			arguments.emplace_back(translate(argument, context, ruleContext, variableStack));
 
 		return ast::Term::make<ast::Function>(function.name, std::move(arguments));
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, Context &context)
+	std::experimental::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, Context &context, RuleContext &, const ast::VariableStack &)
 	{
 		throwErrorAtLocation(term.location, "“pool” terms currently unsupported", context);
 		return std::experimental::nullopt;
@@ -140,9 +145,9 @@ struct TermTranslateVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Term translate(const Clingo::AST::Term &term, Context &context)
+ast::Term translate(const Clingo::AST::Term &term, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 {
-	auto translatedTerm = term.data.accept(TermTranslateVisitor(), term, context);
+	auto translatedTerm = term.data.accept(TermTranslateVisitor(), term, context, ruleContext, variableStack);
 
 	if (!translatedTerm)
 		throwErrorAtLocation(term.location, "could not translate term", context);

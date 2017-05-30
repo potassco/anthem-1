@@ -2,6 +2,7 @@
 
 #include <boost/program_options.hpp>
 
+#include <anthem/AST.h>
 #include <anthem/Context.h>
 #include <anthem/Translation.h>
 

@@ -35,17 +35,17 @@ struct BinaryOperation
 		Modulo
 	};
 
-	BinaryOperation(const BinaryOperation &other) = delete;
-	BinaryOperation &operator=(const BinaryOperation &other) = delete;
-	BinaryOperation(BinaryOperation &&other) noexcept = default;
-	BinaryOperation &operator=(BinaryOperation &&other) noexcept = default;
-
-	BinaryOperation(Operator operator_, Term &&left, Term &&right)
+	explicit BinaryOperation(Operator operator_, Term &&left, Term &&right)
 	:	operator_{operator_},
 		left{std::move(left)},
 		right{std::move(right)}
 	{
 	}
+
+	BinaryOperation(const BinaryOperation &other) = delete;
+	BinaryOperation &operator=(const BinaryOperation &other) = delete;
+	BinaryOperation(BinaryOperation &&other) noexcept = default;
+	BinaryOperation &operator=(BinaryOperation &&other) noexcept = default;
 
 	Operator operator_;
 	Term left;
@@ -56,7 +56,7 @@ struct BinaryOperation
 
 struct Boolean
 {
-	Boolean(bool value)
+	explicit Boolean(bool value)
 	:	value{value}
 	{
 	}
@@ -83,7 +83,7 @@ struct Comparison
 		Equal
 	};
 
-	Comparison(Operator operator_, Term &&left, Term &&right)
+	explicit Comparison(Operator operator_, Term &&left, Term &&right)
 	:	operator_{operator_},
 		left{std::move(left)},
 		right{std::move(right)}
@@ -104,7 +104,7 @@ struct Comparison
 
 struct Constant
 {
-	Constant(std::string &&name)
+	explicit Constant(std::string &&name)
 	:	name{std::move(name)}
 	{
 	}
@@ -121,12 +121,12 @@ struct Constant
 
 struct Function
 {
-	Function(std::string &&name)
+	explicit Function(std::string &&name)
 	:	name{std::move(name)}
 	{
 	}
 
-	Function(std::string &&name, std::vector<Term> &&arguments)
+	explicit Function(std::string &&name, std::vector<Term> &&arguments)
 	:	name{std::move(name)},
 		arguments{std::move(arguments)}
 	{
@@ -146,7 +146,7 @@ struct Function
 // TODO: refactor (limit element type to primitive terms)
 struct In
 {
-	In(Term &&element, Term &&set)
+	explicit In(Term &&element, Term &&set)
 	:	element{std::move(element)},
 		set{std::move(set)}
 	{
@@ -167,7 +167,7 @@ struct In
 
 struct Integer
 {
-	Integer(int value)
+	explicit Integer(int value)
 	:	value{value}
 	{
 	}
@@ -184,7 +184,7 @@ struct Integer
 
 struct Interval
 {
-	Interval(Term &&from, Term &&to)
+	explicit Interval(Term &&from, Term &&to)
 	:	from{std::move(from)},
 		to{std::move(to)}
 	{
@@ -201,14 +201,15 @@ struct Interval
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: implement declaration/signature
 struct Predicate
 {
-	Predicate(std::string &&name)
+	explicit Predicate(std::string &&name)
 	:	name{std::move(name)}
 	{
 	}
 
-	Predicate(std::string &&name, std::vector<Term> &&arguments)
+	explicit Predicate(std::string &&name, std::vector<Term> &&arguments)
 	:	name{std::move(name)},
 		arguments{std::move(arguments)}
 	{
@@ -238,7 +239,7 @@ struct SpecialInteger
 		Supremum
 	};
 
-	SpecialInteger(Type type)
+	explicit SpecialInteger(Type type)
 	:	type{type}
 	{
 	}
@@ -255,7 +256,7 @@ struct SpecialInteger
 
 struct String
 {
-	String(std::string &&text)
+	explicit String(std::string &&text)
 	:	text{std::move(text)}
 	{
 	}
@@ -272,15 +273,8 @@ struct String
 
 struct Variable
 {
-	enum class Type
-	{
-		UserDefined,
-		Reserved
-	};
-
-	Variable(std::string &&name, Type type)
-	:	name{std::move(name)},
-		type{type}
+	explicit Variable(VariableDeclaration *declaration)
+	:	declaration{declaration}
 	{
 	}
 
@@ -288,6 +282,32 @@ struct Variable
 	Variable &operator=(const Variable &other) = delete;
 	Variable(Variable &&other) = default;
 	Variable &operator=(Variable &&other) = default;
+
+	VariableDeclaration *declaration = nullptr;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct VariableDeclaration
+{
+	// TODO: remove
+	enum class Type
+	{
+		UserDefined,
+		Head,
+		Body
+	};
+
+	explicit VariableDeclaration(std::string &&name, Type type)
+	:	name{std::move(name)},
+		type{type}
+	{
+	}
+
+	VariableDeclaration(const VariableDeclaration &other) = delete;
+	VariableDeclaration &operator=(const VariableDeclaration &other) = delete;
+	VariableDeclaration(VariableDeclaration &&other) = default;
+	VariableDeclaration &operator=(VariableDeclaration &&other) = default;
 
 	std::string name;
 	Type type;
@@ -301,7 +321,7 @@ struct And
 {
 	And() = default;
 
-	And(std::vector<Formula> &&arguments)
+	explicit And(std::vector<Formula> &&arguments)
 	:	arguments{std::move(arguments)}
 	{
 	}
@@ -318,7 +338,7 @@ struct And
 
 struct Biconditional
 {
-	Biconditional(Formula &&left, Formula &&right)
+	explicit Biconditional(Formula &&left, Formula &&right)
 	:	left{std::move(left)},
 		right{std::move(right)}
 	{
@@ -337,7 +357,8 @@ struct Biconditional
 
 struct Exists
 {
-	Exists(std::vector<Variable> &&variables, Formula &&argument)
+	// TODO: rename “variables”
+	explicit Exists(std::vector<std::unique_ptr<VariableDeclaration>> &&variables, Formula &&argument)
 	:	variables{std::move(variables)},
 		argument{std::move(argument)}
 	{
@@ -348,7 +369,7 @@ struct Exists
 	Exists(Exists &&other) noexcept = default;
 	Exists &operator=(Exists &&other) noexcept = default;
 
-	std::vector<Variable> variables;
+	std::vector<std::unique_ptr<VariableDeclaration>> variables;
 	Formula argument;
 };
 
@@ -356,7 +377,7 @@ struct Exists
 
 struct ForAll
 {
-	ForAll(std::vector<Variable> &&variables, Formula &&argument)
+	explicit ForAll(std::vector<std::unique_ptr<VariableDeclaration>> &&variables, Formula &&argument)
 	:	variables{std::move(variables)},
 		argument{std::move(argument)}
 	{
@@ -367,7 +388,7 @@ struct ForAll
 	ForAll(ForAll &&other) noexcept = default;
 	ForAll &operator=(ForAll &&other) noexcept = default;
 
-	std::vector<Variable> variables;
+	std::vector<std::unique_ptr<VariableDeclaration>> variables;
 	Formula argument;
 };
 
@@ -375,7 +396,7 @@ struct ForAll
 
 struct Implies
 {
-	Implies(Formula &&antecedent, Formula &&consequent)
+	explicit Implies(Formula &&antecedent, Formula &&consequent)
 	:	antecedent{std::move(antecedent)},
 		consequent{std::move(consequent)}
 	{
@@ -394,7 +415,7 @@ struct Implies
 
 struct Not
 {
-	Not(Formula &&argument)
+	explicit Not(Formula &&argument)
 	:	argument{std::move(argument)}
 	{
 	}
@@ -413,7 +434,7 @@ struct Or
 {
 	Or() = default;
 
-	Or(std::vector<Formula> &&arguments)
+	explicit Or(std::vector<Formula> &&arguments)
 	:	arguments{std::move(arguments)}
 	{
 	}
@@ -427,255 +448,20 @@ struct Or
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Deep Copying
+// High-Level
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-BinaryOperation deepCopy(const BinaryOperation &other);
-Boolean deepCopy(const Boolean &other);
-Comparison deepCopy(const Comparison &other);
-Constant deepCopy(const Constant &other);
-Function deepCopy(const Function &other);
-Integer deepCopy(const Integer &other);
-Interval deepCopy(const Interval &other);
-Predicate deepCopy(const Predicate &other);
-SpecialInteger deepCopy(const SpecialInteger &other);
-String deepCopy(const String &other);
-Variable deepCopy(const Variable &other);
-std::vector<Variable> deepCopy(const std::vector<Variable> &other);
-And deepCopy(const And &other);
-Biconditional deepCopy(const Biconditional &other);
-Exists deepCopy(const Exists &other);
-ForAll deepCopy(const ForAll &other);
-Implies deepCopy(const Implies &other);
-Not deepCopy(const Not &other);
-Or deepCopy(const Or &other);
-
-Formula deepCopy(const Formula &formula);
-std::vector<Formula> deepCopy(const std::vector<Formula> &formulas);
-Term deepCopy(const Term &term);
-std::vector<Term> deepCopy(const std::vector<Term> &terms);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template<class Variant>
-struct VariantDeepCopyVisitor
+struct ScopedFormula
 {
-	template<class T>
-	Variant visit(const T &x)
+	explicit ScopedFormula(ast::Formula &&formula, std::vector<std::unique_ptr<ast::VariableDeclaration>> &&freeVariables)
+	:	formula{std::move(formula)},
+		freeVariables{std::move(freeVariables)}
 	{
-		return deepCopy(x);
 	}
+
+	ast::Formula formula;
+	std::vector<std::unique_ptr<ast::VariableDeclaration>> freeVariables;
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-const auto deepCopyVariant =
-	[](const auto &variant) -> typename std::decay<decltype(variant)>::type
-	{
-		using VariantType = typename std::decay<decltype(variant)>::type;
-
-		return variant.accept(VariantDeepCopyVisitor<VariantType>());
-	};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-const auto deepCopyVariantVector =
-	[](const auto &variantVector) -> typename std::decay<decltype(variantVector)>::type
-	{
-		using Type = typename std::decay<decltype(variantVector)>::type::value_type;
-
-		std::vector<Type> result;
-		result.reserve(variantVector.size());
-
-		for (const auto &variant : variantVector)
-			result.emplace_back(deepCopyVariant(variant));
-
-		return result;
-	};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-const auto deepCopyVector =
-	[](const auto &vector) -> typename std::decay<decltype(vector)>::type
-	{
-		using Type = typename std::decay<decltype(vector)>::type::value_type;
-
-		std::vector<Type> result;
-		result.reserve(vector.size());
-
-		for (const auto &element : vector)
-			result.emplace_back(deepCopy(element));
-
-		return result;
-	};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline BinaryOperation deepCopy(const BinaryOperation &other)
-{
-	return BinaryOperation(other.operator_, deepCopy(other.left), deepCopy(other.right));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Boolean deepCopy(const Boolean &other)
-{
-	return Boolean(other.value);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Comparison deepCopy(const Comparison &other)
-{
-	return Comparison(other.operator_, deepCopy(other.left), deepCopy(other.right));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Constant deepCopy(const Constant &other)
-{
-	return Constant(std::string(other.name));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Function deepCopy(const Function &other)
-{
-	return Function(std::string(other.name), deepCopy(other.arguments));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Integer deepCopy(const Integer &other)
-{
-	return Integer(other.value);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Interval deepCopy(const Interval &other)
-{
-	return Interval(deepCopy(other.from), deepCopy(other.to));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Predicate deepCopy(const Predicate &other)
-{
-	return Predicate(std::string(other.name), deepCopy(other.arguments));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline SpecialInteger deepCopy(const SpecialInteger &other)
-{
-	return SpecialInteger(other.type);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline String deepCopy(const String &other)
-{
-	return String(std::string(other.text));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Variable deepCopy(const Variable &other)
-{
-	return Variable(std::string(other.name), other.type);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline std::vector<Variable> deepCopy(const std::vector<Variable> &other)
-{
-	return deepCopyVector(other);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline And deepCopy(const And &other)
-{
-	return And(deepCopy(other.arguments));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Biconditional deepCopy(const Biconditional &other)
-{
-	return Biconditional(deepCopy(other.left), deepCopy(other.right));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Exists deepCopy(const Exists &other)
-{
-	return Exists(deepCopy(other.variables), deepCopy(other.argument));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline ForAll deepCopy(const ForAll &other)
-{
-	return ForAll(deepCopy(other.variables), deepCopy(other.argument));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline In deepCopy(const In &other)
-{
-	return In(deepCopy(other.element), deepCopy(other.set));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Implies deepCopy(const Implies &other)
-{
-	return Implies(deepCopy(other.antecedent), deepCopy(other.consequent));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Not deepCopy(const Not &other)
-{
-	return Not(deepCopy(other.argument));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Or deepCopy(const Or &other)
-{
-	return Or(deepCopy(other.arguments));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Formula deepCopy(const Formula &formula)
-{
-	return deepCopyVariant(formula);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline std::vector<Formula> deepCopy(const std::vector<Formula> &formulas)
-{
-	return deepCopyVariantVector(formulas);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline Term deepCopy(const Term &term)
-{
-	return deepCopyVariant(term);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline std::vector<Term> deepCopy(const std::vector<Term> &terms)
-{
-	return deepCopyVariantVector(terms);
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

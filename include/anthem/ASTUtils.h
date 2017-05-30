@@ -20,14 +20,14 @@ namespace ast
 class VariableStack
 {
 	public:
-		using Layer = ast::VariableDeclarationPointers *;
+		using Layer = VariableDeclarationPointers *;
 
 	public:
 		void push(Layer layer);
 		void pop();
 
-		std::experimental::optional<ast::VariableDeclaration *> findUserVariableDeclaration(const char *variableName) const;
-		bool contains(const ast::VariableDeclaration &variableDeclaration) const;
+		std::experimental::optional<VariableDeclaration *> findUserVariableDeclaration(const char *variableName) const;
+		bool contains(const VariableDeclaration &variableDeclaration) const;
 
 	private:
 		std::vector<Layer> m_layers;
@@ -35,11 +35,11 @@ class VariableStack
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ast::VariableDeclaration *> collectFreeVariables(ast::Formula &formula);
-std::vector<ast::VariableDeclaration *> collectFreeVariables(ast::Formula &formula, ast::VariableStack &variableStack);
+std::vector<VariableDeclaration *> collectFreeVariables(Formula &formula);
+std::vector<VariableDeclaration *> collectFreeVariables(Formula &formula, VariableStack &variableStack);
 
-bool matches(const ast::Predicate &lhs, const ast::Predicate &rhs);
-void collectPredicates(const ast::Formula &formula, std::vector<const ast::Predicate *> &predicates);
+bool matches(const Predicate &lhs, const Predicate &rhs);
+void collectPredicates(const Formula &formula, std::vector<const Predicate *> &predicates);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

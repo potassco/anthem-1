@@ -3,9 +3,9 @@
 
 #include <cstdlib>
 
+#include <clingo.hh>
+
 namespace anthem
-{
-namespace input
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,6 +16,23 @@ namespace input
 
 struct Location
 {
+	Location() = default;
+
+	Location(const Clingo::Location &clingoLocation)
+	:	sectionStart{clingoLocation.begin_file()},
+		sectionEnd{clingoLocation.end_file()},
+		rowStart{clingoLocation.begin_line()},
+		rowEnd{clingoLocation.end_line()},
+		columnStart{clingoLocation.begin_column()},
+		columnEnd{clingoLocation.end_column()}
+	{
+	}
+
+	Location(const Location &other) = default;
+	Location &operator=(const Location &other) = default;
+	Location(Location &&other) = default;
+	Location &operator=(Location &&other) = default;
+
 	const char *sectionStart = nullptr;
 	const char *sectionEnd = nullptr;
 
@@ -28,7 +45,6 @@ struct Location
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-}
 }
 
 #endif

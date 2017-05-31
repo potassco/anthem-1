@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include <anthem/input/Location.h>
+#include <anthem/Location.h>
 #include <anthem/output/ColorStream.h>
 #include <anthem/output/FormatScope.h>
 #include <anthem/output/Priority.h>
@@ -34,7 +34,7 @@ class Logger
 		void setColorPolicy(ColorStream::ColorPolicy colorPolicy);
 
 		FormatScope log(Priority priority);
-		FormatScope log(Priority priority, const input::Location &location);
+		FormatScope log(Priority priority, const Location &location);
 
 	private:
 		ColorStream m_outputStream;

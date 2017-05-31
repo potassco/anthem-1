@@ -42,17 +42,17 @@ struct StatementVisitor
 		context.logger.log(output::Priority::Debug) << "[program] " << program.name;
 
 		if (!program.parameters.empty())
-			throwErrorAtLocation(statement.location, "program parameters currently unsupported", context);
+			throw LogicException(statement.location, "program parameters currently unsupported");
 	}
 
-	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &)
 	{
 		RuleContext ruleContext;
 		ast::VariableStack variableStack;
 		variableStack.push(&ruleContext.freeVariables);
 
 		// Collect all head terms
-		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, context, ruleContext);
+		rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, ruleContext);
 
 		// Create new variable declarations for the head terms
 		ruleContext.headVariablesStartIndex = ruleContext.freeVariables.size();
@@ -68,16 +68,12 @@ struct StatementVisitor
 
 		// Compute consequent
 		auto headVariableIndex = ruleContext.headVariablesStartIndex;
-		auto consequent = rule.head.data.accept(HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, headVariableIndex);
+		auto consequent = rule.head.data.accept(HeadLiteralTranslateToConsequentVisitor(), rule.head, ruleContext, headVariableIndex);
 
 		assert(ruleContext.headTerms.size() == headVariableIndex - ruleContext.headVariablesStartIndex);
 
 		if (!consequent)
-		{
-			// TODO: think about throwing an exception instead
-			context.logger.log(output::Priority::Error) << "could not translate formula consequent";
-			return;
-		}
+			throw TranslationException(rule.head.location, "could not translate formula consequent");
 
 		// Generate auxiliary variables replacing the head atom’s arguments
 		for (auto i = ruleContext.headTerms.cbegin(); i != ruleContext.headTerms.cend(); i++)
@@ -86,7 +82,7 @@ struct StatementVisitor
 
 			const auto auxiliaryHeadVariableID = ruleContext.headVariablesStartIndex + i - ruleContext.headTerms.cbegin();
 			auto element = ast::Variable(ruleContext.freeVariables[auxiliaryHeadVariableID].get());
-			auto set = translate(headTerm, context, ruleContext, variableStack);
+			auto set = translate(headTerm, ruleContext, variableStack);
 			auto in = ast::In(std::move(element), std::move(set));
 
 			antecedent.arguments.emplace_back(std::move(in));
@@ -97,10 +93,10 @@ struct StatementVisitor
 		{
 			const auto &bodyLiteral = *i;
 
-			auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, context, ruleContext, variableStack);
+			auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, ruleContext, variableStack);
 
 			if (!argument)
-				throwErrorAtLocation(bodyLiteral.location, "could not translate body literal", context);
+				throw TranslationException(bodyLiteral.location, "could not translate body literal");
 
 			antecedent.arguments.emplace_back(std::move(argument.value()));
 		}
@@ -155,9 +151,9 @@ struct StatementVisitor
 	}
 
 	template<class T>
-	void visit(const T &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
+	void visit(const T &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &)
 	{
-		throwErrorAtLocation(statement.location, "statement currently unsupported, expected rule", context);
+		throw LogicException(statement.location, "statement currently unsupported, expected rule");
 	}
 };
 

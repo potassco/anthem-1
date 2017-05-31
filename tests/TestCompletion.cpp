@@ -15,7 +15,7 @@
 	std::stringstream errors;
 
 	anthem::output::Logger logger(output, errors);
-	anthem::Context context = {logger, {}};
+	anthem::Context context(std::move(logger));
 	context.simplify = true;
 	context.complete = true;
 

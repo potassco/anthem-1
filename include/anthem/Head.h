@@ -5,6 +5,7 @@
 #include <experimental/optional>
 
 #include <anthem/AST.h>
+#include <anthem/Exception.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Utils.h>
 #include <anthem/output/Formatting.h>
@@ -24,10 +25,10 @@ namespace anthem
 
 struct TermCollectFunctionTermsVisitor
 {
-	void visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context, RuleContext &ruleContext)
+	void visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext)
 	{
 		if (function.external)
-			throwErrorAtLocation(term.location, "external functions currently unsupported", context);
+			throw LogicException(term.location, "external functions currently unsupported");
 
 		ruleContext.headTerms.reserve(ruleContext.headTerms.size() + function.arguments.size());
 
@@ -36,9 +37,9 @@ struct TermCollectFunctionTermsVisitor
 	}
 
 	template<class T>
-	void visit(const T &, const Clingo::AST::Term &term, Context &context, RuleContext &)
+	void visit(const T &, const Clingo::AST::Term &term, RuleContext &)
 	{
-		throwErrorAtLocation(term.location, "term currently unsupported in this context, function expected", context);
+		throw LogicException(term.location, "term currently unsupported in this function expected");
 	}
 };
 
@@ -46,19 +47,19 @@ struct TermCollectFunctionTermsVisitor
 
 struct LiteralCollectFunctionTermsVisitor
 {
-	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, Context &, RuleContext &)
+	void visit(const Clingo::AST::Boolean &, const Clingo::AST::Literal &, RuleContext &)
 	{
 	}
 
-	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, Context &context, RuleContext &ruleContext)
+	void visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, RuleContext &ruleContext)
 	{
-		term.data.accept(TermCollectFunctionTermsVisitor(), term, context, ruleContext);
+		term.data.accept(TermCollectFunctionTermsVisitor(), term, ruleContext);
 	}
 
 	template<class T>
-	void visit(const T &, const Clingo::AST::Literal &literal, Context &context, RuleContext &)
+	void visit(const T &, const Clingo::AST::Literal &literal, RuleContext &)
 	{
-		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals", context);
+		throw LogicException(literal.location, "only disjunctions of literals allowed as head literals");
 	}
 };
 
@@ -67,47 +68,47 @@ struct LiteralCollectFunctionTermsVisitor
 // TODO: rename, because not only terms are collected anymore
 struct HeadLiteralCollectFunctionTermsVisitor
 {
-	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, Context &context, RuleContext &ruleContext)
+	void visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, RuleContext &ruleContext)
 	{
 		ruleContext.numberOfHeadLiterals = 1;
 
-		literal.data.accept(LiteralCollectFunctionTermsVisitor(), literal, context, ruleContext);
+		literal.data.accept(LiteralCollectFunctionTermsVisitor(), literal, ruleContext);
 	}
 
-	void visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext)
+	void visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext)
 	{
 		ruleContext.numberOfHeadLiterals = disjunction.elements.size();
 
 		for (const auto &conditionalLiteral : disjunction.elements)
 		{
 			if (!conditionalLiteral.condition.empty())
-				throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
+				throw LogicException(headLiteral.location, "conditional head literals currently unsupported");
 
-			conditionalLiteral.literal.data.accept(LiteralCollectFunctionTermsVisitor(), conditionalLiteral.literal, context, ruleContext);
+			conditionalLiteral.literal.data.accept(LiteralCollectFunctionTermsVisitor(), conditionalLiteral.literal, ruleContext);
 		}
 	}
 
-	void visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext)
+	void visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext)
 	{
 		ruleContext.isChoiceRule = true;
 		ruleContext.numberOfHeadLiterals = aggregate.elements.size();
 
 		if (aggregate.left_guard || aggregate.right_guard)
-			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards currently unsupported", context);
+			throw LogicException(headLiteral.location, "aggregates with left or right guards currently unsupported");
 
 		for (const auto &conditionalLiteral : aggregate.elements)
 		{
 			if (!conditionalLiteral.condition.empty())
-				throwErrorAtLocation(headLiteral.location, "conditional literals in aggregates currently unsupported", context);
+				throw LogicException(headLiteral.location, "conditional literals in aggregates currently unsupported");
 
-			conditionalLiteral.literal.data.accept(LiteralCollectFunctionTermsVisitor(), conditionalLiteral.literal, context, ruleContext);
+			conditionalLiteral.literal.data.accept(LiteralCollectFunctionTermsVisitor(), conditionalLiteral.literal, ruleContext);
 		}
 	}
 
 	template<class T>
-	void visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &)
+	void visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &)
 	{
-		throwErrorAtLocation(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate", context);
+		throw LogicException(headLiteral.location, "head literal currently unsupported in this expected literal, disjunction, or aggregate");
 	}
 };
 
@@ -118,10 +119,10 @@ struct HeadLiteralCollectFunctionTermsVisitor
 struct FunctionTermTranslateVisitor
 {
 	// TODO: check correctness
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, Context &context, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		if (function.external)
-			throwErrorAtLocation(term.location, "external functions currently unsupported", context);
+			throw TranslationException(term.location, "external functions currently unsupported");
 
 		std::vector<ast::Term> arguments;
 		arguments.reserve(function.arguments.size());
@@ -133,9 +134,9 @@ struct FunctionTermTranslateVisitor
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Term &term, Context &context, RuleContext &, size_t &)
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Term &term, RuleContext &, size_t &)
 	{
-		throwErrorAtLocation(term.location, "term currently unsupported in this context, function expected", context);
+		throw TranslationException(term.location, "term currently unsupported in this function expected");
 		return std::experimental::nullopt;
 	}
 };
@@ -144,20 +145,20 @@ struct FunctionTermTranslateVisitor
 
 struct LiteralTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, Context &, RuleContext &, size_t &)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, RuleContext &, size_t &)
 	{
 		return ast::Formula::make<ast::Boolean>(boolean.value);
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, Context &context, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
-		return term.data.accept(FunctionTermTranslateVisitor(), term, context, ruleContext, headVariableIndex);
+		return term.data.accept(FunctionTermTranslateVisitor(), term, ruleContext, headVariableIndex);
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, Context &context, RuleContext &, size_t &)
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, RuleContext &, size_t &)
 	{
-		throwErrorAtLocation(literal.location, "only disjunctions of literals allowed as head literals", context);
+		throw TranslationException(literal.location, "only disjunctions of literals allowed as head literals");
 		return std::experimental::nullopt;
 	}
 };
@@ -166,12 +167,12 @@ struct LiteralTranslateVisitor
 
 struct HeadLiteralTranslateToConsequentVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, Context &context, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
-			throwErrorAtLocation(literal.location, "double-negated head literals currently unsupported", context);
+			throw TranslationException(literal.location, "double-negated head literals currently unsupported");
 
-		auto translatedLiteral = literal.data.accept(LiteralTranslateVisitor(), literal, context, ruleContext, headVariableIndex);
+		auto translatedLiteral = literal.data.accept(LiteralTranslateVisitor(), literal, ruleContext, headVariableIndex);
 
 		if (literal.sign == Clingo::AST::Sign::None)
 			return translatedLiteral;
@@ -182,7 +183,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 		return ast::Formula::make<ast::Not>(std::move(translatedLiteral.value()));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		std::vector<ast::Formula> arguments;
 		arguments.reserve(disjunction.elements.size());
@@ -190,12 +191,12 @@ struct HeadLiteralTranslateToConsequentVisitor
 		for (const auto &conditionalLiteral : disjunction.elements)
 		{
 			if (!conditionalLiteral.condition.empty())
-				throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
+				throw TranslationException(headLiteral.location, "conditional head literals currently unsupported");
 
-			auto argument = visit(conditionalLiteral.literal, headLiteral, context, ruleContext, headVariableIndex);
+			auto argument = visit(conditionalLiteral.literal, headLiteral, ruleContext, headVariableIndex);
 
 			if (!argument)
-				throwErrorAtLocation(headLiteral.location, "could not parse argument", context);
+				throw TranslationException(headLiteral.location, "could not parse argument");
 
 			arguments.emplace_back(std::move(argument.value()));
 		}
@@ -203,18 +204,18 @@ struct HeadLiteralTranslateToConsequentVisitor
 		return ast::Formula::make<ast::Or>(std::move(arguments));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		if (aggregate.left_guard || aggregate.right_guard)
-			throwErrorAtLocation(headLiteral.location, "aggregates with left or right guards currently unsupported", context);
+			throw TranslationException(headLiteral.location, "aggregates with left or right guards currently unsupported");
 
 		const auto translateConditionalLiteral =
 			[&](const auto &conditionalLiteral)
 			{
 				if (!conditionalLiteral.condition.empty())
-					throwErrorAtLocation(headLiteral.location, "conditional head literals currently unsupported", context);
+					throw TranslationException(headLiteral.location, "conditional head literals currently unsupported");
 
-				return this->visit(conditionalLiteral.literal, headLiteral, context, ruleContext, headVariableIndex);
+				return this->visit(conditionalLiteral.literal, headLiteral, ruleContext, headVariableIndex);
 			};
 
 		if (aggregate.elements.size() == 1)
@@ -228,7 +229,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 			auto argument = translateConditionalLiteral(conditionalLiteral);
 
 			if (!argument)
-				throwErrorAtLocation(headLiteral.location, "could not parse argument", context);
+				throw TranslationException(headLiteral.location, "could not parse argument");
 
 			arguments.emplace_back(std::move(argument.value()));
 		}
@@ -237,9 +238,9 @@ struct HeadLiteralTranslateToConsequentVisitor
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &, size_t &)
+	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &, size_t &)
 	{
-		throwErrorAtLocation(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate", context);
+		throw TranslationException(headLiteral.location, "head literal currently unsupported in this expected literal, disjunction, or aggregate");
 		return std::experimental::nullopt;
 	}
 };

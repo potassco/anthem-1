@@ -110,7 +110,7 @@ FormatScope Logger::log(Priority priority)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-FormatScope Logger::log(Priority priority, const input::Location &location)
+FormatScope Logger::log(Priority priority, const Location &location)
 {
 	const auto priorityID = static_cast<int>(priority);
 

@@ -17,6 +17,7 @@ namespace ast
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: rename to VariableDeclarationStack or ParameterStack
+// TODO: move to separate file
 class VariableStack
 {
 	public:

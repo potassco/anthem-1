@@ -22,9 +22,9 @@ namespace ast
 
 struct PrintContext
 {
-	std::map<const ast::VariableDeclaration *, size_t> userVariableIDs;
-	std::map<const ast::VariableDeclaration *, size_t> headVariableIDs;
-	std::map<const ast::VariableDeclaration *, size_t> bodyVariableIDs;
+	std::map<const VariableDeclaration *, size_t> userVariableIDs;
+	std::map<const VariableDeclaration *, size_t> headVariableIDs;
+	std::map<const VariableDeclaration *, size_t> bodyVariableIDs;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -425,14 +425,14 @@ struct VariantPrintVisitor
 
 inline output::ColorStream &print(output::ColorStream &stream, const Formula &formula, PrintContext &printContext)
 {
-	return formula.accept(VariantPrintVisitor<ast::Formula>(), stream, printContext);
+	return formula.accept(VariantPrintVisitor<Formula>(), stream, printContext);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline output::ColorStream &print(output::ColorStream &stream, const Term &term, PrintContext &printContext)
 {
-	return term.accept(VariantPrintVisitor<ast::Term>(), stream, printContext);
+	return term.accept(VariantPrintVisitor<Term>(), stream, printContext);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

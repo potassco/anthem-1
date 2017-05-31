@@ -15,9 +15,9 @@ namespace ast
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Terms are primitive (or arguments) if they are neither operations nor intervals
-inline bool isPrimitive(const ast::Term &term)
+inline bool isPrimitive(const Term &term)
 {
-	return (!term.is<ast::BinaryOperation>() && !term.is<ast::Interval>());
+	return (!term.is<BinaryOperation>() && !term.is<Interval>());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -362,7 +362,7 @@ struct Biconditional
 struct Exists
 {
 	// TODO: rename “variables”
-	explicit Exists(std::vector<std::unique_ptr<VariableDeclaration>> &&variables, Formula &&argument)
+	explicit Exists(VariableDeclarationPointers &&variables, Formula &&argument)
 	:	variables{std::move(variables)},
 		argument{std::move(argument)}
 	{
@@ -373,7 +373,7 @@ struct Exists
 	Exists(Exists &&other) noexcept = default;
 	Exists &operator=(Exists &&other) noexcept = default;
 
-	std::vector<std::unique_ptr<VariableDeclaration>> variables;
+	VariableDeclarationPointers variables;
 	Formula argument;
 };
 
@@ -381,7 +381,7 @@ struct Exists
 
 struct ForAll
 {
-	explicit ForAll(std::vector<std::unique_ptr<VariableDeclaration>> &&variables, Formula &&argument)
+	explicit ForAll(VariableDeclarationPointers &&variables, Formula &&argument)
 	:	variables{std::move(variables)},
 		argument{std::move(argument)}
 	{
@@ -392,7 +392,7 @@ struct ForAll
 	ForAll(ForAll &&other) noexcept = default;
 	ForAll &operator=(ForAll &&other) noexcept = default;
 
-	std::vector<std::unique_ptr<VariableDeclaration>> variables;
+	VariableDeclarationPointers variables;
 	Formula argument;
 };
 
@@ -457,14 +457,14 @@ struct Or
 
 struct ScopedFormula
 {
-	explicit ScopedFormula(ast::Formula &&formula, std::vector<std::unique_ptr<ast::VariableDeclaration>> &&freeVariables)
+	explicit ScopedFormula(Formula &&formula, VariableDeclarationPointers &&freeVariables)
 	:	formula{std::move(formula)},
 		freeVariables{std::move(freeVariables)}
 	{
 	}
 
-	ast::Formula formula;
-	std::vector<std::unique_ptr<ast::VariableDeclaration>> freeVariables;
+	Formula formula;
+	VariableDeclarationPointers freeVariables;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

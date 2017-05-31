@@ -59,7 +59,7 @@ struct BodyTermTranslateVisitor
 		}
 
 		// Create new body variable declarations
-		std::vector<std::unique_ptr<ast::VariableDeclaration>> parameters;
+		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(function.arguments.size());
 
 		for (size_t i = 0; i < function.arguments.size(); i++)
@@ -125,7 +125,7 @@ struct BodyLiteralTranslateVisitor
 
 		const auto operator_ = translate(comparison.comparison);
 
-		std::vector<std::unique_ptr<ast::VariableDeclaration>> parameters;
+		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(2);
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));

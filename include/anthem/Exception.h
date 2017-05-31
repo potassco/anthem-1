@@ -19,11 +19,20 @@ namespace anthem
 class Exception: public std::exception
 {
 	public:
-		Exception() = delete;
-		Exception(const Exception &other) = delete;
-		Exception &operator=(const Exception &other) = delete;
-		Exception(Exception &&other) = default;
-		Exception &operator=(Exception &&other) = default;
+		explicit Exception()
+		:	Exception("unspecified parser error")
+		{
+		}
+
+		explicit Exception(const char *message)
+		:	Exception(static_cast<std::string>(message))
+		{
+		}
+
+		explicit Exception(const std::string &message)
+		:	m_message{message}
+		{
+		}
 
 		explicit Exception(const Location &location)
 		:	Exception(location, "unspecified error")
@@ -43,6 +52,11 @@ class Exception: public std::exception
 				+ ":" + std::to_string(m_location.columnStart) + " " + m_message}
 		{
 		}
+
+		Exception(const Exception &other) = delete;
+		Exception &operator=(const Exception &other) = delete;
+		Exception(Exception &&other) = default;
+		Exception &operator=(Exception &&other) = default;
 
 		~Exception() noexcept = default;
 

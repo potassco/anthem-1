@@ -11,7 +11,7 @@ target_include_directories(${target} PRIVATE ${includes})
 target_link_libraries(${target} anthem)
 
 add_custom_target(run-tests
-	COMMAND ${CMAKE_BINARY_DIR}/bin/tests
+	COMMAND ${CMAKE_BINARY_DIR}/bin/tests --use-colour=yes
 	DEPENDS ${target}
 	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )

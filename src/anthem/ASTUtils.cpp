@@ -192,25 +192,6 @@ struct CollectFreeVariablesVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<VariableDeclaration *> collectFreeVariables(Formula &formula)
-{
-	VariableStack variableStack;
-	return collectFreeVariables(formula, variableStack);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-std::vector<VariableDeclaration *> collectFreeVariables(Formula &formula, VariableStack &variableStack)
-{
-	std::vector<VariableDeclaration *> freeVariables;
-
-	formula.accept(CollectFreeVariablesVisitor(), variableStack, freeVariables);
-
-	return freeVariables;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 struct CollectPredicatesVisitor : public RecursiveFormulaVisitor<CollectPredicatesVisitor>
 {
 	static void accept(const Predicate &predicate, const Formula &, std::vector<const Predicate *> &predicates)

@@ -1,8 +1,10 @@
 	#include <anthem/Completion.h>
 
 #include <anthem/AST.h>
+#include <anthem/ASTCopy.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
+#include <anthem/Exception.h>
 #include <anthem/Utils.h>
 
 namespace anthem
@@ -14,33 +16,14 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Copies the parameters of a predicate
-std::vector<std::unique_ptr<ast::VariableDeclaration>> copyParameters(const ast::Predicate &predicate)
-{
-	std::vector<std::unique_ptr<ast::VariableDeclaration>> parameters;
-	/*parameters.reserve(predicate.arity());
-
-	for (const auto &argument : predicate.arguments)
-	{
-		assert(argument.is<ast::Variable>());
-		// TODO: reimplement
-		//parameters.emplace_back(ast::deepCopy(parameter.get<ast::VariableDeclaration>()));
-	}*/
-
-	return parameters;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // Builds the conjunction within the completed formula for a given predicate
-ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, std::vector<std::unique_ptr<ast::VariableDeclaration>> &parameters, std::vector<ast::ScopedFormula> &scopedFormulas)
+ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, const ast::VariableDeclarationPointers &parameters, std::vector<ast::ScopedFormula> &scopedFormulas)
 {
 	auto disjunction = ast::Formula::make<ast::Or>();
 
-	/*ast::VariableStack variableStack;
-	variableStack.push(&parameters);
+	assert(predicate.arguments.size() == parameters.size());
 
-	// Build the conjunction of all formulas with the predicate as consequent
+	// Build the disjunction of all formulas with the predicate as consequent
 	for (auto &scopedFormula : scopedFormulas)
 	{
 		assert(scopedFormula.formula.is<ast::Implies>());
@@ -54,18 +37,36 @@ ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, s
 		if (!ast::matches(predicate, otherPredicate))
 			continue;
 
-		auto variables = ast::collectFreeVariables(implies.antecedent, variableStack);
+		assert(otherPredicate.arguments.size() == parameters.size());
 
-		// TODO: avoid deep copies
-		// TODO: reimplement
-		if (variables.empty())
-			disjunction.get<ast::Or>().arguments.emplace_back(ast::deepCopy(implies.antecedent));
+		// Each formula with the predicate as its consequent currently has its own copy of the predicate’s parameters
+		// These need to be linked to the new, unique set of parameters
+		for (size_t i = 0; i < parameters.size(); i++)
+		{
+			assert(otherPredicate.arguments[i].is<ast::Variable>());
+			const auto &otherVariable = otherPredicate.arguments[i].get<ast::Variable>();
+
+			scopedFormula.formula.accept(ast::ReplaceVariableInFormulaVisitor(), scopedFormula.formula, otherVariable.declaration, parameters[i].get());
+		}
+
+		// Remove all the head variables, because they are not free variables after completion
+		const auto isHeadVariable =
+			[](const auto &variableDeclaration)
+			{
+				return variableDeclaration->type == ast::VariableDeclaration::Type::Head;
+			};
+
+		auto &freeVariables = scopedFormula.freeVariables;
+		freeVariables.erase(std::remove_if(freeVariables.begin(), freeVariables.end(), isHeadVariable), freeVariables.end());
+
+		if (freeVariables.empty())
+			disjunction.get<ast::Or>().arguments.emplace_back(std::move(implies.antecedent));
 		else
 		{
-			auto exists = ast::Formula::make<ast::Exists>(std::move(variables), ast::deepCopy(implies.antecedent));
+			auto exists = ast::Formula::make<ast::Exists>(std::move(freeVariables), std::move(implies.antecedent));
 			disjunction.get<ast::Or>().arguments.emplace_back(std::move(exists));
 		}
-	}*/
+	}
 
 	return disjunction;
 }
@@ -77,7 +78,7 @@ ast::Formula buildCompletedFormulaQuantified(ast::Predicate &&predicate, ast::Fo
 {
 	assert(innerFormula.is<ast::Or>());
 
-	/*if (innerFormula.get<ast::Or>().arguments.empty())
+	if (innerFormula.get<ast::Or>().arguments.empty())
 		return ast::Formula::make<ast::Not>(std::move(predicate));
 
 	if (innerFormula.get<ast::Or>().arguments.size() == 1)
@@ -91,72 +92,77 @@ ast::Formula buildCompletedFormulaQuantified(ast::Predicate &&predicate, ast::Fo
 			return std::move(predicate);
 		else
 			return ast::Formula::make<ast::Not>(std::move(predicate));
-	}*/
+	}
 
 	return ast::Formula::make<ast::Biconditional>(std::move(predicate), std::move(innerFormula));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void completePredicate(ast::Predicate &&predicate, std::vector<ast::ScopedFormula> &scopedFormulas, std::vector<ast::ScopedFormula> &completedScopedFormulas)
+ast::Formula completePredicate(const ast::Predicate &predicate, std::vector<ast::ScopedFormula> &scopedFormulas)
 {
-	/*auto parameters = copyParameters(predicate);
-	auto completedFormulaDisjunction = buildCompletedFormulaDisjunction(predicate, parameters, scopedFormulas);
-	auto completedFormulaQuantified = buildCompletedFormulaQuantified(std::move(predicate), std::move(completedFormulaDisjunction));
+	// Create new set of parameters for the completed definition for the predicate
+	ast::VariableDeclarationPointers parameters;
+	parameters.reserve(predicate.arguments.size());
 
-	if (parameters.empty())
+	std::vector<ast::Term> arguments;
+	arguments.reserve(predicate.arguments.size());
+
+	for (size_t i = 0; i < predicate.arguments.size(); i++)
 	{
-		completedFormulas.emplace_back(std::move(completedFormulaQuantified));
-		return;
+		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
+		arguments.emplace_back(ast::Term::make<ast::Variable>(parameters.back().get()));
 	}
 
-	auto completedFormula = ast::Formula::make<ast::ForAll>(std::move(parameters), std::move(completedFormulaQuantified));
-	completedFormulas.emplace_back(std::move(completedFormula));*/
+	ast::Predicate predicateCopy(std::string(predicate.name), std::move(arguments));
+
+	auto completedFormulaDisjunction = buildCompletedFormulaDisjunction(predicateCopy, parameters, scopedFormulas);
+	auto completedFormulaQuantified = buildCompletedFormulaQuantified(std::move(predicateCopy), std::move(completedFormulaDisjunction));
+
+	if (parameters.empty())
+		return completedFormulaQuantified;
+
+	return ast::Formula::make<ast::ForAll>(std::move(parameters), std::move(completedFormulaQuantified));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void completeIntegrityConstraint(ast::Formula &formula, std::vector<ast::ScopedFormula> &)
+ast::Formula completeIntegrityConstraint(ast::ScopedFormula &scopedFormula)
 {
-	/*assert(formula.is<ast::Implies>());
-	auto &implies = formula.get<ast::Implies>();
+	assert(scopedFormula.formula.is<ast::Implies>());
+	auto &implies = scopedFormula.formula.get<ast::Implies>();
 	assert(implies.consequent.is<ast::Boolean>());
 	assert(implies.consequent.get<ast::Boolean>().value == false);
 
-	auto variables = ast::collectFreeVariables(implies.antecedent);
+	auto argument = ast::Formula::make<ast::Not>(std::move(implies.antecedent));
 
-	// TODO: avoid deep copies
-	// TODO: reimplement
-	auto argument = ast::Formula::make<ast::Not>(ast::deepCopy(implies.antecedent));
+	auto &freeVariables = scopedFormula.freeVariables;
 
-	if (variables.empty())
-	{
-		completedFormulas.emplace_back(std::move(argument));
-		return;
-	}
+	if (freeVariables.empty())
+		return argument;
 
-	auto completedFormula = ast::Formula::make<ast::ForAll>(std::move(variables), std::move(argument));
-	completedFormulas.emplace_back(std::move(completedFormula));*/
+	return ast::Formula::make<ast::ForAll>(std::move(freeVariables), std::move(argument));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void complete(std::vector<ast::ScopedFormula> &scopedFormulas)
+std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormulas)
 {
-	/*// Check whether formulas are in normal form
+	// Check whether formulas are in normal form
 	for (const auto &scopedFormula : scopedFormulas)
 	{
 		if (!scopedFormula.formula.is<ast::Implies>())
-			throw std::runtime_error("cannot perform completion, formula not in normal form");
+			throw CompletionException("cannot perform completion, formula not in normal form");
 
 		auto &implies = scopedFormula.formula.get<ast::Implies>();
 
 		if (!implies.consequent.is<ast::Predicate>() && !implies.consequent.is<ast::Boolean>())
-			throw std::runtime_error("cannot perform completion, only single predicates and Booleans supported as formula consequent currently");
+			throw CompletionException("cannot perform completion, only single predicates and Booleans supported as formula consequent currently");
 	}
 
 	std::vector<const ast::Predicate *> predicates;
 
+	// Get a list of all predicates
 	for (const auto &scopedFormula : scopedFormulas)
 		ast::collectPredicates(scopedFormula.formula, predicates);
 
@@ -171,24 +177,11 @@ void complete(std::vector<ast::ScopedFormula> &scopedFormulas)
 			return lhs->arity() < rhs->arity();
 		});
 
-	std::vector<ast::ScopedFormula> completedScopedFormulas;
+	std::vector<ast::Formula> completedFormulas;
 
 	// Complete predicates
 	for (const auto *predicate : predicates)
-	{
-		// Create the signature of the predicate
-		ast::Predicate signature(std::string(predicate->name));
-		signature.arguments.reserve(predicate->arguments.size());
-
-		// TODO: reimplement
-		for (std::size_t i = 0; i < predicate->arguments.size(); i++)
-		{
-			auto variableName = std::string(AuxiliaryHeadVariablePrefix) + std::to_string(i + 1);
-			signature.arguments.emplace_back(ast::Term::make<ast::Variable>(std::move(variableName), ast::VariableDeclaration::Type::Reserved));
-		}
-
-		completePredicate(std::move(signature), scopedFormulas, completedScopedFormulas);
-	}
+		completedFormulas.emplace_back(completePredicate(*predicate, scopedFormulas));
 
 	// Complete integrity constraints
 	for (auto &scopedFormula : scopedFormulas)
@@ -204,10 +197,10 @@ void complete(std::vector<ast::ScopedFormula> &scopedFormulas)
 		if (boolean.value == true)
 			continue;
 
-		completeIntegrityConstraint(scopedFormula.formula, completedScopedFormulas);
+		completedFormulas.emplace_back(completeIntegrityConstraint(scopedFormula));
 	}
 
-	std::swap(scopedFormulas, completedScopedFormulas);*/
+	return completedFormulas;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

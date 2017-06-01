@@ -8,7 +8,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*TEST_CASE("[completion] Rules are completed", "[completion]")
+TEST_CASE("[completion] Rules are completed", "[completion]")
 {
 	std::stringstream input;
 	std::stringstream output;
@@ -75,12 +75,12 @@
 		CHECK(output.str() ==
 			"not q\n"
 			"forall V1 not r(V1)\n"
-			"forall V1 not s(V1)\n"
+			"forall V2 not s(V2)\n"
 			"not t\n"
-			"forall V1 not u(V1)\n"
+			"forall V3 not u(V3)\n"
 			"not q\n"
 			"not r(5)\n"
-			"forall N not s(N)\n"
+			"forall U1 not s(U1)\n"
 			"not t\n"
 			"not u(5)\n");
 	}
@@ -126,7 +126,7 @@
 		CHECK(output.str() ==
 			"not p\n"
 			"forall V1 not q(V1)\n"
-			"forall V1, V2 not t(V1, V2)\n"
+			"forall V2, V3 not t(V2, V3)\n"
 			"not v\n");
 	}
 
@@ -140,12 +140,9 @@
 		anthem::translate("input", input, context);
 
 		CHECK(output.str() ==
-			"forall V1 (covered(V1) <-> exists I, S (V1 = I and in(I, S)))\n"
-			"forall V1, V2 (in(V1, V2) <-> (V1 in 1..n and V2 in 1..r and in(V1, V2)))\n"
-			"forall I not (I in 1..n and not covered(I))\n"
-			"forall I, S, J not (in(I, S) and in(J, S) and exists X5 (X5 in (I + J) and in(X5, S)))\n");
+			"forall V1 (covered(V1) <-> exists U1, U2 (V1 = U1 and in(U1, U2)))\n"
+			"forall V2, V3 (in(V2, V3) <-> (V2 in 1..n and V3 in 1..r and in(V2, V3)))\n"
+			"forall U3 not (U3 in 1..n and not covered(U3))\n"
+			"forall U4, U5, U6 not (in(U4, U5) and in(U6, U5) and exists X1 (X1 in (U4 + U6) and in(X1, U5)))\n");
 	}
-
-	// TODO: test collecting free variables
 }
-*/

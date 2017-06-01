@@ -59,14 +59,24 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		for (auto &scopedFormula : scopedFormulas)
 			simplify(scopedFormula.formula);
 
-	if (context.complete)
-		complete(scopedFormulas);
-
 	ast::PrintContext printContext;
 
-	for (const auto &scopedFormula : scopedFormulas)
+	if (!context.complete)
 	{
-		ast::print(context.logger.outputStream(), scopedFormula.formula, printContext);
+		for (const auto &scopedFormula : scopedFormulas)
+		{
+			ast::print(context.logger.outputStream(), scopedFormula.formula, printContext);
+			context.logger.outputStream() << std::endl;
+		}
+
+		return;
+	}
+
+	auto completedFormulas = complete(std::move(scopedFormulas));
+
+	for (const auto &completedFormula : completedFormulas)
+	{
+		ast::print(context.logger.outputStream(), completedFormula, printContext);
 		context.logger.outputStream() << std::endl;
 	}
 }

@@ -39,7 +39,7 @@ struct StatementVisitor
 {
 	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
 	{
-		context.logger.log(output::Priority::Debug) << "[program] " << program.name;
+		context.logger.log(output::Priority::Debug) << "program “" << program.name << "”";
 
 		if (!program.parameters.empty())
 			throw LogicException(statement.location, "program parameters currently unsupported");

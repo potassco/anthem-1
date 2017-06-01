@@ -6,6 +6,10 @@ Features:
 
 * unique IDs for all variables (user-defined variables are renamed)
 
+Bug Fixes:
+
+* adds missing error message when attempting to read inaccessible file
+
 ## 0.1.5 (2017-05-04)
 
 Bug Fixes:

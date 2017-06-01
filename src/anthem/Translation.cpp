@@ -27,6 +27,9 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 	{
 		std::ifstream file(fileName, std::ios::in);
 
+		if (!file.is_open())
+			throw LogicException("could not read file “" + fileName + "”");
+
 		translate(fileName.c_str(), file, context);
 	}
 }

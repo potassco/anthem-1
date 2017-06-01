@@ -29,6 +29,7 @@ class Exception: public std::exception
 		{
 		}
 
+		// TODO: set plain message as well
 		explicit Exception(const std::string &message)
 		:	m_message{message}
 		{

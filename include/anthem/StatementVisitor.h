@@ -150,10 +150,36 @@ struct StatementVisitor
 		}
 	}
 
+	void visit(const Clingo::AST::ShowSignature &showSignature, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
+	{
+		if (showSignature.csp)
+			throw LogicException(statement.location, "CSP #show statements are not supported");
+
+		auto &signature = showSignature.signature;
+
+		if (signature.negative())
+			throw LogicException(statement.location, "negative #show atom signatures are currently unsupported");
+
+		if (!context.visiblePredicateSignatures)
+			context.visiblePredicateSignatures.emplace();
+
+		if (std::strlen(signature.name()) == 0)
+			return;
+
+		context.logger.log(output::Priority::Debug) << "showing “" << signature.name() << "/" << signature.arity() << "”";
+
+		context.visiblePredicateSignatures.value().emplace_back(std::string(signature.name()), signature.arity());
+	}
+
+	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &)
+	{
+		throw LogicException(statement.location, "only #show statements for atoms (not terms) are supported currently");
+	}
+
 	template<class T>
 	void visit(const T &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &)
 	{
-		throw LogicException(statement.location, "statement currently unsupported, expected rule");
+		throw LogicException(statement.location, "statement currently unsupported");
 	}
 };
 

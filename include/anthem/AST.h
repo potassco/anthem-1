@@ -201,7 +201,6 @@ struct Interval
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: implement declaration/signature
 struct Predicate
 {
 	explicit Predicate(std::string &&name)
@@ -227,6 +226,26 @@ struct Predicate
 
 	std::string name;
 	std::vector<Term> arguments;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// TODO: make more use of this class
+struct PredicateSignature
+{
+	explicit PredicateSignature(std::string &&name, size_t arity)
+	:	name{std::move(name)},
+		arity{arity}
+	{
+	}
+
+	PredicateSignature(const PredicateSignature &other) = delete;
+	PredicateSignature &operator=(const PredicateSignature &other) = delete;
+	PredicateSignature(PredicateSignature &&other) noexcept = default;
+	PredicateSignature &operator=(PredicateSignature &&other) noexcept = default;
+
+	std::string name;
+	size_t arity;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

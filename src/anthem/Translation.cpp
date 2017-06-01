@@ -64,6 +64,8 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	ast::PrintContext printContext;
 
+	// TODO: respect predicate visibility in output
+
 	if (!context.complete)
 	{
 		for (const auto &scopedFormula : scopedFormulas)

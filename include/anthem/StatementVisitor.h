@@ -39,14 +39,19 @@ struct StatementVisitor
 {
 	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
 	{
-		context.logger.log(output::Priority::Debug) << "program “" << program.name << "”";
+		context.logger.log(output::Priority::Debug, statement.location) << "reading program “" << program.name << "”";
+
+		if (std::strcmp(program.name, "base") != 0)
+			throw LogicException(statement.location, "program parts currently unsupported");
 
 		if (!program.parameters.empty())
 			throw LogicException(statement.location, "program parameters currently unsupported");
 	}
 
-	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &)
+	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 	{
+		context.logger.log(output::Priority::Debug, statement.location) << "reading rule";
+
 		RuleContext ruleContext;
 		ast::VariableStack variableStack;
 		variableStack.push(&ruleContext.freeVariables);
@@ -164,9 +169,12 @@ struct StatementVisitor
 			context.visiblePredicateSignatures.emplace();
 
 		if (std::strlen(signature.name()) == 0)
+		{
+			context.logger.log(output::Priority::Debug, statement.location) << "showing no predicates by default";
 			return;
+		}
 
-		context.logger.log(output::Priority::Debug) << "showing “" << signature.name() << "/" << signature.arity() << "”";
+		context.logger.log(output::Priority::Debug, statement.location) << "showing “" << signature.name() << "/" << signature.arity() << "”";
 
 		context.visiblePredicateSignatures.value().emplace_back(std::string(signature.name()), signature.arity());
 	}

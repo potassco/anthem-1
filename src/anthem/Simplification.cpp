@@ -26,7 +26,7 @@ bool matchesVariableDeclaration(const ast::Term &term, const ast::VariableDeclar
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Extracts the term t if the given formula is of the form “X = t” and X matches the given variable
-// The input formula is not usable if a term is returned
+// The input formula is no longer usable after this call if a term is returned
 std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::VariableDeclaration &variableDeclaration)
 {
 	if (!formula.is<ast::Comparison>())

@@ -39,7 +39,7 @@ struct TermCollectFunctionTermsVisitor
 	template<class T>
 	void visit(const T &, const Clingo::AST::Term &term, RuleContext &)
 	{
-		throw LogicException(term.location, "term currently unsupported in this function expected");
+		throw LogicException(term.location, "term currently unsupported in this context, function expected");
 	}
 };
 
@@ -108,7 +108,7 @@ struct HeadLiteralCollectFunctionTermsVisitor
 	template<class T>
 	void visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &)
 	{
-		throw LogicException(headLiteral.location, "head literal currently unsupported in this expected literal, disjunction, or aggregate");
+		throw LogicException(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate");
 	}
 };
 
@@ -136,7 +136,7 @@ struct FunctionTermTranslateVisitor
 	template<class T>
 	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Term &term, RuleContext &, size_t &)
 	{
-		throw TranslationException(term.location, "term currently unsupported in this function expected");
+		throw TranslationException(term.location, "term currently unsupported in this context, function expected");
 		return std::experimental::nullopt;
 	}
 };
@@ -240,7 +240,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 	template<class T>
 	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &, size_t &)
 	{
-		throw TranslationException(headLiteral.location, "head literal currently unsupported in this expected literal, disjunction, or aggregate");
+		throw TranslationException(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate");
 		return std::experimental::nullopt;
 	}
 };

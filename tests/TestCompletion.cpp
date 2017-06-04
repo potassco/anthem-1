@@ -140,9 +140,9 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		anthem::translate("input", input, context);
 
 		CHECK(output.str() ==
-			"forall V1 (covered(V1) <-> exists U1, U2 (V1 = U1 and in(U1, U2)))\n"
+			"forall V1 (covered(V1) <-> exists U1 (in(V1, U1)))\n"
 			"forall V2, V3 (in(V2, V3) <-> (V2 in 1..n and V3 in 1..r and in(V2, V3)))\n"
-			"forall U3 not (U3 in 1..n and not covered(U3))\n"
-			"forall U4, U5, U6 not (in(U4, U5) and in(U6, U5) and exists X1 (X1 in (U4 + U6) and in(X1, U5)))\n");
+			"forall U2 not (U2 in 1..n and not covered(U2))\n"
+			"forall U3, U4, U5 not (in(U3, U4) and in(U5, U4) and exists X1 (X1 in (U3 + U5) and in(X1, U4)))\n");
 	}
 }

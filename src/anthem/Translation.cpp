@@ -79,6 +79,13 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	auto completedFormulas = complete(std::move(scopedFormulas));
 
+	// TODO: rethink simplification steps
+	if (context.simplify)
+		for (auto &completedFormula : completedFormulas)
+			simplify(completedFormula);
+
+	// TODO: remove variables that are not referenced after simplification
+
 	for (const auto &completedFormula : completedFormulas)
 	{
 		ast::print(context.logger.outputStream(), completedFormula, printContext);

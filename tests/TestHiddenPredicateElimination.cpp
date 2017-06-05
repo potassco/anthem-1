@@ -99,12 +99,14 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"b(X) :- not c(X).\n"
 			"c(X) :- d(X).\n"
 			"d(X) :- not b(X).\n"
+			"{e(X)}.\n"
 			"#show a/1.";
 		anthem::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (a(V1) <-> not d(V1))\n"
-			"forall V2 (d(V2) <-> not not d(V2))\n");
+			"forall V2 (d(V2) <-> not not d(V2))\n"
+			"forall V3 (e(V3) <-> e(V3))\n");
 	}
 
 	SECTION("simple Booleans are recognized")

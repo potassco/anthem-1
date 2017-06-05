@@ -5,6 +5,8 @@
 Features:
 
 * unique IDs for all variables (user-defined variables are renamed)
+* support for hiding predicates from completed output by using `#show` statements
+* more simplification rules with `--simplify`
 
 Bug Fixes:
 

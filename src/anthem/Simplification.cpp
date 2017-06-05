@@ -174,12 +174,12 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	if (!exists.variables.empty())
 		return;
 
-	assert(!conjunction.arguments.empty());
+	assert(!arguments.empty());
 
 	// If the argument now is a conjunction with just one element, directly replace the input formula with the argument
-	if (conjunction.arguments.size() == 1)
+	if (arguments.size() == 1)
 	{
-		formula = std::move(conjunction.arguments.front());
+		formula = std::move(arguments.front());
 		return;
 	}
 

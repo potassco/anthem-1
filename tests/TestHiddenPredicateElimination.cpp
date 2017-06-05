@@ -16,8 +16,8 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.simplify = true;
-	context.complete = true;
+	context.performSimplification = true;
+	context.performCompletion = true;
 
 	SECTION("simple example (positive 0-ary predicate)")
 	{

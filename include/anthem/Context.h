@@ -26,8 +26,8 @@ struct Context
 
 	output::Logger logger;
 
-	bool simplify = false;
-	bool complete = false;
+	bool performSimplification = false;
+	bool performCompletion = false;
 
 	std::experimental::optional<std::vector<ast::PredicateSignature>> visiblePredicateSignatures;
 };

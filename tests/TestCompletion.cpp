@@ -16,8 +16,8 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.simplify = true;
-	context.complete = true;
+	context.performSimplification = true;
+	context.performCompletion = true;
 
 	SECTION("predicate in single rule head")
 	{

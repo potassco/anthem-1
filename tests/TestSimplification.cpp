@@ -16,8 +16,8 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.simplify = true;
-	context.complete = false;
+	context.performSimplification = true;
+	context.performCompletion = false;
 
 	SECTION("example 1")
 	{

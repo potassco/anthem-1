@@ -17,8 +17,8 @@ int main(int argc, char **argv)
 		("help,h", "Display this help message")
 		("version,v", "Display version information")
 		("input,i", po::value<std::vector<std::string>>(), "Input files")
-		("simplify,s", po::bool_switch(&context.simplify), "Simplify the output")
-		("complete,c", po::bool_switch(&context.complete), "Perform completion")
+		("simplify,s", po::bool_switch(&context.performSimplification), "Simplify the output")
+		("complete,c", po::bool_switch(&context.performCompletion), "Perform completion")
 		("color", po::value<std::string>()->default_value("auto"), "Colorize output (always, never, auto)")
 		("log-priority,p", po::value<std::string>()->default_value("warning"), "Log messages starting from this priority (debug, info, warning, error)");
 

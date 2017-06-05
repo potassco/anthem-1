@@ -16,8 +16,8 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.simplify = false;
-	context.complete = false;
+	context.performSimplification = false;
+	context.performCompletion = false;
 
 	SECTION("simple example 1")
 	{

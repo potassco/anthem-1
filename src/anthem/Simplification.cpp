@@ -101,6 +101,28 @@ struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<Rep
 // The exists statement has to be of the form “exists <variables> <conjunction>”
 void simplify(ast::Exists &exists, ast::Formula &formula)
 {
+	// Simplify formulas like “exists X (X = Y)” to “#true”
+	// TODO: check that this covers all cases
+	if (exists.argument.is<ast::Comparison>())
+	{
+		const auto &comparison = exists.argument.get<ast::Comparison>();
+
+		if (comparison.operator_ != ast::Comparison::Operator::Equal)
+			return;
+
+		const auto matchingAssignment = std::find_if(exists.variables.cbegin(), exists.variables.cend(),
+			[&](const auto &variableDeclaration)
+			{
+				return matchesVariableDeclaration(comparison.left, *variableDeclaration)
+					|| matchesVariableDeclaration(comparison.right, *variableDeclaration);
+			});
+
+		if (matchingAssignment != exists.variables.cend())
+			formula = ast::Formula::make<ast::Boolean>(true);
+
+		return;
+	}
+
 	if (!exists.argument.is<ast::And>())
 		return;
 

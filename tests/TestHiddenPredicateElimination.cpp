@@ -123,4 +123,18 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"forall V1 (a(V1) <-> #true)\n"
 			"forall V2 (b(V2) <-> #false)\n");
 	}
+
+	SECTION("predicate arity is respected")
+	{
+		input <<
+			"a(X) :- a(X, Y).\n"
+			"a(X, Y) :- a(X, Y, Z).\n"
+			"a(1, 2, 3).\n"
+			"a(2, 4, 6).\n"
+			"#show a/2.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() ==
+			"forall V1, V2 (a(V1, V2) <-> exists U1 ((V1 = 1 and V2 = 2 and U1 = 3) or (V1 = 2 and V2 = 4 and U1 = 6)))\n");
+	}
 }

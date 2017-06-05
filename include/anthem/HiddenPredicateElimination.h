@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__COMPLETION_H
-#define __ANTHEM__COMPLETION_H
+#ifndef __ANTHEM__HIDDEN_PREDICATE_ELIMINATION_H
+#define __ANTHEM__HIDDEN_PREDICATE_ELIMINATION_H
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>
@@ -9,11 +9,11 @@ namespace anthem
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Completion
+// HiddenPredicateElimination
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context);
+void eliminateHiddenPredicates(const std::vector<ast::PredicateSignature> &predicateSignatures, std::vector<ast::Formula> &completedFormulas, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

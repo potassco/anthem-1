@@ -5,6 +5,7 @@
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
 #include <anthem/Exception.h>
+#include <anthem/HiddenPredicateElimination.h>
 #include <anthem/Utils.h>
 
 namespace anthem
@@ -99,22 +100,22 @@ ast::Formula buildCompletedFormulaQuantified(ast::Predicate &&predicate, ast::Fo
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula completePredicate(const ast::Predicate &predicate, std::vector<ast::ScopedFormula> &scopedFormulas)
+ast::Formula completePredicate(const ast::PredicateSignature &predicateSignature, std::vector<ast::ScopedFormula> &scopedFormulas)
 {
 	// Create new set of parameters for the completed definition for the predicate
 	ast::VariableDeclarationPointers parameters;
-	parameters.reserve(predicate.arguments.size());
+	parameters.reserve(predicateSignature.arity);
 
 	std::vector<ast::Term> arguments;
-	arguments.reserve(predicate.arguments.size());
+	arguments.reserve(predicateSignature.arity);
 
-	for (size_t i = 0; i < predicate.arguments.size(); i++)
+	for (size_t i = 0; i < predicateSignature.arity; i++)
 	{
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
 		arguments.emplace_back(ast::Term::make<ast::Variable>(parameters.back().get()));
 	}
 
-	ast::Predicate predicateCopy(std::string(predicate.name), std::move(arguments));
+	ast::Predicate predicateCopy(std::string(predicateSignature.name), std::move(arguments));
 
 	auto completedFormulaDisjunction = buildCompletedFormulaDisjunction(predicateCopy, parameters, scopedFormulas);
 	auto completedFormulaQuantified = buildCompletedFormulaQuantified(std::move(predicateCopy), std::move(completedFormulaDisjunction));
@@ -146,7 +147,7 @@ ast::Formula completeIntegrityConstraint(ast::ScopedFormula &scopedFormula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormulas)
+std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context)
 {
 	// Check whether formulas are in normal form
 	for (const auto &scopedFormula : scopedFormulas)
@@ -160,28 +161,28 @@ std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormu
 			throw CompletionException("cannot perform completion, only single predicates and Booleans supported as formula consequent currently");
 	}
 
-	std::vector<const ast::Predicate *> predicates;
+	std::vector<ast::PredicateSignature> predicateSignatures;
 
 	// Get a list of all predicates
 	for (const auto &scopedFormula : scopedFormulas)
-		ast::collectPredicates(scopedFormula.formula, predicates);
+		ast::collectPredicateSignatures(scopedFormula.formula, predicateSignatures);
 
-	std::sort(predicates.begin(), predicates.end(),
-		[](const auto *lhs, const auto *rhs)
+	std::sort(predicateSignatures.begin(), predicateSignatures.end(),
+		[](const auto &lhs, const auto &rhs)
 		{
-			const auto order = std::strcmp(lhs->name.c_str(), rhs->name.c_str());
+			const auto order = std::strcmp(lhs.name.c_str(), rhs.name.c_str());
 
 			if (order != 0)
-				return order < 0;
+				return (order < 0);
 
-			return lhs->arity() < rhs->arity();
+			return lhs.arity < rhs.arity;
 		});
 
 	std::vector<ast::Formula> completedFormulas;
 
 	// Complete predicates
-	for (const auto *predicate : predicates)
-		completedFormulas.emplace_back(completePredicate(*predicate, scopedFormulas));
+	for (const auto &predicateSignature : predicateSignatures)
+		completedFormulas.emplace_back(completePredicate(predicateSignature, scopedFormulas));
 
 	// Complete integrity constraints
 	for (auto &scopedFormula : scopedFormulas)
@@ -199,6 +200,9 @@ std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormu
 
 		completedFormulas.emplace_back(completeIntegrityConstraint(scopedFormula));
 	}
+
+	// Eliminate all predicates that should not be visible in the output
+	eliminateHiddenPredicates(predicateSignatures, completedFormulas, context);
 
 	return completedFormulas;
 }

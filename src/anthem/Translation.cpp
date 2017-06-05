@@ -77,7 +77,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		return;
 	}
 
-	auto completedFormulas = complete(std::move(scopedFormulas));
+	auto completedFormulas = complete(std::move(scopedFormulas), context);
 
 	// TODO: rethink simplification steps
 	if (context.simplify)

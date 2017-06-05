@@ -241,8 +241,10 @@ struct PredicateSignature
 
 	PredicateSignature(const PredicateSignature &other) = delete;
 	PredicateSignature &operator=(const PredicateSignature &other) = delete;
-	PredicateSignature(PredicateSignature &&other) noexcept = default;
-	PredicateSignature &operator=(PredicateSignature &&other) noexcept = default;
+	// TODO: make noexcept again
+	// GCC versions before 7 don’t declare moving std::string noexcept and would complain here
+	PredicateSignature(PredicateSignature &&other) = default;
+	PredicateSignature &operator=(PredicateSignature &&other) = default;
 
 	std::string name;
 	size_t arity;

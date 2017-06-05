@@ -38,7 +38,9 @@ class VariableStack
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool matches(const Predicate &lhs, const Predicate &rhs);
-void collectPredicates(const Formula &formula, std::vector<const Predicate *> &predicates);
+bool matches(const Predicate &predicate, const PredicateSignature &signature);
+bool matches(const PredicateSignature &lhs, const PredicateSignature &rhs);
+void collectPredicateSignatures(const Formula &formula, std::vector<PredicateSignature> &predicateSignatures);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Replacing Variables

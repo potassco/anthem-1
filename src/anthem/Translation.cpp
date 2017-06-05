@@ -64,10 +64,11 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	ast::PrintContext printContext;
 
-	// TODO: respect predicate visibility in output
-
 	if (!context.complete)
 	{
+		if (context.visiblePredicateSignatures)
+			context.logger.log(output::Priority::Warning) << "#show statements are ignored because completion is not enabled";
+
 		for (const auto &scopedFormula : scopedFormulas)
 		{
 			ast::print(context.logger.outputStream(), scopedFormula.formula, printContext);

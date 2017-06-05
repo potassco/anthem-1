@@ -91,4 +91,19 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"forall V3 (c(V3) <-> (V3 = 1 or V3 = 2))\n"
 			"forall V4 not d(V4)\n");
 	}
+
+	SECTION("circular dependencies cannot be fully removed")
+	{
+		input <<
+			"a(X) :- b(X).\n"
+			"b(X) :- not c(X).\n"
+			"c(X) :- d(X).\n"
+			"d(X) :- not b(X).\n"
+			"#show a/1.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() ==
+			"forall V1 (a(V1) <-> not d(V1))\n"
+			"forall V2 (d(V2) <-> not not d(V2))\n");
+	}
 }

@@ -62,7 +62,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		for (auto &scopedFormula : scopedFormulas)
 			simplify(scopedFormula.formula);
 
-	ast::PrintContext printContext;
+	ast::PrintContext printContext(context);
 
 	if (!context.performCompletion)
 	{

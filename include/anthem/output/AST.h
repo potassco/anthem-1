@@ -22,9 +22,21 @@ namespace ast
 
 struct PrintContext
 {
+	PrintContext(const Context &context)
+	:	context{context}
+	{
+	}
+
+	PrintContext(const PrintContext &other) = delete;
+	PrintContext &operator=(const PrintContext &other) = delete;
+	PrintContext(PrintContext &&other) = delete;
+	PrintContext &operator=(PrintContext &&other) = delete;
+
 	std::map<const VariableDeclaration *, size_t> userVariableIDs;
 	std::map<const VariableDeclaration *, size_t> headVariableIDs;
 	std::map<const VariableDeclaration *, size_t> bodyVariableIDs;
+
+	const Context &context;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,11 +142,17 @@ inline output::ColorStream &print(output::ColorStream &stream, Comparison::Opera
 
 inline output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext)
 {
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	print(stream, comparison.left, printContext);
 	stream << " ";
 	print(stream, comparison.operator_, printContext);
 	stream << " ";
 	print(stream, comparison.right, printContext);
+
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
@@ -177,9 +195,15 @@ inline output::ColorStream &print(output::ColorStream &stream, const Function &f
 
 inline output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext)
 {
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	print(stream, in.element, printContext);
 	stream << " " << output::Keyword("in") << " ";
 	print(stream, in.set, printContext);
+
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
@@ -195,9 +219,15 @@ inline output::ColorStream &print(output::ColorStream &stream, const Integer &in
 
 inline output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext)
 {
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	print(stream, interval.from, printContext);
 	stream << "..";
 	print(stream, interval.to, printContext);
+
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
@@ -329,6 +359,9 @@ inline output::ColorStream &print(output::ColorStream &stream, const Bicondition
 
 inline output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext)
 {
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	stream << output::Keyword("exists") << " ";
 
 	for (auto i = exists.variables.cbegin(); i != exists.variables.cend(); i++)
@@ -342,6 +375,9 @@ inline output::ColorStream &print(output::ColorStream &stream, const Exists &exi
 	stream << " ";
 	print(stream, exists.argument, printContext);
 
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
+
 	return stream;
 }
 
@@ -349,6 +385,9 @@ inline output::ColorStream &print(output::ColorStream &stream, const Exists &exi
 
 inline output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext)
 {
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	stream << output::Keyword("forall") << " ";
 
 	for (auto i = forAll.variables.cbegin(); i != forAll.variables.cend(); i++)
@@ -361,6 +400,9 @@ inline output::ColorStream &print(output::ColorStream &stream, const ForAll &for
 
 	stream << " ";
 	print(stream, forAll.argument, printContext);
+
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
@@ -382,8 +424,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const Implies &im
 
 inline output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext)
 {
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	stream << output::Keyword("not") << " ";
 	print(stream, not_.argument, printContext);
+
+	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }

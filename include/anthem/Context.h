@@ -5,6 +5,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/output/Logger.h>
+#include <anthem/output/ParenthesisStyle.h>
 
 namespace anthem
 {
@@ -30,6 +31,8 @@ struct Context
 	bool performCompletion = false;
 
 	std::experimental::optional<std::vector<ast::PredicateSignature>> visiblePredicateSignatures;
+
+	ast::ParenthesisStyle parenthesisStyle = ast::ParenthesisStyle::Normal;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -20,6 +20,7 @@ int main(int argc, char **argv)
 		("simplify,s", po::bool_switch(&context.performSimplification), "Simplify the output")
 		("complete,c", po::bool_switch(&context.performCompletion), "Perform completion")
 		("color", po::value<std::string>()->default_value("auto"), "Colorize output (always, never, auto)")
+		("parentheses", po::value<std::string>()->default_value("normal"), "Parenthesis style (normal, full)")
 		("log-priority,p", po::value<std::string>()->default_value("warning"), "Log messages starting from this priority (debug, info, warning, error)");
 
 	po::positional_options_description positionalOptionsDescription;
@@ -75,6 +76,20 @@ int main(int argc, char **argv)
 	else
 	{
 		context.logger.log(anthem::output::Priority::Error) << "unknown color policy “" << colorPolicyString << "”";
+		context.logger.errorStream() << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
+	}
+
+	const auto parenthesisStyle = variablesMap["parentheses"].as<std::string>();
+
+	if (parenthesisStyle == "normal")
+		context.parenthesisStyle = anthem::ast::ParenthesisStyle::Normal;
+	else if (parenthesisStyle == "full")
+		context.parenthesisStyle = anthem::ast::ParenthesisStyle::Full;
+	else
+	{
+		context.logger.log(anthem::output::Priority::Error) << "unknown parenthesis style “" << parenthesisStyle << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

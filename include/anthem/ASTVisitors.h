@@ -112,7 +112,7 @@ struct RecursiveTermVisitor
 	ReturnType visit(BinaryOperation &binaryOperation, Term &term, Arguments &&... arguments)
 	{
 		binaryOperation.left.accept(*this, binaryOperation.left, std::forward<Arguments>(arguments)...);
-		binaryOperation.right.accept(*this, binaryOperation.left, std::forward<Arguments>(arguments)...);
+		binaryOperation.right.accept(*this, binaryOperation.right, std::forward<Arguments>(arguments)...);
 
 		return T::accept(binaryOperation, term, std::forward<Arguments>(arguments)...);
 	}

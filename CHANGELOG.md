@@ -7,7 +7,7 @@ Features:
 * unique IDs for all variables (user-defined variables are renamed)
 * support for hiding predicates from completed output by using `#show` statements
 * more simplification rules with `--simplify`
-* command-line option `--parentheses` to fully parenthesize
+* command-line option `--parentheses` to fully parenthesize the output
 
 Bug Fixes:
 

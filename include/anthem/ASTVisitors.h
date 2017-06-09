@@ -108,7 +108,6 @@ struct RecursiveFormulaVisitor
 template<class T, class ReturnType = void>
 struct RecursiveTermVisitor
 {
-	// TODO: return type is incorrect
 	template <class... Arguments>
 	ReturnType visit(BinaryOperation &binaryOperation, Term &term, Arguments &&... arguments)
 	{

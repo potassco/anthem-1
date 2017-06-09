@@ -130,7 +130,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"not v\n");
 	}
 
-	SECTION("example")
+	SECTION("Schur number example")
 	{
 		input <<
 			"{in(1..n, 1..r)}.\n"

@@ -13,6 +13,7 @@ Bug Fixes:
 
 * adds missing error message when attempting to read inaccessible file
 * removes unnecessary parentheses after simplification
+* fixes incorrect simplification with binary operations in arguments
 
 ## 0.1.5 (2017-05-04)
 

@@ -170,6 +170,14 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 		i++;
 	}
 
+	// If there are no arguments left, we had a formula of the form “exists X1, ..., Xn (X1 = Y1 and ... and Xn = Yn)”
+	// Such exists statements are useless and can be safely replaced with “#true”
+	if (arguments.empty())
+	{
+		formula = ast::Formula::make<ast::Boolean>(true);
+		return;
+	}
+
 	// If the argument now is a conjunction with just one element, directly replace the input formula with the argument
 	if (arguments.size() == 1)
 		exists.argument = std::move(arguments.front());

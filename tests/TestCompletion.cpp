@@ -166,4 +166,14 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"forall V1, V2 (a(V1, V2) <-> b(c((V1 + V2)), d((1 + V2))))\n"
 			"forall V3, V4 not b(V3, V4)\n");
 	}
+
+	SECTION("predicate with more than one argument")
+	{
+		input << "p(X, Y, Z).";
+		anthem::translate("input", input, context);
+
+		// TODO: simplify further
+		CHECK(output.str() ==
+			"forall V1, V2, V3 (p(V1, V2, V3) <-> #true)\n");
+	}
 }

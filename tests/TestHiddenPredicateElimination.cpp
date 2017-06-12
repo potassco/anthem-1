@@ -171,4 +171,17 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"not (s and not t)\n"
 			"not (not #false and not #false and #false)\n");
 	}
+
+	SECTION("predicate with more than one argument is hidden correctly")
+	{
+		input <<
+			"a(X, Y, Z) :- p(X, Y, Z).\n"
+			"p(X, Y, Z).\n"
+			"#show a/3.";
+		anthem::translate("input", input, context);
+
+		// TODO: simplify further
+		CHECK(output.str() ==
+			"forall V1, V2, V3 (a(V1, V2, V3) <-> #true)\n");
+	}
 }

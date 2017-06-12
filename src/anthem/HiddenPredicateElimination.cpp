@@ -124,36 +124,40 @@ struct DetectCircularDependcyVisitor : public ast::RecursiveFormulaVisitor<Detec
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Finds the replacement for predicates of the form “forall X1, ..., Xn (p(X1, ..., Xn) <-> ...)”
-PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::ForAll &forAll)
+// Finds the replacement for predicates of the form “p(X1, ..., Xn) <-> q(X1, ..., Xn)”
+PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Predicate &predicate)
 {
 	// Declare variable used, only used in debug mode
 	(void)(predicateSignature);
 
-	// Form: “forall X1, ..., Xn p(X1, ..., Xn)”
+	assert(ast::matches(predicate, predicateSignature));
+
 	// Replace with “#true”
-	if (forAll.argument.is<ast::Predicate>())
-	{
-		assert(ast::matches(forAll.argument.get<ast::Predicate>(), predicateSignature));
+	return {predicate, ast::Formula::make<ast::Boolean>(true)};
+}
 
-		return {forAll.argument.get<ast::Predicate>(), ast::Formula::make<ast::Boolean>(true)};
-	}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// Form: “forall X1, ..., Xn (p(X1, ..., Xn) <-> ...)”
+// Finds the replacement for predicates of the form “p(X1, ..., Xn) <-> not q(X1, ..., Xn)”
+PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Not &not_)
+{
+	// Declare variable used, only used in debug mode
+	(void)(predicateSignature);
+
+	assert(not_.argument.is<ast::Predicate>());
+	assert(ast::matches(not_.argument.get<ast::Predicate>(), predicateSignature));
+
 	// Replace with “#false”
-	if (forAll.argument.is<ast::Not>())
-	{
-		auto &notArgument = forAll.argument.get<ast::Not>().argument;
+	return {not_.argument.get<ast::Predicate>(), ast::Formula::make<ast::Boolean>(false)};
+}
 
-		assert(notArgument.is<ast::Predicate>());
-		assert(ast::matches(notArgument.get<ast::Predicate>(), predicateSignature));
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		return {notArgument.get<ast::Predicate>(), ast::Formula::make<ast::Boolean>(false)};
-	}
-
-	assert(forAll.argument.is<ast::Biconditional>());
-
-	const auto &biconditional = forAll.argument.get<ast::Biconditional>();
+// Finds the replacement for predicates of the form “forall X1, ..., Xn (p(X1, ..., Xn) <-> ...)”
+PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Biconditional &biconditional)
+{
+	// Declare variable used, only used in debug mode
+	(void)(predicateSignature);
 
 	assert(biconditional.left.is<ast::Predicate>());
 	assert(ast::matches(biconditional.left.get<ast::Predicate>(), predicateSignature));
@@ -167,19 +171,17 @@ PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSig
 // Finds a replacement for a predicate that should be hidden
 PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Formula &completedPredicateDefinition)
 {
+	// TODO: refactor
 	if (completedPredicateDefinition.is<ast::ForAll>())
-		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::ForAll>());
+		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::ForAll>().argument);
+	else if (completedPredicateDefinition.is<ast::Biconditional>())
+		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::Biconditional>());
 	else if (completedPredicateDefinition.is<ast::Predicate>())
-		return {completedPredicateDefinition.get<ast::Predicate>(), ast::Formula::make<ast::Boolean>(true)};
+		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::Predicate>());
 	else if (completedPredicateDefinition.is<ast::Not>())
-	{
-		const auto &notArgument = completedPredicateDefinition.get<ast::Not>().argument;
-		assert(notArgument.is<ast::Predicate>());
+		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::Not>());
 
-		return {notArgument.get<ast::Predicate>(), ast::Formula::make<ast::Boolean>(false)};
-	}
-
-	throw CompletionException("invalid completed predicate definition for predicate “" + predicateSignature.name + "/" +  std::to_string(predicateSignature.arity) + "”");
+	throw CompletionException("unsupported completed definition for predicate “" + predicateSignature.name + "/" +  std::to_string(predicateSignature.arity) + "” for hiding predicates");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

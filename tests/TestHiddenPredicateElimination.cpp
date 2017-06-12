@@ -151,4 +151,24 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 		CHECK(output.str() ==
 			"forall V1 (a(V1) <-> exists U1 (c(V1) = c(U1) and U1 in 1..4))\n");
 	}
+
+	SECTION("simple propositions are hidden correctly")
+	{
+		input <<
+			"p :- q.\n"
+			"q :- not r.\n"
+			"{s; t} :- p.\n"
+			":- s, not t.\n"
+			":- p, q, r.\n"
+			"#show s/0.\n"
+			"#show t/0.";
+		anthem::translate("input", input, context);
+
+		// TODO: simplify further
+		CHECK(output.str() ==
+			"(s <-> (not #false and s))\n"
+			"(t <-> (not #false and t))\n"
+			"not (s and not t)\n"
+			"not (not #false and not #false and #false)\n");
+	}
 }

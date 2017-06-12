@@ -58,14 +58,15 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
 
-	if (context.performSimplification)
-		for (auto &scopedFormula : scopedFormulas)
-			simplify(scopedFormula.formula);
-
 	ast::PrintContext printContext(context);
 
 	if (!context.performCompletion)
 	{
+		// Simplify output if specified
+		if (context.performSimplification)
+			for (auto &scopedFormula : scopedFormulas)
+				simplify(scopedFormula.formula);
+
 		if (context.visiblePredicateSignatures)
 			context.logger.log(output::Priority::Warning) << "#show statements are ignored because completion is not enabled";
 
@@ -78,9 +79,10 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		return;
 	}
 
+	// Perform completion
 	auto completedFormulas = complete(std::move(scopedFormulas), context);
 
-	// TODO: rethink simplification steps
+	// Simplify output if specified
 	if (context.performSimplification)
 		for (auto &completedFormula : completedFormulas)
 			simplify(completedFormula);

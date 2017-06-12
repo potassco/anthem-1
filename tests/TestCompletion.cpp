@@ -115,6 +115,17 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"t\n");
 	}
 
+	SECTION("nested arguments")
+	{
+		input <<
+			"f(f(f(f(f(X))))) :- f(X).\n"
+			"f(1..5).";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() ==
+			"forall V1 (f(V1) <-> (exists U1 (V1 = f(f(f(f(U1)))) and f(U1)) or V1 in 1..5))\n");
+	}
+
 	SECTION("useless implications")
 	{
 		input <<

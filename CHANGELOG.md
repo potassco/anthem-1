@@ -8,6 +8,7 @@ Features:
 * support for hiding predicates from completed output by using `#show` statements
 * more simplification rules with `--simplify`
 * command-line option `--parentheses` to fully parenthesize the output
+* adds multiple example instances for experimenting
 
 Bug Fixes:
 

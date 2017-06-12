@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
 	if (variablesMap.count("version"))
 	{
-		std::cout << "anthem version 0.1.6-git" << std::endl;
+		std::cout << "anthem version 0.1.6" << std::endl;
 		return EXIT_SUCCESS;
 	}
 

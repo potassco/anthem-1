@@ -3,4 +3,4 @@
 	url = https://github.com/potassco/clingo
 [submodule "lib/catch"]
 	path = lib/catch
-	url = https://github.com/philsquared/Catch
+	url = https://github.com/catchorg/Catch2

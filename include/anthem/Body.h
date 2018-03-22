@@ -43,7 +43,7 @@ ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOp
 struct BodyTermTranslateVisitor
 {
 	// TODO: refactor
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	std::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Literal &literal, const Clingo::AST::Term &, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
 			throw TranslationException(literal.location, "double-negated literals currently unsupported");
@@ -93,12 +93,12 @@ struct BodyTermTranslateVisitor
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, RuleContext &, ast::VariableStack &)
+	std::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &, const Clingo::AST::Term &term, RuleContext &, ast::VariableStack &)
 	{
 		assert(!term.data.is<Clingo::AST::Function>());
 
 		throw TranslationException(term.location, "term currently unsupported in this context, expected function");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 };
 
@@ -106,18 +106,18 @@ struct BodyTermTranslateVisitor
 
 struct BodyLiteralTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, RuleContext &, ast::VariableStack &)
+	std::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, RuleContext &, ast::VariableStack &)
 	{
 		return ast::Formula::make<ast::Boolean>(boolean.value);
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	std::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
 		return term.data.accept(BodyTermTranslateVisitor(), literal, term, ruleContext, variableStack);
 	}
 
 	// TODO: refactor
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	std::optional<ast::Formula> visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
 		// Comparisons should never have a sign, because these are converted to positive comparisons by clingo
 		if (literal.sign != Clingo::AST::Sign::None)
@@ -140,10 +140,10 @@ struct BodyLiteralTranslateVisitor
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, RuleContext &, ast::VariableStack &)
+	std::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, RuleContext &, ast::VariableStack &)
 	{
 		throw TranslationException(literal.location, "literal currently unsupported in this context, expected function or term");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 };
 
@@ -151,7 +151,7 @@ struct BodyLiteralTranslateVisitor
 
 struct BodyBodyLiteralTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &bodyLiteral, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	std::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &bodyLiteral, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
 		if (bodyLiteral.sign != Clingo::AST::Sign::None)
 			throw TranslationException(bodyLiteral.location, "only positive body literals supported currently");
@@ -160,10 +160,10 @@ struct BodyBodyLiteralTranslateVisitor
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::BodyLiteral &bodyLiteral, RuleContext &, ast::VariableStack &)
+	std::optional<ast::Formula> visit(const T &, const Clingo::AST::BodyLiteral &bodyLiteral, RuleContext &, ast::VariableStack &)
 	{
 		throw TranslationException(bodyLiteral.location, "body literal currently unsupported in this context, expected literal");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 };
 

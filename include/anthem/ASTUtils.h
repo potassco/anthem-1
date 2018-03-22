@@ -1,7 +1,7 @@
 #ifndef __ANTHEM__AST_UTILS_H
 #define __ANTHEM__AST_UTILS_H
 
-#include <experimental/optional>
+#include <optional>
 
 #include <anthem/AST.h>
 #include <anthem/ASTVisitors.h>
@@ -28,7 +28,7 @@ class VariableStack
 		void push(Layer layer);
 		void pop();
 
-		std::experimental::optional<VariableDeclaration *> findUserVariableDeclaration(const char *variableName) const;
+		std::optional<VariableDeclaration *> findUserVariableDeclaration(const char *variableName) const;
 		bool contains(const VariableDeclaration &variableDeclaration) const;
 
 	private:

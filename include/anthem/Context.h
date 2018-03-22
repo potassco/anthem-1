@@ -1,7 +1,7 @@
 #ifndef __ANTHEM__CONTEXT_H
 #define __ANTHEM__CONTEXT_H
 
-#include <experimental/optional>
+#include <optional>
 
 #include <anthem/AST.h>
 #include <anthem/output/Logger.h>
@@ -30,7 +30,7 @@ struct Context
 	bool performSimplification = false;
 	bool performCompletion = false;
 
-	std::experimental::optional<std::vector<ast::PredicateSignature>> visiblePredicateSignatures;
+	std::optional<std::vector<ast::PredicateSignature>> visiblePredicateSignatures;
 
 	ast::ParenthesisStyle parenthesisStyle = ast::ParenthesisStyle::Normal;
 };

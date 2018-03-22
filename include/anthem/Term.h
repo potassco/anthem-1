@@ -48,7 +48,7 @@ ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, con
 
 struct TermTranslateVisitor
 {
-	std::experimental::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		switch (symbol.type())
 		{
@@ -81,10 +81,10 @@ struct TermTranslateVisitor
 			}
 		}
 
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		const auto matchingVariableDeclaration = variableStack.findUserVariableDeclaration(variable.name);
 		const auto isAnonymousVariable = (strcmp(variable.name, "_") == 0);
@@ -100,13 +100,13 @@ struct TermTranslateVisitor
 		return ast::Term::make<ast::Variable>(ruleContext.freeVariables.back().get());
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, RuleContext &, const ast::VariableStack &)
+	std::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, RuleContext &, const ast::VariableStack &)
 	{
 		throw TranslationException(term.location, "“unary operation” terms currently unsupported");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translate(binaryOperation.binary_operator, term);
 		auto left = translate(binaryOperation.left, ruleContext, variableStack);
@@ -115,7 +115,7 @@ struct TermTranslateVisitor
 		return ast::Term::make<ast::BinaryOperation>(operator_, std::move(left), std::move(right));
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		auto left = translate(interval.left, ruleContext, variableStack);
 		auto right = translate(interval.right, ruleContext, variableStack);
@@ -123,7 +123,7 @@ struct TermTranslateVisitor
 		return ast::Term::make<ast::Interval>(std::move(left), std::move(right));
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		if (function.external)
 			throw TranslationException(term.location, "external functions currently unsupported");
@@ -137,10 +137,10 @@ struct TermTranslateVisitor
 		return ast::Term::make<ast::Function>(function.name, std::move(arguments));
 	}
 
-	std::experimental::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, const ast::VariableStack &)
+	std::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, const ast::VariableStack &)
 	{
 		throw TranslationException(term.location, "“pool” terms currently unsupported");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 };
 

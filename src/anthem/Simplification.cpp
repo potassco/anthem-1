@@ -1,6 +1,6 @@
 #include <anthem/Simplification.h>
 
-#include <experimental/optional>
+#include <optional>
 
 #include <anthem/ASTCopy.h>
 #include <anthem/ASTVisitors.h>
@@ -27,15 +27,15 @@ bool matchesVariableDeclaration(const ast::Term &term, const ast::VariableDeclar
 
 // Extracts the term t if the given formula is of the form “X = t” and X matches the given variable
 // The input formula is no longer usable after this call if a term is returned
-std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::VariableDeclaration &variableDeclaration)
+std::optional<ast::Term> extractAssignedTerm(ast::Formula &formula, const ast::VariableDeclaration &variableDeclaration)
 {
 	if (!formula.is<ast::Comparison>())
-		return std::experimental::nullopt;
+		return std::nullopt;
 
 	auto &comparison = formula.get<ast::Comparison>();
 
 	if (comparison.operator_ != ast::Comparison::Operator::Equal)
-		return std::experimental::nullopt;
+		return std::nullopt;
 
 	if (matchesVariableDeclaration(comparison.left, variableDeclaration))
 		return std::move(comparison.right);
@@ -43,7 +43,7 @@ std::experimental::optional<ast::Term> extractAssignedTerm(ast::Formula &formula
 	if (matchesVariableDeclaration(comparison.right, variableDeclaration))
 		return std::move(comparison.left);
 
-	return std::experimental::nullopt;
+	return std::nullopt;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

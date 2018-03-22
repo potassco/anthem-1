@@ -2,7 +2,7 @@
 #define __ANTHEM__HEAD_H
 
 #include <algorithm>
-#include <experimental/optional>
+#include <optional>
 
 #include <anthem/AST.h>
 #include <anthem/Exception.h>
@@ -119,7 +119,7 @@ struct HeadLiteralCollectFunctionTermsVisitor
 struct FunctionTermTranslateVisitor
 {
 	// TODO: check correctness
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		if (function.external)
 			throw TranslationException(term.location, "external functions currently unsupported");
@@ -134,10 +134,10 @@ struct FunctionTermTranslateVisitor
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Term &term, RuleContext &, size_t &)
+	std::optional<ast::Formula> visit(const T &, const Clingo::AST::Term &term, RuleContext &, size_t &)
 	{
 		throw TranslationException(term.location, "term currently unsupported in this context, function expected");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 };
 
@@ -145,21 +145,21 @@ struct FunctionTermTranslateVisitor
 
 struct LiteralTranslateVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, RuleContext &, size_t &)
+	std::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, RuleContext &, size_t &)
 	{
 		return ast::Formula::make<ast::Boolean>(boolean.value);
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		return term.data.accept(FunctionTermTranslateVisitor(), term, ruleContext, headVariableIndex);
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, RuleContext &, size_t &)
+	std::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, RuleContext &, size_t &)
 	{
 		throw TranslationException(literal.location, "only disjunctions of literals allowed as head literals");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 };
 
@@ -167,7 +167,7 @@ struct LiteralTranslateVisitor
 
 struct HeadLiteralTranslateToConsequentVisitor
 {
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
 			throw TranslationException(literal.location, "double-negated head literals currently unsupported");
@@ -178,12 +178,12 @@ struct HeadLiteralTranslateToConsequentVisitor
 			return translatedLiteral;
 
 		if (!translatedLiteral)
-			return std::experimental::nullopt;
+			return std::nullopt;
 
 		return ast::Formula::make<ast::Not>(std::move(translatedLiteral.value()));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::optional<ast::Formula> visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		std::vector<ast::Formula> arguments;
 		arguments.reserve(disjunction.elements.size());
@@ -204,7 +204,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 		return ast::Formula::make<ast::Or>(std::move(arguments));
 	}
 
-	std::experimental::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, size_t &headVariableIndex)
+	std::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, size_t &headVariableIndex)
 	{
 		if (aggregate.left_guard || aggregate.right_guard)
 			throw TranslationException(headLiteral.location, "aggregates with left or right guards currently unsupported");
@@ -238,10 +238,10 @@ struct HeadLiteralTranslateToConsequentVisitor
 	}
 
 	template<class T>
-	std::experimental::optional<ast::Formula> visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &, size_t &)
+	std::optional<ast::Formula> visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &, size_t &)
 	{
 		throw TranslationException(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate");
-		return std::experimental::nullopt;
+		return std::nullopt;
 	}
 };
 

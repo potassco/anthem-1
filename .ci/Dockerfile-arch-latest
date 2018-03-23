@@ -1,0 +1,6 @@
+FROM archimg/base-devel:latest
+
+RUN pacman -Sy
+RUN pacman -S --noconfirm boost cmake git ninja re2c
+
+VOLUME /app

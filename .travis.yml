@@ -5,15 +5,21 @@ services:
 
 matrix:
   include:
-    - env: distribution=arch-latest
+    - env: distribution=arch-latest toolchain=gcc
       os: linux
       language: cpp
-    - env: distribution=ubuntu-18.04
+    - env: distribution=arch-latest toolchain=clang
+      os: linux
+      language: cpp
+    - env: distribution=ubuntu-18.04 toolchain=gcc
+      os: linux
+      language: cpp
+    - env: distribution=ubuntu-18.04 toolchain=clang
       os: linux
       language: cpp
 
 before_install:
-  - docker build -t ${distribution} - < .ci/Dockerfile-${distribution}
+  - docker build --build-arg toolchain=${toolchain} -t ${distribution} - < .ci/Dockerfile-${distribution}
 
 script:
-  - docker run --mount source=$(pwd),target=/app,type=bind -w /app ${distribution} /bin/bash -c ".ci/ci.sh"
+  - docker run --mount source=$(pwd),target=/app,type=bind -w /app ${distribution} /bin/bash -c ".ci/ci.sh ${toolchain}"

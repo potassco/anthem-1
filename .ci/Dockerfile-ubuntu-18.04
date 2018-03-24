@@ -1,6 +1,9 @@
 FROM ubuntu:18.04
 
+ARG toolchain
+
 RUN apt-get update
 RUN apt-get install -y libboost-all-dev cmake git ninja-build re2c
+RUN if [ "${toolchain}" = "clang" ]; then apt-get install -y clang; fi
 
 VOLUME /app

@@ -124,7 +124,7 @@ SimplificationResult simplify(ast::Formula &formula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct SimplificationRuleTrivialExists
+struct SimplificationRuleTrivialAssignmentInExists
 {
 	static constexpr const auto Description = "exists X (X = Y) === #true";
 
@@ -229,9 +229,53 @@ struct SimplificationRuleAssignmentInExists
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleEmptyConjunction
+{
+	static constexpr const auto Description = "[empty conjunction] === #true";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::And>())
+			return SimplificationResult::Unchanged;
+
+		auto &and_ = formula.get<ast::And>();
+
+		if (!and_.arguments.empty())
+			return SimplificationResult::Unchanged;
+
+		formula = ast::Formula::make<ast::Boolean>(true);
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct SimplificationRuleTrivialExists
+{
+	static constexpr const auto Description = "exists ... ([#true/#false]) === [#true/#false]";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Exists>())
+			return SimplificationResult::Unchanged;
+
+		auto &exists = formula.get<ast::Exists>();
+
+		if (!exists.argument.is<ast::Boolean>())
+			return SimplificationResult::Unchanged;
+
+		formula = std::move(exists.argument);
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void simplify(ast::Exists &exists, ast::Formula &formula)
 {
-	SimplificationRuleTrivialExists::apply(formula);
+	SimplificationRuleTrivialAssignmentInExists::apply(formula);
 	SimplificationRuleAssignmentInExists::apply(formula);
 
 	if (!exists.argument.is<ast::And>())
@@ -240,13 +284,8 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	auto &and_ = exists.argument.get<ast::And>();
 	auto &arguments = and_.arguments;
 
-	// If there are no arguments left, we had a formula of the form “exists X1, ..., Xn (X1 = Y1 and ... and Xn = Yn)”
-	// Such exists statements are useless and can be safely replaced with “#true”
-	if (arguments.empty())
-	{
-		formula = ast::Formula::make<ast::Boolean>(true);
-		return;
-	}
+	SimplificationRuleEmptyConjunction::apply(exists.argument);
+	SimplificationRuleTrivialExists::apply(formula);
 
 	// If the argument now is a conjunction with just one element, directly replace the input formula with the argument
 	if (arguments.size() == 1)

@@ -3,7 +3,7 @@ FROM archimg/base-devel:latest
 ARG toolchain
 
 RUN pacman -Sy
-RUN pacman -S --noconfirm boost cmake git ninja re2c
+RUN pacman -S --noconfirm cmake git ninja re2c
 RUN if [ "${toolchain}" = "clang" ]; then pacman -S --noconfirm clang; fi
 
 VOLUME /app

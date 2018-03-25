@@ -1,7 +1,5 @@
 set(target anthem-app)
 
-find_package(Boost 1.55.0 COMPONENTS program_options system filesystem REQUIRED)
-
 file(GLOB core_sources "*.cpp")
 file(GLOB core_headers "*.h")
 
@@ -11,11 +9,10 @@ set(sources
 )
 
 set(includes
-	${Boost_INCLUDE_DIRS}
+	${PROJECT_SOURCE_DIR}/lib/cxxopts/include
 )
 
 set(libraries
-	${Boost_LIBRARIES}
 	anthem
 )
 

@@ -161,58 +161,84 @@ struct SimplificationRuleTrivialExists
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Simplifies exists statements by using the equivalence “exists X (X = t and F(X))” == “F(t)”
-// The exists statement has to be of the form “exists <variables> <conjunction>”
+struct SimplificationRuleAssignmentInExists
+{
+	static constexpr const auto Description = "exists X (X = t and F(X)) === exists () (F(t))";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Exists>())
+			return SimplificationResult::Unchanged;
+
+		auto &exists = formula.get<ast::Exists>();
+
+		if (!exists.argument.is<ast::And>())
+			return SimplificationResult::Unchanged;
+
+		auto &and_ = exists.argument.get<ast::And>();
+		auto &arguments = and_.arguments;
+
+		auto simplificationResult = SimplificationResult::Unchanged;
+
+		for (auto i = exists.variables.begin(); i != exists.variables.end();)
+		{
+			const auto &variableDeclaration = **i;
+
+			bool wasVariableReplaced = false;
+
+			// TODO: refactor
+			for (auto j = arguments.begin(); j != arguments.end(); j++)
+			{
+				auto &argument = *j;
+				// Find term that is equivalent to the given variable
+				auto assignedTerm = extractAssignedTerm(argument, variableDeclaration);
+
+				if (!assignedTerm)
+					continue;
+
+				// Replace all occurrences of the variable with the equivalent term
+				for (auto k = arguments.begin(); k != arguments.end(); k++)
+				{
+					if (k == j)
+						continue;
+
+					auto &otherArgument = *k;
+					otherArgument.accept(ReplaceVariableInFormulaVisitor(), otherArgument, variableDeclaration, assignedTerm.value());
+				}
+
+				arguments.erase(j);
+
+				wasVariableReplaced = true;
+				simplificationResult = SimplificationResult::Simplified;
+
+				break;
+			}
+
+			if (wasVariableReplaced)
+			{
+				i = exists.variables.erase(i);
+				continue;
+			}
+
+			i++;
+		}
+
+		return simplificationResult;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void simplify(ast::Exists &exists, ast::Formula &formula)
 {
 	SimplificationRuleTrivialExists::apply(formula);
+	SimplificationRuleAssignmentInExists::apply(formula);
 
 	if (!exists.argument.is<ast::And>())
 		return;
 
-	auto &conjunction = exists.argument.get<ast::And>();
-	auto &arguments = conjunction.arguments;
-
-	// Simplify formulas of type “exists X (X = t and F(X))” to “F(t)”
-	for (auto i = exists.variables.begin(); i != exists.variables.end();)
-	{
-		const auto &variableDeclaration = **i;
-
-		bool wasVariableReplaced = false;
-
-		// TODO: refactor
-		for (auto j = arguments.begin(); j != arguments.end(); j++)
-		{
-			auto &argument = *j;
-			// Find term that is equivalent to the given variable
-			auto assignedTerm = extractAssignedTerm(argument, variableDeclaration);
-
-			if (!assignedTerm)
-				continue;
-
-			// Replace all occurrences of the variable with the equivalent term
-			for (auto k = arguments.begin(); k != arguments.end(); k++)
-			{
-				if (k == j)
-					continue;
-
-				auto &otherArgument = *k;
-				otherArgument.accept(ReplaceVariableInFormulaVisitor(), otherArgument, variableDeclaration, assignedTerm.value());
-			}
-
-			arguments.erase(j);
-			wasVariableReplaced = true;
-			break;
-		}
-
-		if (wasVariableReplaced)
-		{
-			i = exists.variables.erase(i);
-			continue;
-		}
-
-		i++;
-	}
+	auto &and_ = exists.argument.get<ast::And>();
+	auto &arguments = and_.arguments;
 
 	// If there are no arguments left, we had a formula of the form “exists X1, ..., Xn (X1 = Y1 and ... and Xn = Yn)”
 	// Such exists statements are useless and can be safely replaced with “#true”

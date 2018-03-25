@@ -251,6 +251,28 @@ struct SimplificationRuleEmptyConjunction
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleOneElementConjunction
+{
+	static constexpr const auto Description = "[conjunction of only F] === F";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::And>())
+			return SimplificationResult::Unchanged;
+
+		auto &and_ = formula.get<ast::And>();
+
+		if (and_.arguments.size() != 1)
+			return SimplificationResult::Unchanged;
+
+		formula = std::move(and_.arguments.front());
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct SimplificationRuleTrivialExists
 {
 	static constexpr const auto Description = "exists ... ([#true/#false]) === [#true/#false]";
@@ -278,24 +300,13 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	SimplificationRuleTrivialAssignmentInExists::apply(formula);
 	SimplificationRuleAssignmentInExists::apply(formula);
 
-	if (!exists.argument.is<ast::And>())
-		return;
-
-	auto &and_ = exists.argument.get<ast::And>();
-	auto &arguments = and_.arguments;
-
 	SimplificationRuleEmptyConjunction::apply(exists.argument);
 	SimplificationRuleTrivialExists::apply(formula);
-
-	// If the argument now is a conjunction with just one element, directly replace the input formula with the argument
-	if (arguments.size() == 1)
-		exists.argument = std::move(arguments.front());
+	SimplificationRuleOneElementConjunction::apply(exists.argument);
 
 	// If there are still remaining variables, simplification is over
 	if (!exists.variables.empty())
 		return;
-
-	assert(!arguments.empty());
 
 	// If there is more than one element in the conjunction, replace the input formula with the conjunction
 	formula = std::move(exists.argument);

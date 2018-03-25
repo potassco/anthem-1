@@ -317,6 +317,30 @@ struct SimplificationRuleTrivialExists
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleInWithPrimitiveArguments
+{
+	static constexpr const auto Description = "[primitive A] in [primitive B] === A = B";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::In>())
+			return SimplificationResult::Unchanged;
+
+		auto &in = formula.get<ast::In>();
+
+		assert(ast::isPrimitive(in.element));
+
+		if (!ast::isPrimitive(in.element) || !ast::isPrimitive(in.set))
+			return SimplificationResult::Unchanged;
+
+		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void simplify(ast::Exists &exists, ast::Formula &formula)
 {
 	SimplificationRuleTrivialAssignmentInExists::apply(formula);
@@ -341,14 +365,9 @@ struct SimplifyFormulaVisitor : public ast::RecursiveFormulaVisitor<SimplifyForm
 	}
 
 	// Simplify formulas of type “A in B” to “A = B” if A and B are primitive
-	static void accept(ast::In &in, ast::Formula &formula)
+	static void accept(ast::In &, ast::Formula &formula)
 	{
-		assert(ast::isPrimitive(in.element));
-
-		if (!ast::isPrimitive(in.element) || !ast::isPrimitive(in.set))
-			return;
-
-		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
+		SimplificationRuleInWithPrimitiveArguments::apply(formula);
 	}
 
 	// Do nothing for all other types of expressions

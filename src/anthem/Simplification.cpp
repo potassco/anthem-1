@@ -3,7 +3,7 @@
 #include <optional>
 
 #include <anthem/ASTCopy.h>
-#include <anthem/ASTVisitors.h>
+#include <anthem/SimplificationVisitors.h>
 
 namespace anthem
 {
@@ -97,14 +97,6 @@ struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<Rep
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-enum class SimplificationResult
-{
-	Simplified,
-	Unchanged,
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 template<class SimplificationRule>
 SimplificationResult simplify(ast::Formula &formula)
 {
@@ -113,13 +105,13 @@ SimplificationResult simplify(ast::Formula &formula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<class SimplificationRule, class... OtherSimplificationRules>
+template<class FirstSimplificationRule, class SecondSimplificationRule, class... OtherSimplificationRules>
 SimplificationResult simplify(ast::Formula &formula)
 {
-	if (SimplificationRule::apply(formula) == SimplificationResult::Simplified)
+	if (simplify<FirstSimplificationRule>(formula) == SimplificationResult::Simplified)
 		return SimplificationResult::Simplified;
 
-	return simplify<OtherSimplificationRules...>(formula);
+	return simplify<SecondSimplificationRule, OtherSimplificationRules...>(formula);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -341,39 +333,27 @@ struct SimplificationRuleInWithPrimitiveArguments
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void simplify(ast::Exists &exists, ast::Formula &formula)
-{
-	SimplificationRuleTrivialAssignmentInExists::apply(formula);
-	SimplificationRuleAssignmentInExists::apply(formula);
-
-	SimplificationRuleEmptyConjunction::apply(exists.argument);
-	SimplificationRuleTrivialExists::apply(formula);
-	SimplificationRuleOneElementConjunction::apply(exists.argument);
-
-	SimplificationRuleExistsWithoutQuantifiedVariables::apply(formula);
-}
+const auto simplifyWithDefaultRules =
+	simplify
+	<
+		SimplificationRuleTrivialAssignmentInExists,
+		SimplificationRuleAssignmentInExists,
+		SimplificationRuleEmptyConjunction,
+		SimplificationRuleTrivialExists,
+		SimplificationRuleOneElementConjunction,
+		SimplificationRuleExistsWithoutQuantifiedVariables,
+		SimplificationRuleInWithPrimitiveArguments
+	>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Performs the different simplification techniques
-struct SimplifyFormulaVisitor : public ast::RecursiveFormulaVisitor<SimplifyFormulaVisitor>
+struct SimplifyFormulaVisitor : public ast::FormulaSimplificationVisitor<SimplifyFormulaVisitor>
 {
-	// Forward exists statements to the dedicated simplification function
-	static void accept(ast::Exists &exists, ast::Formula &formula)
-	{
-		simplify(exists, formula);
-	}
-
-	// Simplify formulas of type “A in B” to “A = B” if A and B are primitive
-	static void accept(ast::In &, ast::Formula &formula)
-	{
-		SimplificationRuleInWithPrimitiveArguments::apply(formula);
-	}
-
 	// Do nothing for all other types of expressions
-	template<class T>
-	static void accept(T &, ast::Formula &)
+	static SimplificationResult accept(ast::Formula &formula)
 	{
+		return simplifyWithDefaultRules(formula);
 	}
 };
 
@@ -381,7 +361,7 @@ struct SimplifyFormulaVisitor : public ast::RecursiveFormulaVisitor<SimplifyForm
 
 void simplify(ast::Formula &formula)
 {
-	formula.accept(SimplifyFormulaVisitor(), formula);
+	while (formula.accept(SimplifyFormulaVisitor(), formula) == SimplificationResult::Simplified);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

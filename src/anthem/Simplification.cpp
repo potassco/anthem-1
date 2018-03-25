@@ -124,6 +124,28 @@ SimplificationResult simplify(ast::Formula &formula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleExistsWithoutQuantifiedVariables
+{
+	static constexpr const auto Description = "exists () (F) === F";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Exists>())
+			return SimplificationResult::Unchanged;
+
+		auto &exists = formula.get<ast::Exists>();
+
+		if (!exists.variables.empty())
+			return SimplificationResult::Unchanged;
+
+		formula = std::move(exists.argument);
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct SimplificationRuleTrivialAssignmentInExists
 {
 	static constexpr const auto Description = "exists X (X = Y) === #true";
@@ -304,12 +326,7 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 	SimplificationRuleTrivialExists::apply(formula);
 	SimplificationRuleOneElementConjunction::apply(exists.argument);
 
-	// If there are still remaining variables, simplification is over
-	if (!exists.variables.empty())
-		return;
-
-	// If there is more than one element in the conjunction, replace the input formula with the conjunction
-	formula = std::move(exists.argument);
+	SimplificationRuleExistsWithoutQuantifiedVariables::apply(formula);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

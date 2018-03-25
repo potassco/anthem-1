@@ -97,18 +97,51 @@ struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<Rep
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Simplifies exists statements by using the equivalence “exists X (X = t and F(X))” == “F(t)”
-// The exists statement has to be of the form “exists <variables> <conjunction>”
-void simplify(ast::Exists &exists, ast::Formula &formula)
+enum class SimplificationResult
 {
-	// Simplify formulas like “exists X (X = Y)” to “#true”
-	// TODO: check that this covers all cases
-	if (exists.argument.is<ast::Comparison>())
+	Simplified,
+	Unchanged,
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<class SimplificationRule>
+SimplificationResult simplify(ast::Formula &formula)
+{
+	return SimplificationRule::apply(formula);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<class SimplificationRule, class... OtherSimplificationRules>
+SimplificationResult simplify(ast::Formula &formula)
+{
+	if (SimplificationRule::apply(formula) == SimplificationResult::Simplified)
+		return SimplificationResult::Simplified;
+
+	return simplify<OtherSimplificationRules...>(formula);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct SimplificationRuleTrivialExists
+{
+	static constexpr const auto Description = "exists X (X = Y) === #true";
+
+	static SimplificationResult apply(ast::Formula &formula)
 	{
+		if (!formula.is<ast::Exists>())
+			return SimplificationResult::Unchanged;
+
+		const auto &exists = formula.get<ast::Exists>();
+
+		if (!exists.argument.is<ast::Comparison>())
+			return SimplificationResult::Unchanged;
+
 		const auto &comparison = exists.argument.get<ast::Comparison>();
 
 		if (comparison.operator_ != ast::Comparison::Operator::Equal)
-			return;
+			return SimplificationResult::Unchanged;
 
 		const auto matchingAssignment = std::find_if(exists.variables.cbegin(), exists.variables.cend(),
 			[&](const auto &variableDeclaration)
@@ -117,11 +150,22 @@ void simplify(ast::Exists &exists, ast::Formula &formula)
 					|| matchesVariableDeclaration(comparison.right, *variableDeclaration);
 			});
 
-		if (matchingAssignment != exists.variables.cend())
-			formula = ast::Formula::make<ast::Boolean>(true);
+		if (matchingAssignment == exists.variables.cend())
+			return SimplificationResult::Unchanged;
 
-		return;
+		formula = ast::Formula::make<ast::Boolean>(true);
+
+		return SimplificationResult::Simplified;
 	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Simplifies exists statements by using the equivalence “exists X (X = t and F(X))” == “F(t)”
+// The exists statement has to be of the form “exists <variables> <conjunction>”
+void simplify(ast::Exists &exists, ast::Formula &formula)
+{
+	SimplificationRuleTrivialExists::apply(formula);
 
 	if (!exists.argument.is<ast::And>())
 		return;

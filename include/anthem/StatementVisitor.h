@@ -176,12 +176,51 @@ struct StatementVisitor
 
 		context.logger.log(output::Priority::Debug, statement.location) << "showing “" << signature.name() << "/" << signature.arity() << "”";
 
-		context.visiblePredicateSignatures.value().emplace_back(std::string(signature.name()), signature.arity());
+		auto predicateSignature = ast::PredicateSignature{std::string(signature.name()), signature.arity()};
+		context.visiblePredicateSignatures.value().emplace_back(PredicateSignatureMeta{std::move(predicateSignature)});
 	}
 
 	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &)
 	{
 		throw LogicException(statement.location, "only #show statements for atoms (not terms) are supported currently");
+	}
+
+	void visit(const Clingo::AST::External &external, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
+	{
+		const auto fail =
+			[&]()
+			{
+				throw LogicException(statement.location, "only #external declarations of the form “#external <predicate name>(<arity>).” supported");
+			};
+
+		if (!external.body.empty())
+			fail();
+
+		if (!external.atom.data.is<Clingo::AST::Function>())
+			fail();
+
+		const auto &predicate = external.atom.data.get<Clingo::AST::Function>();
+
+		if (predicate.arguments.size() != 1)
+			fail();
+
+		const auto &arityArgument = predicate.arguments.front();
+
+		if (!arityArgument.data.is<Clingo::Symbol>())
+			fail();
+
+		const auto &aritySymbol = arityArgument.data.get<Clingo::Symbol>();
+
+		if (aritySymbol.type() != Clingo::SymbolType::Number)
+			fail();
+
+		const size_t arity = arityArgument.data.get<Clingo::Symbol>().number();
+
+		if (!context.externalPredicateSignatures)
+			context.externalPredicateSignatures.emplace();
+
+		auto predicateSignature = ast::PredicateSignature{std::string(predicate.name), arity};
+		context.externalPredicateSignatures->emplace_back(PredicateSignatureMeta{std::move(predicateSignature)});
 	}
 
 	template<class T>

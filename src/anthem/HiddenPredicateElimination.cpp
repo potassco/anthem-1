@@ -194,41 +194,40 @@ void eliminateHiddenPredicates(const std::vector<ast::PredicateSignature> &predi
 		return;
 	}
 
-	const auto &visiblePredicateSignatures = context.visiblePredicateSignatures.value();
-
-	// Check for undeclared predicates that are requested to be shown
-	for (const auto &visiblePredicateSignature : visiblePredicateSignatures)
-	{
-		const auto matchesPredicateSignature =
-			[&](const auto &predicateSignature)
-			{
-				return ast::matches(predicateSignature, visiblePredicateSignature);
-			};
-
-		const auto matchingPredicateSignature =
-			std::find_if(predicateSignatures.cbegin(), predicateSignatures.cend(), matchesPredicateSignature);
-
-		if (matchingPredicateSignature == predicateSignatures.cend())
-			context.logger.log(output::Priority::Warning) << "cannot show undeclared predicate “" << visiblePredicateSignature.name << "/" << visiblePredicateSignature.arity <<"”";
-	}
+	auto &visiblePredicateSignatures = context.visiblePredicateSignatures.value();
 
 	// Replace all occurrences of hidden predicates
 	for (size_t i = 0; i < predicateSignatures.size(); i++)
 	{
 		auto &predicateSignature = predicateSignatures[i];
 
-		const auto matchesVisiblePredicateSignature =
-			[&](const auto &visiblePredicateSignature)
+		const auto matchesPredicateSignature =
+			[&](const auto &otherPredicateSignature)
 			{
-				return ast::matches(predicateSignature, visiblePredicateSignature);
+				return ast::matches(predicateSignature, otherPredicateSignature.predicateSignature);
 			};
 
-		const auto matchingPredicateSignature =
-			std::find_if(visiblePredicateSignatures.cbegin(), visiblePredicateSignatures.cend(), matchesVisiblePredicateSignature);
+		const auto matchingVisiblePredicateSignature =
+			std::find_if(visiblePredicateSignatures.begin(), visiblePredicateSignatures.end(), matchesPredicateSignature);
 
 		// If the predicate ought to be visible, don’t eliminate it
-		if (matchingPredicateSignature != visiblePredicateSignatures.cend())
+		if (matchingVisiblePredicateSignature != visiblePredicateSignatures.end())
+		{
+			matchingVisiblePredicateSignature->used = true;
 			continue;
+		}
+
+		// Check that the predicate is not declared #external
+		if (context.externalPredicateSignatures)
+		{
+			const auto &externalPredicateSignatures = context.externalPredicateSignatures.value();
+
+			const auto matchingExternalPredicateSignature =
+				std::find_if(externalPredicateSignatures.cbegin(), externalPredicateSignatures.cend(), matchesPredicateSignature);
+
+			if (matchingExternalPredicateSignature != externalPredicateSignatures.cend())
+				continue;
+		}
 
 		context.logger.log(output::Priority::Debug) << "eliminating “" << predicateSignature.name << "/" << predicateSignature.arity << "”";
 

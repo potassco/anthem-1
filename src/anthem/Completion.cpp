@@ -165,7 +165,7 @@ std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormu
 
 	// Get a list of all predicates
 	for (const auto &scopedFormula : scopedFormulas)
-		ast::collectPredicateSignatures(scopedFormula.formula, predicateSignatures);
+		ast::collectPredicateSignatures(scopedFormula.formula, predicateSignatures, context);
 
 	std::sort(predicateSignatures.begin(), predicateSignatures.end(),
 		[](const auto &lhs, const auto &rhs)

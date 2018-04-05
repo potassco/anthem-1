@@ -16,6 +16,14 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct PredicateSignatureMeta
+{
+	ast::PredicateSignature predicateSignature;
+	bool used{false};
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct Context
 {
 	Context() = default;
@@ -30,7 +38,8 @@ struct Context
 	bool performSimplification = false;
 	bool performCompletion = false;
 
-	std::optional<std::vector<ast::PredicateSignature>> visiblePredicateSignatures;
+	std::optional<std::vector<PredicateSignatureMeta>> visiblePredicateSignatures;
+	std::optional<std::vector<PredicateSignatureMeta>> externalPredicateSignatures;
 
 	ast::ParenthesisStyle parenthesisStyle = ast::ParenthesisStyle::Normal;
 };

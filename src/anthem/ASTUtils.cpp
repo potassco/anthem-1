@@ -194,7 +194,7 @@ struct CollectFreeVariablesVisitor
 
 struct CollectPredicateSignaturesVisitor : public RecursiveFormulaVisitor<CollectPredicateSignaturesVisitor>
 {
-	static void accept(const Predicate &predicate, const Formula &, std::vector<PredicateSignature> &predicateSignatures)
+	static void accept(const Predicate &predicate, const Formula &, std::vector<PredicateSignature> &predicateSignatures, Context &context)
 	{
 		const auto predicateSignatureMatches =
 			[&predicate](const auto &predicateSignature)
@@ -206,12 +206,35 @@ struct CollectPredicateSignaturesVisitor : public RecursiveFormulaVisitor<Collec
 			return;
 
 		// TODO: avoid copies
-		predicateSignatures.emplace_back(std::string(predicate.name), predicate.arity());
+		auto predicateSignature = PredicateSignature(std::string(predicate.name), predicate.arity());
+
+		// Ignore predicates that are declared #external
+		if (context.externalPredicateSignatures)
+		{
+			const auto matchesPredicateSignature =
+				[&](const auto &otherPredicateSignature)
+				{
+					return ast::matches(predicateSignature, otherPredicateSignature.predicateSignature);
+				};
+
+			auto &externalPredicateSignatures = context.externalPredicateSignatures.value();
+
+			const auto matchingExternalPredicateSignature =
+				std::find_if(externalPredicateSignatures.begin(), externalPredicateSignatures.end(), matchesPredicateSignature);
+
+			if (matchingExternalPredicateSignature != externalPredicateSignatures.end())
+			{
+				matchingExternalPredicateSignature->used = true;
+				return;
+			}
+		}
+
+		predicateSignatures.emplace_back(std::move(predicateSignature));
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(const T &, const Formula &, std::vector<PredicateSignature> &)
+	static void accept(const T &, const Formula &, std::vector<PredicateSignature> &, const Context &)
 	{
 	}
 };
@@ -240,10 +263,10 @@ bool matches(const PredicateSignature &lhs, const PredicateSignature &rhs)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: remove const_cast
-void collectPredicateSignatures(const Formula &formula, std::vector<PredicateSignature> &predicateSignatures)
+void collectPredicateSignatures(const Formula &formula, std::vector<PredicateSignature> &predicateSignatures, Context &context)
 {
 	auto &formulaMutable = const_cast<Formula &>(formula);
-	formulaMutable.accept(CollectPredicateSignaturesVisitor(), formulaMutable, predicateSignatures);
+	formulaMutable.accept(CollectPredicateSignaturesVisitor(), formulaMutable, predicateSignatures, context);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

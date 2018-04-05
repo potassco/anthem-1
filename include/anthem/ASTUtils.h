@@ -5,6 +5,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTVisitors.h>
+#include <anthem/Context.h>
 
 namespace anthem
 {
@@ -40,7 +41,7 @@ class VariableStack
 bool matches(const Predicate &lhs, const Predicate &rhs);
 bool matches(const Predicate &predicate, const PredicateSignature &signature);
 bool matches(const PredicateSignature &lhs, const PredicateSignature &rhs);
-void collectPredicateSignatures(const Formula &formula, std::vector<PredicateSignature> &predicateSignatures);
+void collectPredicateSignatures(const Formula &formula, std::vector<PredicateSignature> &predicateSignatures, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Replacing Variables

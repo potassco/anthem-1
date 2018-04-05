@@ -70,6 +70,9 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		if (context.visiblePredicateSignatures)
 			context.logger.log(output::Priority::Warning) << "#show statements are ignored because completion is not enabled";
 
+		if (context.externalPredicateSignatures)
+			context.logger.log(output::Priority::Warning) << "#external statements are ignored because completion is not enabled";
+
 		for (const auto &scopedFormula : scopedFormulas)
 		{
 			ast::print(context.logger.outputStream(), scopedFormula.formula, printContext);
@@ -81,6 +84,26 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	// Perform completion
 	auto completedFormulas = complete(std::move(scopedFormulas), context);
+
+	// Check for #show statements with undeclared predicates
+	if (context.visiblePredicateSignatures)
+		for (const auto &predicateSignature : context.visiblePredicateSignatures.value())
+			if (!predicateSignature.used)
+				context.logger.log(output::Priority::Warning)
+					<< "#show declaration of “"
+					<< predicateSignature.predicateSignature.name
+					<< "/" << predicateSignature.predicateSignature.arity
+					<< "” does not match any eligible predicate";
+
+	// Check for #external statements with undeclared predicates
+	if (context.externalPredicateSignatures)
+		for (const auto &predicateSignature : context.externalPredicateSignatures.value())
+			if (!predicateSignature.used)
+				context.logger.log(output::Priority::Warning)
+					<< "#external declaration of “"
+					<< predicateSignature.predicateSignature.name
+					<< "/" << predicateSignature.predicateSignature.arity
+					<< "” does not match any eligible predicate";
 
 	// Simplify output if specified
 	if (context.performSimplification)

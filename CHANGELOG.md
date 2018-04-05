@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+### Features
+
+* support for declaring placeholders with the `#external` directive
+
 ### Internal
 
 * drops Boost dependency in favor of the header-only command-line option library [cxxopts](https://github.com/jarro2783/cxxopts)

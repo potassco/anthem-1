@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+### Internal
+
+* drops Boost dependency in favor of the header-only command-line option library [cxxopts](https://github.com/jarro2783/cxxopts)
+
 ## 0.1.6 (2017-06-12)
 
 ### Features

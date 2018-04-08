@@ -23,6 +23,12 @@ ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOpera
 {
 	switch (binaryOperator)
 	{
+		case Clingo::AST::BinaryOperator::XOr:
+			throw TranslationException(term.location, "binary operation “xor” currently unsupported");
+		case Clingo::AST::BinaryOperator::Or:
+			throw TranslationException(term.location, "binary operation “or” currently unsupported");
+		case Clingo::AST::BinaryOperator::And:
+			throw TranslationException(term.location, "binary operation “and” currently unsupported");
 		case Clingo::AST::BinaryOperator::Plus:
 			return ast::BinaryOperation::Operator::Plus;
 		case Clingo::AST::BinaryOperator::Minus:
@@ -33,11 +39,11 @@ ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOpera
 			return ast::BinaryOperation::Operator::Division;
 		case Clingo::AST::BinaryOperator::Modulo:
 			return ast::BinaryOperation::Operator::Modulo;
-		default:
-			throw TranslationException(term.location, "“binary operation” terms currently unsupported");
+		case Clingo::AST::BinaryOperator::Power:
+			return ast::BinaryOperation::Operator::Power;
 	}
 
-	return ast::BinaryOperation::Operator::Plus;
+	throw TranslationException(term.location, "unknown binary operation");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

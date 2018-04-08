@@ -32,7 +32,8 @@ struct BinaryOperation
 		Minus,
 		Multiplication,
 		Division,
-		Modulo
+		Modulo,
+		Power
 	};
 
 	explicit BinaryOperation(Operator operator_, Term &&left, Term &&right)

@@ -296,4 +296,12 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		CHECK(output.str() == "((V1 in U1 and V2 in U2 and exists X1, X2 (X1 in U3 and X2 in U4 and q(X1, X2))) -> p(V1, V2))\n");
 	}
+
+	SECTION("exponentiation operator")
+	{
+		input << "p(N, N ** N) :- N = 1..n.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "((V1 in U1 and V2 in (U1 ** U1) and exists X1, X2 (X1 in U1 and X2 in 1..n and X1 = X2)) -> p(V1, V2))\n");
+	}
 }

@@ -85,6 +85,8 @@ inline output::ColorStream &print(output::ColorStream &stream, BinaryOperation::
 			return (stream << output::Operator("/"));
 		case BinaryOperation::Operator::Modulo:
 			return (stream << output::Operator("%"));
+		case BinaryOperation::Operator::Power:
+			return (stream << output::Operator("**"));
 	}
 
 	return stream;

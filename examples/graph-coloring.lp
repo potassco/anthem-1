@@ -1,12 +1,9 @@
-colored(V, red) :- vertex(V), not colored(V, green), not colored(V, blue).
-colored(V, green) :- vertex(V), not colored(V, red), not colored(V, blue).
-colored(V, blue) :- vertex(V), not colored(V, red), not colored(V, green).
+#external color(1).
+#external edge(2).
+#external vertex(1).
+#show color/2.
 
-:- edge(V1, V2), colored(V1, C), colored(V2, C).
-
-vertex(a).
-vertex(b).
-vertex(c).
-
-edge(a, b).
-edge(a, c).
+{color(V,C)} :- vertex(V), color(C).
+covered(V) :- color(V, _).
+:- vertex(V), not covered(V).
+:- color(V1,C), color(V2,C), edge(V1,V2).

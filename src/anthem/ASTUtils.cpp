@@ -59,7 +59,7 @@ bool VariableStack::contains(const VariableDeclaration &variableDeclaration) con
 		};
 
 	const auto layerContainsVariableDeclaration =
-		[&variableDeclaration, &variableDeclarationMatches](const auto &layer)
+		[&variableDeclarationMatches](const auto &layer)
 		{
 			return (std::find_if(layer->cbegin(), layer->cend(), variableDeclarationMatches) != layer->cend());
 		};

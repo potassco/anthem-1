@@ -379,9 +379,34 @@ struct SimplificationRuleSubsumptionInBiconditionals
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleDoubleNegation
+{
+	static constexpr const auto Description = "not not F === F";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Not>())
+			return SimplificationResult::Unchanged;
+
+		auto &not_ = formula.get<ast::Not>();
+
+		if (!not_.argument.is<ast::Not>())
+			return SimplificationResult::Unchanged;
+
+		auto &notNot = not_.argument.get<ast::Not>();
+
+		formula = std::move(notNot.argument);
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto simplifyWithDefaultRules =
 	simplify
 	<
+		SimplificationRuleDoubleNegation,
 		SimplificationRuleTrivialAssignmentInExists,
 		SimplificationRuleAssignmentInExists,
 		SimplificationRuleEmptyConjunction,

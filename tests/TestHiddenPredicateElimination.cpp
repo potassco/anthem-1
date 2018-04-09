@@ -103,9 +103,10 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"#show a/1.";
 		anthem::translate("input", input, context);
 
+		// TODO: simplify further
 		CHECK(output.str() ==
 			"forall V1 (a(V1) <-> not d(V1))\n"
-			"forall V2 (d(V2) <-> not not d(V2))\n"
+			"forall V2 (d(V2) <-> d(V2))\n"
 			"forall V3 (e(V3) <-> e(V3))\n");
 	}
 

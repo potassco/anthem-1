@@ -168,8 +168,8 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 		CHECK(output.str() ==
 			"(s -> not #false)\n"
 			"(t -> not #false)\n"
-			"not (s and not t)\n"
-			"not (not #false and not #false and #false)\n");
+			"(not s or t)\n"
+			"(#false or #false or not #false)\n");
 	}
 
 	SECTION("predicate with more than one argument is hidden correctly")

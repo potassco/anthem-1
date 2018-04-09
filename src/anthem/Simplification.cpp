@@ -403,6 +403,33 @@ struct SimplificationRuleDoubleNegation
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleDeMorganForConjunctions
+{
+	static constexpr const auto Description = "(not (F and G)) === (not F or not G)";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Not>())
+			return SimplificationResult::Unchanged;
+
+		auto &not_ = formula.get<ast::Not>();
+
+		if (!not_.argument.is<ast::And>())
+			return SimplificationResult::Unchanged;
+
+		auto &and_ = not_.argument.get<ast::And>();
+
+		for (auto &argument : and_.arguments)
+			argument = ast::Formula::make<ast::Not>(std::move(argument));
+
+		formula = ast::Formula::make<ast::Or>(std::move(and_.arguments));
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto simplifyWithDefaultRules =
 	simplify
 	<
@@ -414,7 +441,8 @@ const auto simplifyWithDefaultRules =
 		SimplificationRuleOneElementConjunction,
 		SimplificationRuleExistsWithoutQuantifiedVariables,
 		SimplificationRuleInWithPrimitiveArguments,
-		SimplificationRuleSubsumptionInBiconditionals
+		SimplificationRuleSubsumptionInBiconditionals,
+		SimplificationRuleDeMorganForConjunctions
 	>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

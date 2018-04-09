@@ -56,7 +56,7 @@ TEST_CASE("[placeholders] Programs with placeholders are correctly completed", "
 
 		CHECK(output.str() ==
 			"forall V1, V2 (color(V1, V2) -> (vertex(V1) and color(V2)))\n"
-			"forall U1 not (vertex(U1) and not exists U2 color(U1, U2))\n"
-			"forall U3, U4, U5 not (color(U3, U4) and color(U5, U4) and edge(U3, U5))\n");
+			"forall U1 (not vertex(U1) or exists U2 color(U1, U2))\n"
+			"forall U3, U4, U5 (not color(U3, U4) or not color(U5, U4) or not edge(U3, U5))\n");
 	}
 }

@@ -430,6 +430,42 @@ struct SimplificationRuleDeMorganForConjunctions
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleImplicationFromDisjunction
+{
+	static constexpr const auto Description = "(not F or G) === (F -> G)";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Or>())
+			return SimplificationResult::Unchanged;
+
+		auto &or_ = formula.get<ast::Or>();
+
+		if (or_.arguments.size() != 2)
+			return SimplificationResult::Unchanged;
+
+		const auto leftIsNot = or_.arguments[0].is<ast::Not>();
+		const auto rightIsNot = or_.arguments[1].is<ast::Not>();
+
+		if (leftIsNot == rightIsNot)
+			return SimplificationResult::Unchanged;
+
+		auto &negativeSide = leftIsNot ? or_.arguments[0] : or_.arguments[1];
+		auto &positiveSide = leftIsNot ? or_.arguments[1] : or_.arguments[0];
+
+		assert(negativeSide.is<ast::Not>());
+		assert(!positiveSide.is<ast::Not>());
+
+		auto &negativeSideArgument = negativeSide.get<ast::Not>().argument;
+
+		formula = ast::Formula::make<ast::Implies>(std::move(negativeSideArgument), std::move(positiveSide));
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto simplifyWithDefaultRules =
 	simplify
 	<
@@ -442,7 +478,8 @@ const auto simplifyWithDefaultRules =
 		SimplificationRuleExistsWithoutQuantifiedVariables,
 		SimplificationRuleInWithPrimitiveArguments,
 		SimplificationRuleSubsumptionInBiconditionals,
-		SimplificationRuleDeMorganForConjunctions
+		SimplificationRuleDeMorganForConjunctions,
+		SimplificationRuleImplicationFromDisjunction
 	>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

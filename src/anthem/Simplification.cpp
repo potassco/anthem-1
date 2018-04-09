@@ -3,6 +3,8 @@
 #include <optional>
 
 #include <anthem/ASTCopy.h>
+#include <anthem/Equality.h>
+#include <anthem/output/AST.h>
 #include <anthem/SimplificationVisitors.h>
 
 namespace anthem
@@ -333,6 +335,50 @@ struct SimplificationRuleInWithPrimitiveArguments
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleSubsumptionInBiconditionals
+{
+	static constexpr const auto Description = "(F <-> (F and G)) === (F -> G)";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Biconditional>())
+			return SimplificationResult::Unchanged;
+
+		auto &biconditional = formula.get<ast::Biconditional>();
+
+		const auto leftIsPredicate = biconditional.left.is<ast::Predicate>();
+		const auto rightIsPredicate = biconditional.right.is<ast::Predicate>();
+
+		const auto leftIsAnd = biconditional.left.is<ast::And>();
+		const auto rightIsAnd = biconditional.right.is<ast::And>();
+
+		if (!(leftIsPredicate && rightIsAnd) && !(rightIsPredicate && leftIsAnd))
+			return SimplificationResult::Unchanged;
+
+		auto &predicateSide = (leftIsPredicate ? biconditional.left : biconditional.right);
+		auto &andSide = (leftIsPredicate ? biconditional.right : biconditional.left);
+		auto &and_ = andSide.get<ast::And>();
+
+		const auto matchingPredicate =
+			std::find_if(and_.arguments.cbegin(), and_.arguments.cend(),
+			[&](const auto &argument)
+			{
+				return (ast::equal(predicateSide, argument) == ast::Tristate::True);
+			});
+
+		if (matchingPredicate == and_.arguments.cend())
+			return SimplificationResult::Unchanged;
+
+		and_.arguments.erase(matchingPredicate);
+
+		formula = ast::Formula::make<ast::Implies>(std::move(predicateSide), std::move(andSide));
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto simplifyWithDefaultRules =
 	simplify
 	<
@@ -342,7 +388,8 @@ const auto simplifyWithDefaultRules =
 		SimplificationRuleTrivialExists,
 		SimplificationRuleOneElementConjunction,
 		SimplificationRuleExistsWithoutQuantifiedVariables,
-		SimplificationRuleInWithPrimitiveArguments
+		SimplificationRuleInWithPrimitiveArguments,
+		SimplificationRuleSubsumptionInBiconditionals
 	>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

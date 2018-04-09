@@ -164,10 +164,9 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"#show t/0.";
 		anthem::translate("input", input, context);
 
-		// TODO: simplify further
 		CHECK(output.str() ==
-			"(s <-> (not #false and s))\n"
-			"(t <-> (not #false and t))\n"
+			"(s -> not #false)\n"
+			"(t -> not #false)\n"
 			"not (s and not t)\n"
 			"not (not #false and not #false and #false)\n");
 	}

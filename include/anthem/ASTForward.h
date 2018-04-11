@@ -37,6 +37,7 @@ struct Or;
 struct Predicate;
 struct SpecialInteger;
 struct String;
+struct UnaryOperation;
 struct Variable;
 struct VariableDeclaration;
 using VariableDeclarationPointer = std::unique_ptr<VariableDeclaration>;
@@ -68,6 +69,7 @@ using Term = Clingo::Variant<
 	Interval,
 	SpecialInteger,
 	String,
+	UnaryOperation,
 	Variable>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

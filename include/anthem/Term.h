@@ -48,6 +48,23 @@ ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOpera
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+ast::UnaryOperation::Operator translate(Clingo::AST::UnaryOperator unaryOperator, const Clingo::AST::Term &term)
+{
+	switch (unaryOperator)
+	{
+		case Clingo::AST::UnaryOperator::Absolute:
+			return ast::UnaryOperation::Operator::Absolute;
+		case Clingo::AST::UnaryOperator::Minus:
+			throw TranslationException(term.location, "binary operation “minus” currently unsupported");
+		case Clingo::AST::UnaryOperator::Negation:
+			throw TranslationException(term.location, "binary operation “negation” currently unsupported");
+	}
+
+	throw TranslationException(term.location, "unknown unary operation");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,12 +123,6 @@ struct TermTranslateVisitor
 		return ast::Term::make<ast::Variable>(ruleContext.freeVariables.back().get());
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &term, RuleContext &, const ast::VariableStack &)
-	{
-		throw TranslationException(term.location, "“unary operation” terms currently unsupported");
-		return std::nullopt;
-	}
-
 	std::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translate(binaryOperation.binary_operator, term);
@@ -119,6 +130,14 @@ struct TermTranslateVisitor
 		auto right = translate(binaryOperation.right, ruleContext, variableStack);
 
 		return ast::Term::make<ast::BinaryOperation>(operator_, std::move(left), std::move(right));
+	}
+
+	std::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	{
+		const auto operator_ = translate(unaryOperation.unary_operator, term);
+		auto argument = translate(unaryOperation.argument, ruleContext, variableStack);
+
+		return ast::Term::make<ast::UnaryOperation>(operator_, std::move(argument));
 	}
 
 	std::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, const ast::VariableStack &variableStack)

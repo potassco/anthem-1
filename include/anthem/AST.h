@@ -293,6 +293,30 @@ struct String
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct UnaryOperation
+{
+	enum class Operator
+	{
+		Absolute
+	};
+
+	explicit UnaryOperation(Operator operator_, Term &&argument)
+	:	operator_{operator_},
+		argument{std::move(argument)}
+	{
+	}
+
+	UnaryOperation(const UnaryOperation &other) = delete;
+	UnaryOperation &operator=(const UnaryOperation &other) = delete;
+	UnaryOperation(UnaryOperation &&other) noexcept = default;
+	UnaryOperation &operator=(UnaryOperation &&other) noexcept = default;
+
+	Operator operator_;
+	Term argument;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct Variable
 {
 	explicit Variable(VariableDeclaration *declaration)

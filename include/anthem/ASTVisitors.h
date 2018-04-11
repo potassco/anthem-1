@@ -166,6 +166,14 @@ struct RecursiveTermVisitor
 	}
 
 	template <class... Arguments>
+	ReturnType visit(UnaryOperation &unaryOperation, Term &term, Arguments &&... arguments)
+	{
+		unaryOperation.argument.accept(*this, unaryOperation.argument, std::forward<Arguments>(arguments)...);
+
+		return T::accept(unaryOperation, term, std::forward<Arguments>(arguments)...);
+	}
+
+	template <class... Arguments>
 	ReturnType visit(Variable &variable, Term &term, Arguments &&... arguments)
 	{
 		return T::accept(variable, term, std::forward<Arguments>(arguments)...);

@@ -382,6 +382,19 @@ struct TermEqualityVisitor
 			: Tristate::False;
 	}
 
+	Tristate visit(const UnaryOperation &unaryOperation, const Term &otherTerm)
+	{
+		if (!otherTerm.is<UnaryOperation>())
+			return Tristate::Unknown;
+
+		const auto &otherUnaryOperation = otherTerm.get<UnaryOperation>();
+
+		if (unaryOperation.operator_ != otherUnaryOperation.operator_)
+			return Tristate::Unknown;
+
+		return equal(unaryOperation.argument, otherUnaryOperation.argument);
+	}
+
 	Tristate visit(const Variable &variable, const Term &otherTerm)
 	{
 		if (!otherTerm.is<Variable>())

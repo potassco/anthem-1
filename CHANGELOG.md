@@ -5,7 +5,7 @@
 ### Features
 
 * more and advanced simplification rules
-* adds support for exponentiation operator
+* adds support for exponentiation (power) and modulus (absolute value)
 * new examples: prime numbers, permutation generator, and graph coloring (extended)
 
 ## 0.1.7 (2018-04-08)

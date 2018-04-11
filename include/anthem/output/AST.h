@@ -53,6 +53,7 @@ output::ColorStream &print(output::ColorStream &stream, const Interval &interval
 output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext);
 output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &printContext);
 output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const UnaryOperation &unaryOperation, PrintContext &printContext);
 output::ColorStream &print(output::ColorStream &stream, const Variable &variable, PrintContext &printContext);
 output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext);
 
@@ -278,6 +279,29 @@ inline output::ColorStream &print(output::ColorStream &stream, const SpecialInte
 inline output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &)
 {
 	return (stream << output::String(string.text.c_str()));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline output::ColorStream &print(output::ColorStream &stream, const UnaryOperation &unaryOperation, PrintContext &printContext)
+{
+	switch (unaryOperation.operator_)
+	{
+		case UnaryOperation::Operator::Absolute:
+			stream << "|";
+			break;
+	}
+
+	print(stream, unaryOperation.argument, printContext);
+
+	switch (unaryOperation.operator_)
+	{
+		case UnaryOperation::Operator::Absolute:
+			stream << "|";
+			break;
+	}
+
+	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

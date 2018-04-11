@@ -178,6 +178,11 @@ struct CollectFreeVariablesVisitor
 	{
 	}
 
+	void visit(UnaryOperation &unaryOperation, VariableStack &variableStack, std::vector<VariableDeclaration *> &freeVariables)
+	{
+		unaryOperation.argument.accept(*this, variableStack, freeVariables);
+	}
+
 	void visit(Variable &variable, VariableStack &variableStack, std::vector<VariableDeclaration *> &freeVariables)
 	{
 		if (variableStack.contains(*variable.declaration))

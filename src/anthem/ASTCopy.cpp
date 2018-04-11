@@ -159,6 +159,13 @@ String prepareCopy(const String &other)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+UnaryOperation prepareCopy(const UnaryOperation &other)
+{
+	return UnaryOperation(other.operator_, prepareCopy(other.argument));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 Variable prepareCopy(const Variable &other)
 {
 	return Variable(other.declaration);
@@ -318,6 +325,12 @@ struct FixDanglingVariablesInTermVisitor
 	template <class... Arguments>
 	void visit(String &, Arguments &&...)
 	{
+	}
+
+	template <class... Arguments>
+	void visit(UnaryOperation &unaryOperation, Arguments &&... arguments)
+	{
+		unaryOperation.argument.accept(*this, std::forward<Arguments>(arguments)...);
 	}
 
 	void visit(Variable &variable, ScopedFormula &scopedFormula, VariableStack &variableStack,

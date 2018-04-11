@@ -176,4 +176,12 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		CHECK(output.str() ==
 			"forall V1, V2, V3 (p(V1, V2, V3) <-> #true)\n");
 	}
+
+	SECTION("negated comparisons")
+	{
+		input << ":- color(V, C1), color(V, C2), C1 != C2.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "forall V1, V2 not color(V1, V2)\nforall U1, U2, U3 (not color(U1, U2) or not color(U1, U3) or U2 = U3)\n");
+	}
 }

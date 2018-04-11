@@ -466,6 +466,52 @@ struct SimplificationRuleImplicationFromDisjunction
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleNegatedComparison
+{
+	static constexpr const auto Description = "(not F [comparison] G) === (F [negated comparison] G)";
+
+	static SimplificationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::Not>())
+			return SimplificationResult::Unchanged;
+
+		auto &not_ = formula.get<ast::Not>();
+
+		if (!not_.argument.is<ast::Comparison>())
+			return SimplificationResult::Unchanged;
+
+		auto &comparison = not_.argument.get<ast::Comparison>();
+
+		switch (comparison.operator_)
+		{
+			case ast::Comparison::Operator::GreaterThan:
+				comparison.operator_ = ast::Comparison::Operator::LessEqual;
+				break;
+			case ast::Comparison::Operator::LessThan:
+				comparison.operator_ = ast::Comparison::Operator::GreaterEqual;
+				break;
+			case ast::Comparison::Operator::LessEqual:
+				comparison.operator_ = ast::Comparison::Operator::GreaterThan;
+				break;
+			case ast::Comparison::Operator::GreaterEqual:
+				comparison.operator_ = ast::Comparison::Operator::LessThan;
+				break;
+			case ast::Comparison::Operator::NotEqual:
+				comparison.operator_ = ast::Comparison::Operator::Equal;
+				break;
+			case ast::Comparison::Operator::Equal:
+				comparison.operator_ = ast::Comparison::Operator::NotEqual;
+				break;
+		}
+
+		formula = std::move(comparison);
+
+		return SimplificationResult::Simplified;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto simplifyWithDefaultRules =
 	simplify
 	<
@@ -479,7 +525,8 @@ const auto simplifyWithDefaultRules =
 		SimplificationRuleInWithPrimitiveArguments,
 		SimplificationRuleSubsumptionInBiconditionals,
 		SimplificationRuleDeMorganForConjunctions,
-		SimplificationRuleImplicationFromDisjunction
+		SimplificationRuleImplicationFromDisjunction,
+		SimplificationRuleNegatedComparison
 	>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

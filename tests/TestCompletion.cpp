@@ -190,6 +190,6 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		input << "adj(X, Y) :- X = 1..n, Y = 1..n, |X - Y| = 1.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "forall V1, V2 (adj(V1, V2) <-> (V1 in 1..n and V2 in 1..n and |(V1 - V2)| = 1))\n");
+		CHECK(output.str() == "forall V1, V2 (adj(V1, V2) <-> (V1 in 1..n and V2 in 1..n and |V1 - V2| = 1))\n");
 	}
 }

@@ -41,38 +41,39 @@ struct PrintContext
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &print(output::ColorStream &stream, const BinaryOperation::Operator operator_, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const UnaryOperation &unaryOperation, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Variable &variable, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const BinaryOperation::Operator operator_, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, Comparison::Operator operator_, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const UnaryOperation &unaryOperation, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Variable &variable, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext, bool omitParentheses = false);
 
-output::ColorStream &print(output::ColorStream &stream, const And &and_, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Biconditional &biconditional, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Implies &implies, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Or &or_, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const And &and_, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Biconditional &biconditional, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Implies &implies, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Or &or_, PrintContext &printContext, bool omitParentheses = false);
 
-output::ColorStream &print(output::ColorStream &stream, const Formula &formula, PrintContext &printContext);
-output::ColorStream &print(output::ColorStream &stream, const Term &term, PrintContext &printContext);
+output::ColorStream &print(output::ColorStream &stream, const Formula &formula, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const Term &term, PrintContext &printContext, bool omitParentheses = false);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Primitives
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, BinaryOperation::Operator operator_, PrintContext &)
+inline output::ColorStream &print(output::ColorStream &stream, BinaryOperation::Operator operator_, PrintContext &, bool)
 {
 	switch (operator_)
 	{
@@ -95,22 +96,26 @@ inline output::ColorStream &print(output::ColorStream &stream, BinaryOperation::
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext, bool omitParentheses)
 {
-	stream << "(";
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	print(stream, binaryOperation.left, printContext);
 	stream << " ";
 	print(stream, binaryOperation.operator_, printContext);
 	stream << " ";
 	print(stream, binaryOperation.right, printContext);
-	stream << ")";
+
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &)
+inline output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &, bool)
 {
 	if (boolean.value)
 		return (stream << output::Boolean("#true"));
@@ -120,7 +125,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Boolean &bo
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, Comparison::Operator operator_, PrintContext &)
+inline output::ColorStream &print(output::ColorStream &stream, Comparison::Operator operator_, PrintContext &, bool)
 {
 	switch (operator_)
 	{
@@ -143,7 +148,7 @@ inline output::ColorStream &print(output::ColorStream &stream, Comparison::Opera
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext, bool)
 {
 	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << "(";
@@ -162,14 +167,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const Comparison 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &)
+inline output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &, bool)
 {
 	return (stream << constant.name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext, bool)
 {
 	stream << function.name;
 
@@ -196,7 +201,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Function &f
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext, bool)
 {
 	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << "(";
@@ -213,14 +218,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const In &in, Pri
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &)
+inline output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &, bool)
 {
 	return (stream << output::Number<int>(integer.value));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext, bool)
 {
 	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << "(";
@@ -237,7 +242,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Interval &i
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext, bool)
 {
 	stream << predicate.name;
 
@@ -261,7 +266,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Predicate &
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &)
+inline output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &, bool)
 {
 	switch (specialInteger.type)
 	{
@@ -276,14 +281,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const SpecialInte
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &)
+inline output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &, bool)
 {
 	return (stream << output::String(string.text.c_str()));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const UnaryOperation &unaryOperation, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const UnaryOperation &unaryOperation, PrintContext &printContext, bool)
 {
 	switch (unaryOperation.operator_)
 	{
@@ -292,7 +297,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const UnaryOperat
 			break;
 	}
 
-	print(stream, unaryOperation.argument, printContext);
+	print(stream, unaryOperation.argument, printContext, true);
 
 	switch (unaryOperation.operator_)
 	{
@@ -306,7 +311,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const UnaryOperat
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Variable &variable, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Variable &variable, PrintContext &printContext, bool)
 {
 	assert(variable.declaration != nullptr);
 
@@ -315,7 +320,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Variable &v
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext, bool)
 {
 	const auto printVariableDeclaration =
 		[&stream, &variableDeclaration](const auto *prefix, auto &variableIDs) -> output::ColorStream &
@@ -351,9 +356,10 @@ inline output::ColorStream &print(output::ColorStream &stream, const VariableDec
 // Expressions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const And &and_, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const And &and_, PrintContext &printContext, bool omitParentheses)
 {
-	stream << "(";
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
 
 	for (auto i = and_.arguments.cbegin(); i != and_.arguments.cend(); i++)
 	{
@@ -363,27 +369,32 @@ inline output::ColorStream &print(output::ColorStream &stream, const And &and_, 
 		print(stream, *i, printContext);
 	}
 
-	stream << ")";
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Biconditional &biconditional, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Biconditional &biconditional, PrintContext &printContext, bool omitParentheses)
 {
-	stream << "(";
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	print(stream, biconditional.left, printContext);
 	stream << " <-> ";
 	print(stream, biconditional.right, printContext);
-	stream << ")";
+
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext, bool)
 {
 	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << "(";
@@ -409,7 +420,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Exists &exi
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext, bool)
 {
 	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << "(";
@@ -435,20 +446,24 @@ inline output::ColorStream &print(output::ColorStream &stream, const ForAll &for
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Implies &implies, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Implies &implies, PrintContext &printContext, bool omitParentheses)
 {
-	stream << "(";
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
+
 	print(stream, implies.antecedent, printContext);
 	stream << " -> ";
 	print(stream, implies.consequent, printContext);
-	stream << ")";
+
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext, bool)
 {
 	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << "(";
@@ -464,9 +479,10 @@ inline output::ColorStream &print(output::ColorStream &stream, const Not &not_, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Or &or_, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Or &or_, PrintContext &printContext, bool omitParentheses)
 {
-	stream << "(";
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << "(";
 
 	for (auto i = or_.arguments.cbegin(); i != or_.arguments.cend(); i++)
 	{
@@ -476,7 +492,8 @@ inline output::ColorStream &print(output::ColorStream &stream, const Or &or_, Pr
 		print(stream, *i, printContext);
 	}
 
-	stream << ")";
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+		stream << ")";
 
 	return stream;
 }
@@ -489,24 +506,24 @@ template<class Variant>
 struct VariantPrintVisitor
 {
 	template<class T>
-	output::ColorStream &visit(const T &x, output::ColorStream &stream, PrintContext &printContext)
+	output::ColorStream &visit(const T &x, output::ColorStream &stream, PrintContext &printContext, bool omitParentheses)
 	{
-		return print(stream, x, printContext);
+		return print(stream, x, printContext, omitParentheses);
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Formula &formula, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Formula &formula, PrintContext &printContext, bool omitParentheses)
 {
-	return formula.accept(VariantPrintVisitor<Formula>(), stream, printContext);
+	return formula.accept(VariantPrintVisitor<Formula>(), stream, printContext, omitParentheses);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Term &term, PrintContext &printContext)
+inline output::ColorStream &print(output::ColorStream &stream, const Term &term, PrintContext &printContext, bool omitParentheses)
 {
-	return term.accept(VariantPrintVisitor<Term>(), stream, printContext);
+	return term.accept(VariantPrintVisitor<Term>(), stream, printContext, omitParentheses);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -9,10 +9,11 @@
 ## Usage
 
 ```bash
-$ anthem [--simplify] file...
+$ anthem [--complete] [--simplify] file...
 ```
 
-With the option `--simplify`, output formulas are simplified by applying several basic transformation rules.
+`--complete` instructs `anthem` to perform Clark’s completion on the translated formulas.
+With the option `--simplify`, the output formulas are simplified by applying several basic transformation rules.
 
 ## Building
 

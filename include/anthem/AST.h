@@ -2,6 +2,7 @@
 #define __ANTHEM__AST_H
 
 #include <anthem/ASTForward.h>
+#include <anthem/Utils.h>
 
 namespace anthem
 {
@@ -369,6 +370,7 @@ struct VariableDeclaration
 	VariableDeclaration &operator=(VariableDeclaration &&other) = default;
 
 	Type type;
+	Domain domain{Domain::Unknown};
 	std::string name;
 };
 

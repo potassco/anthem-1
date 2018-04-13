@@ -73,7 +73,7 @@ struct StatementVisitor
 
 		// Compute consequent
 		auto headVariableIndex = ruleContext.headVariablesStartIndex;
-		auto consequent = rule.head.data.accept(HeadLiteralTranslateToConsequentVisitor(), rule.head, ruleContext, headVariableIndex);
+		auto consequent = rule.head.data.accept(HeadLiteralTranslateToConsequentVisitor(), rule.head, ruleContext, context, headVariableIndex);
 
 		assert(ruleContext.headTerms.size() == headVariableIndex - ruleContext.headVariablesStartIndex);
 
@@ -98,7 +98,7 @@ struct StatementVisitor
 		{
 			const auto &bodyLiteral = *i;
 
-			auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, ruleContext, variableStack);
+			auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, ruleContext, context, variableStack);
 
 			if (!argument)
 				throw TranslationException(bodyLiteral.location, "could not translate body literal");
@@ -165,8 +165,8 @@ struct StatementVisitor
 		if (signature.negative())
 			throw LogicException(statement.location, "negative #show atom signatures are currently unsupported");
 
-		if (!context.visiblePredicateSignatures)
-			context.visiblePredicateSignatures.emplace();
+		context.showStatementsUsed = true;
+		context.defaultPredicateVisibility = ast::PredicateDeclaration::Visibility::Hidden;
 
 		if (std::strlen(signature.name()) == 0)
 		{
@@ -176,8 +176,8 @@ struct StatementVisitor
 
 		context.logger.log(output::Priority::Debug, statement.location) << "showing “" << signature.name() << "/" << signature.arity() << "”";
 
-		auto predicateSignature = ast::PredicateSignature{std::string(signature.name()), signature.arity()};
-		context.visiblePredicateSignatures.value().emplace_back(PredicateSignatureMeta{std::move(predicateSignature)});
+		auto predicateDeclaration = context.findOrCreatePredicateDeclaration(signature.name(), signature.arity());
+		predicateDeclaration->visibility = ast::PredicateDeclaration::Visibility::Visible;
 	}
 
 	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &)
@@ -214,13 +214,12 @@ struct StatementVisitor
 		if (aritySymbol.type() != Clingo::SymbolType::Number)
 			fail();
 
+		context.externalStatementsUsed = true;
+
 		const size_t arity = aritySymbol.number();
 
-		if (!context.externalPredicateSignatures)
-			context.externalPredicateSignatures.emplace();
-
-		auto predicateSignature = ast::PredicateSignature{std::string(predicate.name), arity};
-		context.externalPredicateSignatures->emplace_back(PredicateSignatureMeta{std::move(predicateSignature)});
+		auto predicateDeclaration = context.findOrCreatePredicateDeclaration(predicate.name, arity);
+		predicateDeclaration->isExternal = true;
 	}
 
 	template<class T>

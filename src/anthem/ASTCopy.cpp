@@ -133,7 +133,7 @@ Interval prepareCopy(const Interval &other)
 
 Predicate prepareCopy(const Predicate &other)
 {
-	return Predicate(std::string(other.name), prepareCopy(other.arguments));
+	return Predicate(other.declaration, prepareCopy(other.arguments));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

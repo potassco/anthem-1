@@ -187,13 +187,13 @@ struct Interval
 
 struct Predicate
 {
-	explicit Predicate(std::string &&name)
-	:	name{std::move(name)}
+	explicit Predicate(PredicateDeclaration *declaration)
+	:	declaration{declaration}
 	{
 	}
 
-	explicit Predicate(std::string &&name, std::vector<Term> &&arguments)
-	:	name{std::move(name)},
+	explicit Predicate(PredicateDeclaration *declaration, std::vector<Term> &&arguments)
+	:	declaration{declaration},
 		arguments{std::move(arguments)}
 	{
 	}
@@ -203,35 +203,37 @@ struct Predicate
 	Predicate(Predicate &&other) noexcept = default;
 	Predicate &operator=(Predicate &&other) noexcept = default;
 
-	std::size_t arity() const
-	{
-		return arguments.size();
-	}
-
-	std::string name;
+	PredicateDeclaration *declaration{nullptr};
 	std::vector<Term> arguments;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: make more use of this class
-struct PredicateSignature
+struct PredicateDeclaration
 {
-	explicit PredicateSignature(std::string &&name, size_t arity)
+	enum class Visibility
+	{
+		Default,
+		Visible,
+		Hidden
+	};
+
+	explicit PredicateDeclaration(std::string &&name, size_t arity)
 	:	name{std::move(name)},
 		arity{arity}
 	{
 	}
 
-	PredicateSignature(const PredicateSignature &other) = delete;
-	PredicateSignature &operator=(const PredicateSignature &other) = delete;
-	// TODO: make noexcept again
-	// GCC versions before 7 don’t declare moving std::string noexcept and would complain here
-	PredicateSignature(PredicateSignature &&other) = default;
-	PredicateSignature &operator=(PredicateSignature &&other) = default;
+	PredicateDeclaration(const PredicateDeclaration &other) = delete;
+	PredicateDeclaration &operator=(const PredicateDeclaration &other) = delete;
+	PredicateDeclaration(PredicateDeclaration &&other) noexcept = default;
+	PredicateDeclaration &operator=(PredicateDeclaration &&other) noexcept = default;
 
 	std::string name;
 	size_t arity;
+	bool isUsed{false};
+	bool isExternal{false};
+	Visibility visibility{Visibility::Default};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -323,7 +323,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Variable &v
 inline output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext, bool)
 {
 	const auto printVariableDeclaration =
-		[&stream, &variableDeclaration](const auto *prefix, auto &variableIDs) -> output::ColorStream &
+		[&](const auto *prefix, auto &variableIDs) -> output::ColorStream &
 		{
 			auto matchingVariableID = variableIDs.find(&variableDeclaration);
 

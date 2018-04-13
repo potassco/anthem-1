@@ -343,13 +343,21 @@ struct VariableDeclaration
 		Body
 	};
 
+	enum class Domain
+	{
+		General,
+		Integer
+	};
+
 	explicit VariableDeclaration(Type type)
-	:	type{type}
+	:	type{type},
+		domain{Domain::General}
 	{
 	}
 
 	explicit VariableDeclaration(Type type, std::string &&name)
 	:	type{type},
+		domain{Domain::General},
 		name{std::move(name)}
 	{
 	}
@@ -360,6 +368,7 @@ struct VariableDeclaration
 	VariableDeclaration &operator=(VariableDeclaration &&other) = default;
 
 	Type type;
+	Domain domain;
 	std::string name;
 };
 

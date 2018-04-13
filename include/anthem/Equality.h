@@ -237,7 +237,7 @@ struct FormulaEqualityVisitor
 
 		const auto &otherPredicate = otherFormula.get<Predicate>();
 
-		if (!matches(predicate, otherPredicate))
+		if (predicate.declaration != otherPredicate.declaration)
 			return Tristate::False;
 
 		assert(predicate.arguments.size() == otherPredicate.arguments.size());

@@ -78,7 +78,7 @@ struct ReplacePredicateInFormulaVisitor : public ast::RecursiveFormulaVisitor<Re
 {
 	static void accept(ast::Predicate &predicate, ast::Formula &formula, const PredicateReplacement &predicateReplacement)
 	{
-		if (!ast::matches(predicate, predicateReplacement.predicate))
+		if (predicate.declaration != predicateReplacement.predicate.declaration)
 			return;
 
 		auto formulaReplacement = ast::prepareCopy(predicateReplacement.replacement);
@@ -109,15 +109,15 @@ struct ReplacePredicateInFormulaVisitor : public ast::RecursiveFormulaVisitor<Re
 // Detect whether a formula contains a circular dependency on a given predicate
 struct DetectCircularDependcyVisitor : public ast::RecursiveFormulaVisitor<DetectCircularDependcyVisitor>
 {
-	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::PredicateSignature &predicateSignature, bool &hasCircularDependency)
+	static void accept(ast::Predicate &predicate, ast::Formula &, const ast::PredicateDeclaration &predicateDeclaration, bool &hasCircularDependency)
 	{
-		if (ast::matches(predicate, predicateSignature))
+		if (predicate.declaration == &predicateDeclaration)
 			hasCircularDependency = true;
 	}
 
 	// Ignore all other types of expressions
 	template<class T>
-	static void accept(T &, ast::Formula &, const ast::PredicateSignature &, bool &)
+	static void accept(T &, ast::Formula &, const ast::PredicateDeclaration &, bool &)
 	{
 	}
 };
@@ -125,12 +125,12 @@ struct DetectCircularDependcyVisitor : public ast::RecursiveFormulaVisitor<Detec
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Finds the replacement for predicates of the form “p(X1, ..., Xn) <-> q(X1, ..., Xn)”
-PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Predicate &predicate)
+PredicateReplacement findReplacement(const ast::PredicateDeclaration &predicateDeclaration, const ast::Predicate &predicate)
 {
 	// Declare variable used, only used in debug mode
-	(void)(predicateSignature);
+	(void)(predicateDeclaration);
 
-	assert(ast::matches(predicate, predicateSignature));
+	assert(predicate.declaration == &predicateDeclaration);
 
 	// Replace with “#true”
 	return {predicate, ast::Formula::make<ast::Boolean>(true)};
@@ -139,13 +139,13 @@ PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSig
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Finds the replacement for predicates of the form “p(X1, ..., Xn) <-> not q(X1, ..., Xn)”
-PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Not &not_)
+PredicateReplacement findReplacement(const ast::PredicateDeclaration &predicateDeclaration, const ast::Not &not_)
 {
 	// Declare variable used, only used in debug mode
-	(void)(predicateSignature);
+	(void)(predicateDeclaration);
 
 	assert(not_.argument.is<ast::Predicate>());
-	assert(ast::matches(not_.argument.get<ast::Predicate>(), predicateSignature));
+	assert(not_.argument.get<ast::Predicate>().declaration == &predicateDeclaration);
 
 	// Replace with “#false”
 	return {not_.argument.get<ast::Predicate>(), ast::Formula::make<ast::Boolean>(false)};
@@ -154,13 +154,13 @@ PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSig
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Finds the replacement for predicates of the form “forall X1, ..., Xn (p(X1, ..., Xn) <-> ...)”
-PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Biconditional &biconditional)
+PredicateReplacement findReplacement(const ast::PredicateDeclaration &predicateDeclaration, const ast::Biconditional &biconditional)
 {
 	// Declare variable used, only used in debug mode
-	(void)(predicateSignature);
+	(void)(predicateDeclaration);
 
 	assert(biconditional.left.is<ast::Predicate>());
-	assert(ast::matches(biconditional.left.get<ast::Predicate>(), predicateSignature));
+	assert(biconditional.left.get<ast::Predicate>().declaration == &predicateDeclaration);
 
 	// TODO: avoid copy
 	return {biconditional.left.get<ast::Predicate>(), ast::prepareCopy(biconditional.right)};
@@ -169,77 +169,65 @@ PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSig
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Finds a replacement for a predicate that should be hidden
-PredicateReplacement findReplacement(const ast::PredicateSignature &predicateSignature, const ast::Formula &completedPredicateDefinition)
+PredicateReplacement findReplacement(const ast::PredicateDeclaration &predicateDeclaration, const ast::Formula &completedPredicateDefinition)
 {
 	// TODO: refactor
 	if (completedPredicateDefinition.is<ast::ForAll>())
-		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::ForAll>().argument);
+		return findReplacement(predicateDeclaration, completedPredicateDefinition.get<ast::ForAll>().argument);
 	else if (completedPredicateDefinition.is<ast::Biconditional>())
-		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::Biconditional>());
+		return findReplacement(predicateDeclaration, completedPredicateDefinition.get<ast::Biconditional>());
 	else if (completedPredicateDefinition.is<ast::Predicate>())
-		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::Predicate>());
+		return findReplacement(predicateDeclaration, completedPredicateDefinition.get<ast::Predicate>());
 	else if (completedPredicateDefinition.is<ast::Not>())
-		return findReplacement(predicateSignature, completedPredicateDefinition.get<ast::Not>());
+		return findReplacement(predicateDeclaration, completedPredicateDefinition.get<ast::Not>());
 
-	throw CompletionException("unsupported completed definition for predicate “" + predicateSignature.name + "/" +  std::to_string(predicateSignature.arity) + "” for hiding predicates");
+	throw CompletionException("unsupported completed definition for predicate “" + predicateDeclaration.name + "/" +  std::to_string(predicateDeclaration.arity) + "” for hiding predicates");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void eliminateHiddenPredicates(const std::vector<ast::PredicateSignature> &predicateSignatures, std::vector<ast::Formula> &completedFormulas, Context &context)
+void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Context &context)
 {
-	if (!context.visiblePredicateSignatures)
+	if (context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Visible)
 	{
 		context.logger.log(output::Priority::Debug) << "no predicates to be eliminated";
 		return;
 	}
 
-	auto &visiblePredicateSignatures = context.visiblePredicateSignatures.value();
+	assert(context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Hidden);
+
+	// TODO: get rid of index-wise matching of completed formulas and predicate declarations
+	size_t i = -1;
 
 	// Replace all occurrences of hidden predicates
-	for (size_t i = 0; i < predicateSignatures.size(); i++)
+	for (auto &predicateDeclaration : context.predicateDeclarations)
 	{
-		auto &predicateSignature = predicateSignatures[i];
+		// Check that the predicate is used and not declared #external
+		if (!predicateDeclaration->isUsed || predicateDeclaration->isExternal)
+			continue;
 
-		const auto matchesPredicateSignature =
-			[&](const auto &otherPredicateSignature)
-			{
-				return ast::matches(predicateSignature, otherPredicateSignature.predicateSignature);
-			};
+		i++;
 
-		const auto matchingVisiblePredicateSignature =
-			std::find_if(visiblePredicateSignatures.begin(), visiblePredicateSignatures.end(), matchesPredicateSignature);
+		const auto isPredicateVisible =
+				(predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Visible)
+				|| (predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Default
+					&& context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Visible);
 
 		// If the predicate ought to be visible, don’t eliminate it
-		if (matchingVisiblePredicateSignature != visiblePredicateSignatures.end())
-		{
-			matchingVisiblePredicateSignature->used = true;
+		if (isPredicateVisible)
 			continue;
-		}
 
-		// Check that the predicate is not declared #external
-		if (context.externalPredicateSignatures)
-		{
-			const auto &externalPredicateSignatures = context.externalPredicateSignatures.value();
-
-			const auto matchingExternalPredicateSignature =
-				std::find_if(externalPredicateSignatures.cbegin(), externalPredicateSignatures.cend(), matchesPredicateSignature);
-
-			if (matchingExternalPredicateSignature != externalPredicateSignatures.cend())
-				continue;
-		}
-
-		context.logger.log(output::Priority::Debug) << "eliminating “" << predicateSignature.name << "/" << predicateSignature.arity << "”";
+		context.logger.log(output::Priority::Debug) << "eliminating “" << predicateDeclaration->name << "/" << predicateDeclaration->arity << "”";
 
 		const auto &completedPredicateDefinition = completedFormulas[i];
-		auto replacement = findReplacement(predicateSignature, completedPredicateDefinition);
+		auto replacement = findReplacement(*predicateDeclaration, completedPredicateDefinition);
 
 		bool hasCircularDependency = false;
-		replacement.replacement.accept(DetectCircularDependcyVisitor(), replacement.replacement, predicateSignature, hasCircularDependency);
+		replacement.replacement.accept(DetectCircularDependcyVisitor(), replacement.replacement, *predicateDeclaration, hasCircularDependency);
 
 		if (hasCircularDependency)
 		{
-			context.logger.log(output::Priority::Warning) << "cannot hide predicate “" << predicateSignature.name << "/" << predicateSignature.arity << "” due to circular dependency";
+			context.logger.log(output::Priority::Warning) << "cannot hide predicate “" << predicateDeclaration->name << "/" << predicateDeclaration->arity << "” due to circular dependency";
 			continue;
 		}
 

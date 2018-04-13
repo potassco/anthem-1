@@ -67,10 +67,10 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			for (auto &scopedFormula : scopedFormulas)
 				simplify(scopedFormula.formula);
 
-		if (context.visiblePredicateSignatures)
+		if (context.showStatementsUsed)
 			context.logger.log(output::Priority::Warning) << "#show statements are ignored because completion is not enabled";
 
-		if (context.externalPredicateSignatures)
+		if (context.externalStatementsUsed)
 			context.logger.log(output::Priority::Warning) << "#external statements are ignored because completion is not enabled";
 
 		for (const auto &scopedFormula : scopedFormulas)
@@ -85,25 +85,29 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 	// Perform completion
 	auto completedFormulas = complete(std::move(scopedFormulas), context);
 
-	// Check for #show statements with undeclared predicates
-	if (context.visiblePredicateSignatures)
-		for (const auto &predicateSignature : context.visiblePredicateSignatures.value())
-			if (!predicateSignature.used)
-				context.logger.log(output::Priority::Warning)
-					<< "#show declaration of “"
-					<< predicateSignature.predicateSignature.name
-					<< "/" << predicateSignature.predicateSignature.arity
-					<< "” does not match any eligible predicate";
+	for (const auto &predicateDeclaration : context.predicateDeclarations)
+	{
+		if (predicateDeclaration->isUsed)
+			continue;
 
-	// Check for #external statements with undeclared predicates
-	if (context.externalPredicateSignatures)
-		for (const auto &predicateSignature : context.externalPredicateSignatures.value())
-			if (!predicateSignature.used)
-				context.logger.log(output::Priority::Warning)
-					<< "#external declaration of “"
-					<< predicateSignature.predicateSignature.name
-					<< "/" << predicateSignature.predicateSignature.arity
-					<< "” does not match any eligible predicate";
+		// Check for #show statements with undeclared predicates
+		if (predicateDeclaration->visibility != ast::PredicateDeclaration::Visibility::Default)
+			context.logger.log(output::Priority::Warning)
+				<< "#show declaration of “"
+				<< predicateDeclaration->name
+				<< "/"
+				<< predicateDeclaration->arity
+				<< "” does not match any declared predicate";
+
+		// Check for #external statements with undeclared predicates
+		if (predicateDeclaration->isExternal && !predicateDeclaration->isUsed)
+			context.logger.log(output::Priority::Warning)
+				<< "#external declaration of “"
+				<< predicateDeclaration->name
+				<< "/"
+				<< predicateDeclaration->arity
+				<< "” does not match any declared predicate";
+	}
 
 	// Simplify output if specified
 	if (context.performSimplification)

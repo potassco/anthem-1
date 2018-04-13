@@ -36,12 +36,6 @@ class VariableStack
 		std::vector<Layer> m_layers;
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool matches(const Predicate &lhs, const Predicate &rhs);
-bool matches(const Predicate &predicate, const PredicateSignature &signature);
-bool matches(const PredicateSignature &lhs, const PredicateSignature &rhs);
-void collectPredicateSignatures(const Formula &formula, std::vector<PredicateSignature> &predicateSignatures, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Replacing Variables

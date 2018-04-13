@@ -13,7 +13,7 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void eliminateHiddenPredicates(const std::vector<ast::PredicateSignature> &predicateSignatures, std::vector<ast::Formula> &completedFormulas, Context &context);
+void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

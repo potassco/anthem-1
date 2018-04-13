@@ -52,6 +52,7 @@ output::ColorStream &print(output::ColorStream &stream, const In &in, PrintConte
 output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, const PredicateDeclaration &predicateDeclaration, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const SpecialInteger &specialInteger, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const String &string, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const UnaryOperation &unaryOperation, PrintContext &printContext, bool omitParentheses = false);
@@ -244,7 +245,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Interval &i
 
 inline output::ColorStream &print(output::ColorStream &stream, const Predicate &predicate, PrintContext &printContext, bool)
 {
-	stream << predicate.name;
+	stream << predicate.declaration->name;
 
 	if (predicate.arguments.empty())
 		return stream;
@@ -262,6 +263,13 @@ inline output::ColorStream &print(output::ColorStream &stream, const Predicate &
 	stream << ")";
 
 	return stream;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline output::ColorStream &print(output::ColorStream &stream, const PredicateDeclaration &predicateDeclaration, PrintContext &, bool)
+{
+	return (stream << predicateDeclaration.name << "/" << predicateDeclaration.arity);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

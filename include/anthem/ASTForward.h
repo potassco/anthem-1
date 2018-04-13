@@ -35,6 +35,7 @@ struct Interval;
 struct Not;
 struct Or;
 struct Predicate;
+struct PredicateDeclaration;
 struct SpecialInteger;
 struct String;
 struct UnaryOperation;

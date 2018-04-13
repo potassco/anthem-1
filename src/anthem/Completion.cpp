@@ -35,7 +35,7 @@ ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, c
 
 		auto &otherPredicate = implies.consequent.get<ast::Predicate>();
 
-		if (!ast::matches(predicate, otherPredicate))
+		if (predicate.declaration != otherPredicate.declaration)
 			continue;
 
 		assert(otherPredicate.arguments.size() == parameters.size());
@@ -100,22 +100,22 @@ ast::Formula buildCompletedFormulaQuantified(ast::Predicate &&predicate, ast::Fo
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula completePredicate(const ast::PredicateSignature &predicateSignature, std::vector<ast::ScopedFormula> &scopedFormulas)
+ast::Formula completePredicate(ast::PredicateDeclaration &predicateDeclaration, std::vector<ast::ScopedFormula> &scopedFormulas)
 {
 	// Create new set of parameters for the completed definition for the predicate
 	ast::VariableDeclarationPointers parameters;
-	parameters.reserve(predicateSignature.arity);
+	parameters.reserve(predicateDeclaration.arity);
 
 	std::vector<ast::Term> arguments;
-	arguments.reserve(predicateSignature.arity);
+	arguments.reserve(predicateDeclaration.arity);
 
-	for (size_t i = 0; i < predicateSignature.arity; i++)
+	for (size_t i = 0; i < predicateDeclaration.arity; i++)
 	{
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
 		arguments.emplace_back(ast::Term::make<ast::Variable>(parameters.back().get()));
 	}
 
-	ast::Predicate predicateCopy(std::string(predicateSignature.name), std::move(arguments));
+	ast::Predicate predicateCopy(&predicateDeclaration, std::move(arguments));
 
 	auto completedFormulaDisjunction = buildCompletedFormulaDisjunction(predicateCopy, parameters, scopedFormulas);
 	auto completedFormulaQuantified = buildCompletedFormulaQuantified(std::move(predicateCopy), std::move(completedFormulaDisjunction));
@@ -161,28 +161,27 @@ std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormu
 			throw CompletionException("cannot perform completion, only single predicates and Booleans supported as formula consequent currently");
 	}
 
-	std::vector<ast::PredicateSignature> predicateSignatures;
-
-	// Get a list of all predicates
-	for (const auto &scopedFormula : scopedFormulas)
-		ast::collectPredicateSignatures(scopedFormula.formula, predicateSignatures, context);
-
-	std::sort(predicateSignatures.begin(), predicateSignatures.end(),
+	std::sort(context.predicateDeclarations.begin(), context.predicateDeclarations.end(),
 		[](const auto &lhs, const auto &rhs)
 		{
-			const auto order = std::strcmp(lhs.name.c_str(), rhs.name.c_str());
+			const auto order = std::strcmp(lhs->name.c_str(), rhs->name.c_str());
 
 			if (order != 0)
 				return (order < 0);
 
-			return lhs.arity < rhs.arity;
+			return lhs->arity < rhs->arity;
 		});
 
 	std::vector<ast::Formula> completedFormulas;
 
 	// Complete predicates
-	for (const auto &predicateSignature : predicateSignatures)
-		completedFormulas.emplace_back(completePredicate(predicateSignature, scopedFormulas));
+	for (auto &predicateDeclaration : context.predicateDeclarations)
+	{
+		if (!predicateDeclaration->isUsed || predicateDeclaration->isExternal)
+			continue;
+
+		completedFormulas.emplace_back(completePredicate(*predicateDeclaration, scopedFormulas));
+	}
 
 	// Complete integrity constraints
 	for (auto &scopedFormula : scopedFormulas)
@@ -202,7 +201,7 @@ std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormu
 	}
 
 	// Eliminate all predicates that should not be visible in the output
-	eliminateHiddenPredicates(predicateSignatures, completedFormulas, context);
+	eliminateHiddenPredicates(completedFormulas, context);
 
 	return completedFormulas;
 }

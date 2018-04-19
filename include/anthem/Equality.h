@@ -289,18 +289,6 @@ struct TermEqualityVisitor
 			: Tristate::False;
 	}
 
-	Tristate visit(const Constant &constant, const Term &otherTerm)
-	{
-		if (!otherTerm.is<Constant>())
-			return Tristate::Unknown;
-
-		const auto &otherConstant = otherTerm.get<Constant>();
-
-		return (constant.name == otherConstant.name)
-			? Tristate::True
-			: Tristate::False;
-	}
-
 	Tristate visit(const Function &function, const Term &otherTerm)
 	{
 		if (!otherTerm.is<Function>())

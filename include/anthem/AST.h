@@ -104,23 +104,6 @@ struct Comparison
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Constant
-{
-	explicit Constant(std::string &&name)
-	:	name{std::move(name)}
-	{
-	}
-
-	Constant(const Constant &other) = delete;
-	Constant &operator=(const Constant &other) = delete;
-	Constant(Constant &&other) = default;
-	Constant &operator=(Constant &&other) = default;
-
-	std::string name;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 struct Function
 {
 	explicit Function(std::string &&name)

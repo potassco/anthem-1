@@ -24,7 +24,6 @@ struct BinaryOperation;
 struct Biconditional;
 struct Boolean;
 struct Comparison;
-struct Constant;
 struct Exists;
 struct ForAll;
 struct Function;
@@ -64,7 +63,6 @@ using Formula = Clingo::Variant<
 using Term = Clingo::Variant<
 	BinaryOperation,
 	Boolean,
-	Constant,
 	Function,
 	Integer,
 	Interval,

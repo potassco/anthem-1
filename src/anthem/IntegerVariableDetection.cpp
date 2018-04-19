@@ -49,14 +49,6 @@ struct TermDomainVisitor
 		return ast::VariableDeclaration::Domain::General;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Constant &)
-	{
-		// Constants may be set to values of any type
-
-		// TODO: implement explicit integer specifications
-		return ast::VariableDeclaration::Domain::General;
-	}
-
 	static ast::VariableDeclaration::Domain visit(ast::Function &)
 	{
 		// Functions may return values of any type

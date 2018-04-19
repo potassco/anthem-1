@@ -3,6 +3,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>
+#include <anthem/Tristate.h>
 
 namespace anthem
 {
@@ -13,16 +14,6 @@ namespace ast
 //
 // Equality
 //
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// TODO: move to separate class
-enum class Tristate
-{
-	True,
-	False,
-	Unknown,
-};
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Tristate equal(const Formula &lhs, const Formula &rhs);

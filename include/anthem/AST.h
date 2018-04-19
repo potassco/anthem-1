@@ -2,6 +2,7 @@
 #define __ANTHEM__AST_H
 
 #include <anthem/ASTForward.h>
+#include <anthem/Tristate.h>
 
 namespace anthem
 {

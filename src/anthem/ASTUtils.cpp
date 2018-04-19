@@ -150,10 +150,6 @@ struct CollectFreeVariablesVisitor
 		binaryOperation.right.accept(*this, variableStack, freeVariables);
 	}
 
-	void visit(Constant &, VariableStack &, std::vector<VariableDeclaration *> &)
-	{
-	}
-
 	void visit(Function &function, VariableStack &variableStack, std::vector<VariableDeclaration *> &freeVariables)
 	{
 		for (auto &argument : function.arguments)

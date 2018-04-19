@@ -46,7 +46,6 @@ output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &b
 output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, Comparison::Operator operator_, PrintContext &printContext, bool omitParentheses = false);
-output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const Integer &integer, PrintContext &printContext, bool omitParentheses = false);
@@ -163,13 +162,6 @@ inline output::ColorStream &print(output::ColorStream &stream, const Comparison 
 		stream << ")";
 
 	return stream;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline output::ColorStream &print(output::ColorStream &stream, const Constant &constant, PrintContext &, bool)
-{
-	return (stream << constant.name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

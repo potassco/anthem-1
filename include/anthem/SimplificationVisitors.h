@@ -138,12 +138,6 @@ struct TermSimplificationVisitor
 	}
 
 	template <class... Arguments>
-	SimplificationResult visit(Constant &, Term &term, Arguments &&... arguments)
-	{
-		return T::accept(term, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
 	SimplificationResult visit(Function &function, Term &term, Arguments &&... arguments)
 	{
 		for (auto &argument : function.arguments)

@@ -103,13 +103,6 @@ Comparison prepareCopy(const Comparison &other)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Constant prepareCopy(const Constant &other)
-{
-	return Constant(std::string(other.name));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 Function prepareCopy(const Function &other)
 {
 	return Function(std::string(other.name), prepareCopy(other.arguments));
@@ -290,11 +283,6 @@ struct FixDanglingVariablesInTermVisitor
 
 	template <class... Arguments>
 	void visit(Boolean &, Arguments &&...)
-	{
-	}
-
-	template <class... Arguments>
-	void visit(Constant &, Arguments &&...)
 	{
 	}
 

@@ -124,12 +124,6 @@ struct RecursiveTermVisitor
 	}
 
 	template <class... Arguments>
-	ReturnType visit(Constant &constant, Term &term, Arguments &&... arguments)
-	{
-		return T::accept(constant, term, std::forward<Arguments>(arguments)...);
-	}
-
-	template <class... Arguments>
 	ReturnType visit(Function &function, Term &term, Arguments &&... arguments)
 	{
 		for (auto &argument : function.arguments)

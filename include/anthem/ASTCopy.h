@@ -22,7 +22,6 @@ namespace ast
 BinaryOperation prepareCopy(const BinaryOperation &other);
 Boolean prepareCopy(const Boolean &other);
 Comparison prepareCopy(const Comparison &other);
-Constant prepareCopy(const Constant &other);
 Function prepareCopy(const Function &other);
 In prepareCopy(const In &other);
 Integer prepareCopy(const Integer &other);

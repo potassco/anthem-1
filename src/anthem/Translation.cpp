@@ -96,7 +96,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 				<< "#show declaration of “"
 				<< predicateDeclaration->name
 				<< "/"
-				<< predicateDeclaration->arity
+				<< predicateDeclaration->arity()
 				<< "” does not match any declared predicate";
 
 		// Check for #external statements with undeclared predicates
@@ -105,7 +105,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 				<< "#external declaration of “"
 				<< predicateDeclaration->name
 				<< "/"
-				<< predicateDeclaration->arity
+				<< predicateDeclaration->arity()
 				<< "” does not match any declared predicate";
 	}
 

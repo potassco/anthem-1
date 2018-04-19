@@ -181,7 +181,7 @@ PredicateReplacement findReplacement(const ast::PredicateDeclaration &predicateD
 	else if (completedPredicateDefinition.is<ast::Not>())
 		return findReplacement(predicateDeclaration, completedPredicateDefinition.get<ast::Not>());
 
-	throw CompletionException("unsupported completed definition for predicate “" + predicateDeclaration.name + "/" +  std::to_string(predicateDeclaration.arity) + "” for hiding predicates");
+	throw CompletionException("unsupported completed definition for predicate “" + predicateDeclaration.name + "/" +  std::to_string(predicateDeclaration.arity()) + "” for hiding predicates");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -217,7 +217,7 @@ void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Con
 		if (isPredicateVisible)
 			continue;
 
-		context.logger.log(output::Priority::Debug) << "eliminating “" << predicateDeclaration->name << "/" << predicateDeclaration->arity << "”";
+		context.logger.log(output::Priority::Debug) << "eliminating “" << predicateDeclaration->name << "/" << predicateDeclaration->arity() << "”";
 
 		const auto &completedPredicateDefinition = completedFormulas[i];
 		auto replacement = findReplacement(*predicateDeclaration, completedPredicateDefinition);
@@ -227,7 +227,7 @@ void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Con
 
 		if (hasCircularDependency)
 		{
-			context.logger.log(output::Priority::Warning) << "cannot hide predicate “" << predicateDeclaration->name << "/" << predicateDeclaration->arity << "” due to circular dependency";
+			context.logger.log(output::Priority::Warning) << "cannot hide predicate “" << predicateDeclaration->name << "/" << predicateDeclaration->arity() << "” due to circular dependency";
 			continue;
 		}
 

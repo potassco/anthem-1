@@ -38,7 +38,7 @@ struct Context
 		const auto matchesExistingPredicateDeclaration =
 			[&](const auto &predicateDeclaration)
 			{
-				return (predicateDeclaration->arity == arity
+				return (predicateDeclaration->arity() == arity
 					&& strcmp(predicateDeclaration->name.c_str(), name) == 0);
 			};
 

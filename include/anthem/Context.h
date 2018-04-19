@@ -53,6 +53,26 @@ struct Context
 		return predicateDeclarations.back().get();
 	}
 
+	ast::FunctionDeclaration *findOrCreateFunctionDeclaration(const char *name, size_t arity)
+	{
+		const auto matchesExistingFunctionDeclaration =
+			[&](const auto &functionDeclarations)
+			{
+				return (functionDeclarations->arity == arity
+					&& strcmp(functionDeclarations->name.c_str(), name) == 0);
+			};
+
+		auto matchingFunctionDeclaration = std::find_if(functionDeclarations.begin(),
+			functionDeclarations.end(), matchesExistingFunctionDeclaration);
+
+		if (matchingFunctionDeclaration != functionDeclarations.end())
+			return matchingFunctionDeclaration->get();
+
+		functionDeclarations.emplace_back(std::make_unique<ast::FunctionDeclaration>(name, arity));
+
+		return functionDeclarations.back().get();
+	}
+
 	output::Logger logger;
 
 	bool performSimplification = false;
@@ -60,6 +80,8 @@ struct Context
 
 	std::vector<std::unique_ptr<ast::PredicateDeclaration>> predicateDeclarations;
 	ast::PredicateDeclaration::Visibility defaultPredicateVisibility{ast::PredicateDeclaration::Visibility::Visible};
+
+	std::vector<std::unique_ptr<ast::FunctionDeclaration>> functionDeclarations;
 
 	bool externalStatementsUsed{false};
 	bool showStatementsUsed{false};

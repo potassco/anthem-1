@@ -105,7 +105,7 @@ Comparison prepareCopy(const Comparison &other)
 
 Function prepareCopy(const Function &other)
 {
-	return Function(std::string(other.name), prepareCopy(other.arguments));
+	return Function(other.declaration, prepareCopy(other.arguments));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -76,7 +76,7 @@ struct BodyTermTranslateVisitor
 		for (size_t i = 0; i < function.arguments.size(); i++)
 		{
 			auto &argument = function.arguments[i];
-			conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[i].get()), translate(argument, ruleContext, variableStack)));
+			conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[i].get()), translate(argument, ruleContext, context, variableStack)));
 		}
 
 		variableStack.pop();
@@ -121,7 +121,7 @@ struct BodyLiteralTranslateVisitor
 	}
 
 	// TODO: refactor
-	std::optional<ast::Formula> visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &, ast::VariableStack &variableStack)
+	std::optional<ast::Formula> visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
 	{
 		// Comparisons should never have a sign, because these are converted to positive comparisons by clingo
 		if (literal.sign != Clingo::AST::Sign::None)
@@ -136,8 +136,8 @@ struct BodyLiteralTranslateVisitor
 
 		ast::And conjunction;
 		conjunction.arguments.reserve(3);
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[0].get()), translate(comparison.left, ruleContext, variableStack)));
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[1].get()), translate(comparison.right, ruleContext, variableStack)));
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[0].get()), translate(comparison.left, ruleContext, context, variableStack)));
+		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[1].get()), translate(comparison.right, ruleContext, context, variableStack)));
 		conjunction.arguments.emplace_back(ast::Formula::make<ast::Comparison>(operator_, ast::Variable(parameters[0].get()), ast::Variable(parameters[1].get())));
 
 		return ast::Formula::make<ast::Exists>(std::move(parameters), std::move(conjunction));

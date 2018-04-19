@@ -296,7 +296,7 @@ struct TermEqualityVisitor
 
 		const auto &otherFunction = otherTerm.get<Function>();
 
-		if (function.name != otherFunction.name)
+		if (function.declaration != otherFunction.declaration)
 			return Tristate::False;
 
 		if (function.arguments.size() != otherFunction.arguments.size())

@@ -261,7 +261,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Predicate &
 
 inline output::ColorStream &print(output::ColorStream &stream, const PredicateDeclaration &predicateDeclaration, PrintContext &, bool)
 {
-	return (stream << predicateDeclaration.name << "/" << predicateDeclaration.arity);
+	return (stream << predicateDeclaration.name << "/" << predicateDeclaration.arity());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

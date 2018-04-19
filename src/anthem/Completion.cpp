@@ -104,12 +104,12 @@ ast::Formula completePredicate(ast::PredicateDeclaration &predicateDeclaration, 
 {
 	// Create new set of parameters for the completed definition for the predicate
 	ast::VariableDeclarationPointers parameters;
-	parameters.reserve(predicateDeclaration.arity);
+	parameters.reserve(predicateDeclaration.arity());
 
 	std::vector<ast::Term> arguments;
-	arguments.reserve(predicateDeclaration.arity);
+	arguments.reserve(predicateDeclaration.arity());
 
-	for (size_t i = 0; i < predicateDeclaration.arity; i++)
+	for (size_t i = 0; i < predicateDeclaration.arity(); i++)
 	{
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
 		arguments.emplace_back(ast::Term::make<ast::Variable>(parameters.back().get()));
@@ -169,7 +169,7 @@ std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormu
 			if (order != 0)
 				return (order < 0);
 
-			return lhs->arity < rhs->arity;
+			return lhs->arity() < rhs->arity();
 		});
 
 	std::vector<ast::Formula> completedFormulas;

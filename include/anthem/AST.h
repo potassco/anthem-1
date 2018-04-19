@@ -245,9 +245,14 @@ struct PredicateDeclaration
 		Hidden
 	};
 
+	struct Parameter
+	{
+		Domain domain{Domain::Unknown};
+	};
+
 	explicit PredicateDeclaration(std::string &&name, size_t arity)
 	:	name{std::move(name)},
-		arity{arity}
+		parameters{std::vector<Parameter>(arity)}
 	{
 	}
 
@@ -256,8 +261,13 @@ struct PredicateDeclaration
 	PredicateDeclaration(PredicateDeclaration &&other) noexcept = default;
 	PredicateDeclaration &operator=(PredicateDeclaration &&other) noexcept = default;
 
+	size_t arity() const noexcept
+	{
+		return parameters.size();
+	}
+
 	std::string name;
-	size_t arity;
+	std::vector<Parameter> parameters;
 	bool isUsed{false};
 	bool isExternal{false};
 	Visibility visibility{Visibility::Default};

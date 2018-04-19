@@ -49,12 +49,9 @@ struct TermDomainVisitor
 		return ast::Domain::General;
 	}
 
-	static ast::Domain visit(ast::Function &)
+	static ast::Domain visit(ast::Function &function)
 	{
-		// Functions may return values of any type
-
-		// TODO: implement explicit integer specifications
-		return ast::Domain::General;
+		return function.declaration->domain;
 	}
 
 	static ast::Domain visit(ast::Integer &)

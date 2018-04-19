@@ -142,7 +142,7 @@ struct VariableDomainInFormulaVisitor
 	static ast::Domain visit(ast::Biconditional &biconditional, ast::VariableDeclaration &variableDeclaration)
 	{
 		const auto leftDomain = biconditional.left.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
-		const auto rightDomain = biconditional.left.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
+		const auto rightDomain = biconditional.right.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 
 		if (leftDomain == ast::Domain::General || rightDomain == ast::Domain::General)
 			return ast::Domain::General;

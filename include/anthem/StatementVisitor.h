@@ -216,7 +216,7 @@ struct StatementVisitor
 
 		context.externalStatementsUsed = true;
 
-		const size_t arity = arityArgument.data.get<Clingo::Symbol>().number();
+		const size_t arity = aritySymbol.number();
 
 		auto predicateDeclaration = context.findOrCreatePredicateDeclaration(predicate.name, arity);
 		predicateDeclaration->isExternal = true;

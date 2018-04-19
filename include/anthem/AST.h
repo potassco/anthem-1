@@ -348,19 +348,20 @@ struct VariableDeclaration
 
 	enum class Domain
 	{
+		Unknown,
 		General,
 		Integer
 	};
 
 	explicit VariableDeclaration(Type type)
 	:	type{type},
-		domain{Domain::General}
+		domain{Domain::Unknown}
 	{
 	}
 
 	explicit VariableDeclaration(Type type, std::string &&name)
 	:	type{type},
-		domain{Domain::General},
+		domain{Domain::Unknown},
 		name{std::move(name)}
 	{
 	}

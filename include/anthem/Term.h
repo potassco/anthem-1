@@ -65,13 +65,13 @@ ast::UnaryOperation::Operator translate(Clingo::AST::UnaryOperator unaryOperator
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack);
+ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct TermTranslateVisitor
 {
-	std::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		switch (symbol.type())
 		{
@@ -85,19 +85,19 @@ struct TermTranslateVisitor
 				return ast::Term::make<ast::String>(std::string(symbol.string()));
 			case Clingo::SymbolType::Function:
 			{
-				auto function = ast::Term::make<ast::Function>(symbol.name());
-				// TODO: remove workaround
-				auto &functionRaw = function.get<ast::Function>();
-				functionRaw.arguments.reserve(symbol.arguments().size());
+				auto functionDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), symbol.arguments().size());
+
+				auto function = ast::Function(functionDeclaration);
+				function.arguments.reserve(symbol.arguments().size());
 
 				for (const auto &argument : symbol.arguments())
 				{
-					auto translatedArgument = visit(argument, term, ruleContext, variableStack);
+					auto translatedArgument = visit(argument, term, ruleContext, context, variableStack);
 
 					if (!translatedArgument)
 						throw TranslationException(term.location, "could not translate argument");
 
-					functionRaw.arguments.emplace_back(std::move(translatedArgument.value()));
+					function.arguments.emplace_back(std::move(translatedArgument.value()));
 				}
 
 				return std::move(function);
@@ -107,7 +107,7 @@ struct TermTranslateVisitor
 		return std::nullopt;
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, RuleContext &ruleContext, Context &, const ast::VariableStack &variableStack)
 	{
 		const auto matchingVariableDeclaration = variableStack.findUserVariableDeclaration(variable.name);
 		const auto isAnonymousVariable = (strcmp(variable.name, "_") == 0);
@@ -120,35 +120,36 @@ struct TermTranslateVisitor
 		auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
 		ruleContext.freeVariables.emplace_back(std::move(variableDeclaration));
 
+		// TODO: ast::Term::make is unnecessary and can be removed
 		return ast::Term::make<ast::Variable>(ruleContext.freeVariables.back().get());
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translate(binaryOperation.binary_operator, term);
-		auto left = translate(binaryOperation.left, ruleContext, variableStack);
-		auto right = translate(binaryOperation.right, ruleContext, variableStack);
+		auto left = translate(binaryOperation.left, ruleContext, context, variableStack);
+		auto right = translate(binaryOperation.right, ruleContext, context, variableStack);
 
 		return ast::Term::make<ast::BinaryOperation>(operator_, std::move(left), std::move(right));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translate(unaryOperation.unary_operator, term);
-		auto argument = translate(unaryOperation.argument, ruleContext, variableStack);
+		auto argument = translate(unaryOperation.argument, ruleContext, context, variableStack);
 
 		return ast::Term::make<ast::UnaryOperation>(operator_, std::move(argument));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
-		auto left = translate(interval.left, ruleContext, variableStack);
-		auto right = translate(interval.right, ruleContext, variableStack);
+		auto left = translate(interval.left, ruleContext, context, variableStack);
+		auto right = translate(interval.right, ruleContext, context, variableStack);
 
 		return ast::Term::make<ast::Interval>(std::move(left), std::move(right));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		if (function.external)
 			throw TranslationException(term.location, "external functions currently unsupported");
@@ -157,12 +158,14 @@ struct TermTranslateVisitor
 		arguments.reserve(function.arguments.size());
 
 		for (const auto &argument : function.arguments)
-			arguments.emplace_back(translate(argument, ruleContext, variableStack));
+			arguments.emplace_back(translate(argument, ruleContext, context, variableStack));
 
-		return ast::Term::make<ast::Function>(function.name, std::move(arguments));
+		auto functionDeclaration = context.findOrCreateFunctionDeclaration(function.name, function.arguments.size());
+
+		return ast::Term::make<ast::Function>(functionDeclaration, std::move(arguments));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, const ast::VariableStack &)
+	std::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, Context &, const ast::VariableStack &)
 	{
 		throw TranslationException(term.location, "“pool” terms currently unsupported");
 		return std::nullopt;
@@ -171,9 +174,9 @@ struct TermTranslateVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 {
-	auto translatedTerm = term.data.accept(TermTranslateVisitor(), term, ruleContext, variableStack);
+	auto translatedTerm = term.data.accept(TermTranslateVisitor(), term, ruleContext, context, variableStack);
 
 	if (!translatedTerm)
 		throw TranslationException(term.location, "could not translate term");

@@ -27,6 +27,7 @@ struct Comparison;
 struct Exists;
 struct ForAll;
 struct Function;
+struct FunctionDeclaration;
 struct Implies;
 struct In;
 struct Integer;

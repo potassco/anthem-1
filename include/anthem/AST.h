@@ -105,13 +105,13 @@ struct Comparison
 
 struct Function
 {
-	explicit Function(std::string &&name)
-	:	name{std::move(name)}
+	explicit Function(FunctionDeclaration *declaration)
+	:	declaration{declaration}
 	{
 	}
 
-	explicit Function(std::string &&name, std::vector<Term> &&arguments)
-	:	name{std::move(name)},
+	explicit Function(FunctionDeclaration *declaration, std::vector<Term> &&arguments)
+	:	declaration{declaration},
 		arguments{std::move(arguments)}
 	{
 	}
@@ -121,8 +121,32 @@ struct Function
 	Function(Function &&other) noexcept = default;
 	Function &operator=(Function &&other) noexcept = default;
 
-	std::string name;
+	FunctionDeclaration *declaration;
 	std::vector<Term> arguments;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct FunctionDeclaration
+{
+	explicit FunctionDeclaration(std::string &&name)
+	:	name{std::move(name)}
+	{
+	}
+
+	explicit FunctionDeclaration(std::string &&name, size_t arity)
+	:	name{std::move(name)},
+		arity{arity}
+	{
+	}
+
+	FunctionDeclaration(const FunctionDeclaration &other) = delete;
+	FunctionDeclaration &operator=(const FunctionDeclaration &other) = delete;
+	FunctionDeclaration(FunctionDeclaration &&other) noexcept = default;
+	FunctionDeclaration &operator=(FunctionDeclaration &&other) noexcept = default;
+
+	std::string name;
+	size_t arity;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

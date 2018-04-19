@@ -169,7 +169,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Comparison 
 
 inline output::ColorStream &print(output::ColorStream &stream, const Function &function, PrintContext &printContext, bool)
 {
-	stream << function.name;
+	stream << function.declaration->name;
 
 	if (function.arguments.empty())
 		return stream;
@@ -184,7 +184,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Function &f
 		print(stream, *i, printContext);
 	}
 
-	if (function.name.empty() && function.arguments.size() == 1)
+	if (function.declaration->name.empty() && function.arguments.size() == 1)
 		stream << ",";
 
 	stream << ")";

@@ -190,7 +190,7 @@ struct StatementVisitor
 		const auto fail =
 			[&]()
 			{
-				throw LogicException(statement.location, "only #external declarations of the form “#external <predicate name>(<arity>).” supported");
+				throw LogicException(statement.location, "only #external declarations of the form “#external <predicate name>(<arity>).” or “#external integer(<function name>(<arity>)).” supported");
 			};
 
 		if (!external.body.empty())
@@ -203,6 +203,47 @@ struct StatementVisitor
 
 		if (predicate.arguments.size() != 1)
 			fail();
+
+		const auto handleIntegerDeclaration =
+			[&]()
+			{
+				// Integer function declarations are treated separately if applicable
+				if (strcmp(predicate.name, "integer") != 0)
+					return false;
+
+				if (predicate.arguments.size() != 1)
+					return false;
+
+				const auto &functionArgument = predicate.arguments.front();
+
+				if (!functionArgument.data.is<Clingo::AST::Function>())
+					return false;
+
+				const auto &function = functionArgument.data.get<Clingo::AST::Function>();
+
+				if (function.arguments.size() != 1)
+					return false;
+
+				const auto &arityArgument = function.arguments.front();
+
+				if (!arityArgument.data.is<Clingo::Symbol>())
+					return false;
+
+				const auto &aritySymbol = arityArgument.data.get<Clingo::Symbol>();
+
+				if (aritySymbol.type() != Clingo::SymbolType::Number)
+					return false;
+
+				const size_t arity = aritySymbol.number();
+
+				auto functionDeclaration = context.findOrCreateFunctionDeclaration(function.name, arity);
+				functionDeclaration->domain = Domain::Integer;
+
+				return true;
+			};
+
+		if (handleIntegerDeclaration())
+			return;
 
 		const auto &arityArgument = predicate.arguments.front();
 

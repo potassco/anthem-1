@@ -214,7 +214,7 @@ struct StatementVisitor
 		if (aritySymbol.type() != Clingo::SymbolType::Number)
 			fail();
 
-		const size_t arity = arityArgument.data.get<Clingo::Symbol>().number();
+		const size_t arity = aritySymbol.number();
 
 		if (!context.externalPredicateSignatures)
 			context.externalPredicateSignatures.emplace();

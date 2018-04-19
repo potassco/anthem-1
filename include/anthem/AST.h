@@ -2,6 +2,7 @@
 #define __ANTHEM__AST_H
 
 #include <anthem/ASTForward.h>
+#include <anthem/Domain.h>
 #include <anthem/Tristate.h>
 
 namespace anthem
@@ -351,13 +352,6 @@ struct VariableDeclaration
 		UserDefined,
 		Head,
 		Body
-	};
-
-	enum class Domain
-	{
-		Unknown,
-		General,
-		Integer
 	};
 
 	explicit VariableDeclaration(Type type)

@@ -16,7 +16,7 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::VariableDeclaration::Domain domain(ast::Term &term);
+ast::Domain domain(ast::Term &term);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,69 +30,69 @@ enum class OperationResult
 
 struct TermDomainVisitor
 {
-	static ast::VariableDeclaration::Domain visit(ast::BinaryOperation &binaryOperation)
+	static ast::Domain visit(ast::BinaryOperation &binaryOperation)
 	{
 		const auto leftDomain = domain(binaryOperation.left);
 		const auto rightDomain = domain(binaryOperation.right);
 
-		if (leftDomain == ast::VariableDeclaration::Domain::General || rightDomain == ast::VariableDeclaration::Domain::General)
-			return ast::VariableDeclaration::Domain::General;
+		if (leftDomain == ast::Domain::General || rightDomain == ast::Domain::General)
+			return ast::Domain::General;
 
-		if (leftDomain == ast::VariableDeclaration::Domain::Integer || rightDomain == ast::VariableDeclaration::Domain::Integer)
-			return ast::VariableDeclaration::Domain::Integer;
+		if (leftDomain == ast::Domain::Integer || rightDomain == ast::Domain::Integer)
+			return ast::Domain::Integer;
 
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Boolean &)
+	static ast::Domain visit(ast::Boolean &)
 	{
-		return ast::VariableDeclaration::Domain::General;
+		return ast::Domain::General;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Function &)
+	static ast::Domain visit(ast::Function &)
 	{
 		// Functions may return values of any type
 
 		// TODO: implement explicit integer specifications
-		return ast::VariableDeclaration::Domain::General;
+		return ast::Domain::General;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Integer &)
+	static ast::Domain visit(ast::Integer &)
 	{
-		return ast::VariableDeclaration::Domain::Integer;
+		return ast::Domain::Integer;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Interval &interval)
+	static ast::Domain visit(ast::Interval &interval)
 	{
 		const auto fromDomain = domain(interval.from);
 		const auto toDomain = domain(interval.to);
 
-		if (fromDomain == ast::VariableDeclaration::Domain::General || toDomain == ast::VariableDeclaration::Domain::General)
-			return ast::VariableDeclaration::Domain::General;
+		if (fromDomain == ast::Domain::General || toDomain == ast::Domain::General)
+			return ast::Domain::General;
 
-		if (fromDomain == ast::VariableDeclaration::Domain::Integer || toDomain == ast::VariableDeclaration::Domain::Integer)
-			return ast::VariableDeclaration::Domain::Integer;
+		if (fromDomain == ast::Domain::Integer || toDomain == ast::Domain::Integer)
+			return ast::Domain::Integer;
 
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::SpecialInteger &)
+	static ast::Domain visit(ast::SpecialInteger &)
 	{
 		// TODO: check correctness
-		return ast::VariableDeclaration::Domain::Integer;
+		return ast::Domain::Integer;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::String &)
+	static ast::Domain visit(ast::String &)
 	{
-		return ast::VariableDeclaration::Domain::General;
+		return ast::Domain::General;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::UnaryOperation &unaryOperation)
+	static ast::Domain visit(ast::UnaryOperation &unaryOperation)
 	{
 		return domain(unaryOperation.argument);
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Variable &variable)
+	static ast::Domain visit(ast::Variable &variable)
 	{
 		return variable.declaration->domain;
 	}
@@ -100,7 +100,7 @@ struct TermDomainVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::VariableDeclaration::Domain domain(ast::Term &term)
+ast::Domain domain(ast::Term &term)
 {
 	return term.accept(TermDomainVisitor());
 }
@@ -121,7 +121,7 @@ bool isVariable(const ast::Term &term, const ast::VariableDeclaration &variableD
 
 struct VariableDomainInFormulaVisitor
 {
-	static ast::VariableDeclaration::Domain visit(ast::And &and_, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::And &and_, ast::VariableDeclaration &variableDeclaration)
 	{
 		bool integer = false;
 
@@ -129,97 +129,97 @@ struct VariableDomainInFormulaVisitor
 		{
 			const auto domain = argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 
-			if (domain == ast::VariableDeclaration::Domain::General)
-				return ast::VariableDeclaration::Domain::General;
+			if (domain == ast::Domain::General)
+				return ast::Domain::General;
 
-			if (domain == ast::VariableDeclaration::Domain::Integer)
+			if (domain == ast::Domain::Integer)
 				integer = true;
 		}
 
 		if (integer)
-			return ast::VariableDeclaration::Domain::Integer;
+			return ast::Domain::Integer;
 
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Biconditional &biconditional, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::Biconditional &biconditional, ast::VariableDeclaration &variableDeclaration)
 	{
 		const auto leftDomain = biconditional.left.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 		const auto rightDomain = biconditional.left.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 
-		if (leftDomain == ast::VariableDeclaration::Domain::General || rightDomain == ast::VariableDeclaration::Domain::General)
-			return ast::VariableDeclaration::Domain::General;
+		if (leftDomain == ast::Domain::General || rightDomain == ast::Domain::General)
+			return ast::Domain::General;
 
-		if (leftDomain == ast::VariableDeclaration::Domain::Integer || rightDomain == ast::VariableDeclaration::Domain::Integer)
-			return ast::VariableDeclaration::Domain::Integer;
+		if (leftDomain == ast::Domain::Integer || rightDomain == ast::Domain::Integer)
+			return ast::Domain::Integer;
 
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Boolean &, ast::VariableDeclaration &)
+	static ast::Domain visit(ast::Boolean &, ast::VariableDeclaration &)
 	{
 		// Variable doesn’t occur in Booleans, hence it’s still considered integer until the contrary is found
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Comparison &comparison, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::Comparison &comparison, ast::VariableDeclaration &variableDeclaration)
 	{
 		const auto leftIsVariable = isVariable(comparison.left, variableDeclaration);
 		const auto rightIsVariable = isVariable(comparison.right, variableDeclaration);
 
 		// TODO: implement more cases
 		if (!leftIsVariable && !rightIsVariable)
-			return ast::VariableDeclaration::Domain::Unknown;
+			return ast::Domain::Unknown;
 
 		auto &otherSide = (leftIsVariable ? comparison.right : comparison.left);
 
 		return domain(otherSide);
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Exists &exists, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::Exists &exists, ast::VariableDeclaration &variableDeclaration)
 	{
 		return exists.argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::ForAll &forAll, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::ForAll &forAll, ast::VariableDeclaration &variableDeclaration)
 	{
 		return forAll.argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Implies &implies, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::Implies &implies, ast::VariableDeclaration &variableDeclaration)
 	{
 		const auto antecedentDomain = implies.antecedent.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 		const auto consequentDomain = implies.antecedent.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 
-		if (antecedentDomain == ast::VariableDeclaration::Domain::General || consequentDomain == ast::VariableDeclaration::Domain::General)
-			return ast::VariableDeclaration::Domain::General;
+		if (antecedentDomain == ast::Domain::General || consequentDomain == ast::Domain::General)
+			return ast::Domain::General;
 
-		if (antecedentDomain == ast::VariableDeclaration::Domain::Integer || consequentDomain == ast::VariableDeclaration::Domain::Integer)
-			return ast::VariableDeclaration::Domain::Integer;
+		if (antecedentDomain == ast::Domain::Integer || consequentDomain == ast::Domain::Integer)
+			return ast::Domain::Integer;
 
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::In &in, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::In &in, ast::VariableDeclaration &variableDeclaration)
 	{
 		const auto elementIsVariable = isVariable(in.element, variableDeclaration);
 		const auto setIsVariable = isVariable(in.set, variableDeclaration);
 
 		// TODO: implement more cases
 		if (!elementIsVariable && !setIsVariable)
-			return ast::VariableDeclaration::Domain::Unknown;
+			return ast::Domain::Unknown;
 
 		auto &otherSide = (elementIsVariable ? in.set : in.element);
 
 		return domain(otherSide);
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Not &not_, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::Not &not_, ast::VariableDeclaration &variableDeclaration)
 	{
 		return not_.argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Or &or_, ast::VariableDeclaration &variableDeclaration)
+	static ast::Domain visit(ast::Or &or_, ast::VariableDeclaration &variableDeclaration)
 	{
 		bool integer = false;
 
@@ -227,23 +227,23 @@ struct VariableDomainInFormulaVisitor
 		{
 			const auto domain = argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
 
-			if (domain == ast::VariableDeclaration::Domain::General)
-				return ast::VariableDeclaration::Domain::General;
+			if (domain == ast::Domain::General)
+				return ast::Domain::General;
 
-			if (domain == ast::VariableDeclaration::Domain::Integer)
+			if (domain == ast::Domain::Integer)
 				integer = true;
 		}
 
 		if (integer)
-			return ast::VariableDeclaration::Domain::Integer;
+			return ast::Domain::Integer;
 
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 
-	static ast::VariableDeclaration::Domain visit(ast::Predicate &, ast::VariableDeclaration &)
+	static ast::Domain visit(ast::Predicate &, ast::VariableDeclaration &)
 	{
 		// TODO: implement correctly
-		return ast::VariableDeclaration::Domain::Unknown;
+		return ast::Domain::Unknown;
 	}
 };
 
@@ -294,11 +294,11 @@ struct DetectIntegerVariablesVisitor
 			operationResult = OperationResult::Changed;
 
 		for (auto &variableDeclaration : exists.variables)
-			if (variableDeclaration->domain == ast::VariableDeclaration::Domain::Unknown
-				&& exists.argument.accept(VariableDomainInFormulaVisitor(), *variableDeclaration) == ast::VariableDeclaration::Domain::Integer)
+			if (variableDeclaration->domain == ast::Domain::Unknown
+				&& exists.argument.accept(VariableDomainInFormulaVisitor(), *variableDeclaration) == ast::Domain::Integer)
 			{
 				operationResult = OperationResult::Changed;
-				variableDeclaration->domain = ast::VariableDeclaration::Domain::Integer;
+				variableDeclaration->domain = ast::Domain::Integer;
 			}
 
 		return operationResult;
@@ -312,11 +312,11 @@ struct DetectIntegerVariablesVisitor
 			operationResult = OperationResult::Changed;
 
 		for (auto &variableDeclaration : forAll.variables)
-			if (variableDeclaration->domain == ast::VariableDeclaration::Domain::Unknown
-				&& forAll.argument.accept(VariableDomainInFormulaVisitor(), *variableDeclaration) == ast::VariableDeclaration::Domain::Integer)
+			if (variableDeclaration->domain == ast::Domain::Unknown
+				&& forAll.argument.accept(VariableDomainInFormulaVisitor(), *variableDeclaration) == ast::Domain::Integer)
 			{
 				operationResult = OperationResult::Changed;
-				variableDeclaration->domain = ast::VariableDeclaration::Domain::Integer;
+				variableDeclaration->domain = ast::Domain::Integer;
 			}
 
 		return operationResult;
@@ -396,11 +396,11 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 				operationResult = OperationResult::Changed;
 
 			for (auto &variableDeclaration : forAll.variables)
-				if (variableDeclaration->domain == ast::VariableDeclaration::Domain::Unknown
-					&& definition.accept(VariableDomainInFormulaVisitor(), *variableDeclaration) == ast::VariableDeclaration::Domain::Integer)
+				if (variableDeclaration->domain == ast::Domain::Unknown
+					&& definition.accept(VariableDomainInFormulaVisitor(), *variableDeclaration) == ast::Domain::Integer)
 				{
 					operationResult = OperationResult::Changed;
-					variableDeclaration->domain = ast::VariableDeclaration::Domain::Integer;
+					variableDeclaration->domain = ast::Domain::Integer;
 				}
 		}
 	}

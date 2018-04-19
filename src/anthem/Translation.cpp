@@ -8,6 +8,7 @@
 
 #include <anthem/Completion.h>
 #include <anthem/Context.h>
+#include <anthem/IntegerVariableDetection.h>
 #include <anthem/Simplification.h>
 #include <anthem/StatementVisitor.h>
 #include <anthem/output/AST.h>
@@ -108,6 +109,9 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 				<< predicateDeclaration->arity
 				<< "” does not match any declared predicate";
 	}
+
+	// Detect integer variables
+	detectIntegerVariables(completedFormulas);
 
 	// Simplify output if specified
 	if (context.performSimplification)

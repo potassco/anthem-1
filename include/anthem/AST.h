@@ -355,14 +355,12 @@ struct VariableDeclaration
 	};
 
 	explicit VariableDeclaration(Type type)
-	:	type{type},
-		domain{Domain::Unknown}
+	:	type{type}
 	{
 	}
 
 	explicit VariableDeclaration(Type type, std::string &&name)
 	:	type{type},
-		domain{Domain::Unknown},
 		name{std::move(name)}
 	{
 	}
@@ -373,7 +371,7 @@ struct VariableDeclaration
 	VariableDeclaration &operator=(VariableDeclaration &&other) = default;
 
 	Type type;
-	Domain domain;
+	Domain domain{Domain::Unknown};
 	std::string name;
 };
 

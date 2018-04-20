@@ -77,6 +77,7 @@ struct Context
 
 	bool performSimplification{false};
 	bool performCompletion{false};
+	bool performIntegerDetection{false};
 
 	std::vector<std::unique_ptr<ast::PredicateDeclaration>> predicateDeclarations;
 	ast::PredicateDeclaration::Visibility defaultPredicateVisibility{ast::PredicateDeclaration::Visibility::Visible};

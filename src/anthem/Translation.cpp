@@ -111,7 +111,8 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 	}
 
 	// Detect integer variables
-	detectIntegerVariables(completedFormulas);
+	if (context.performIntegerDetection)
+		detectIntegerVariables(completedFormulas);
 
 	// Simplify output if specified
 	if (context.performSimplification)

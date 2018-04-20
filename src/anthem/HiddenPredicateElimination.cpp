@@ -209,9 +209,9 @@ void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Con
 		i++;
 
 		const auto isPredicateVisible =
-				(predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Visible)
-				|| (predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Default
-					&& context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Visible);
+			(predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Visible)
+			|| (predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Default
+				&& context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Visible);
 
 		// If the predicate ought to be visible, don’t eliminate it
 		if (isPredicateVisible)

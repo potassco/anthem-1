@@ -16,7 +16,30 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Domain domain(ast::Term &term);
+using VariableDomainMap = std::map<const ast::VariableDeclaration *, ast::Domain>;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ast::Domain domain(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
+{
+	if (variable.declaration->domain != ast::Domain::Unknown)
+		return variable.declaration->domain;
+
+	const auto match = variableDomainMap.find(variable.declaration);
+
+	if (match == variableDomainMap.end())
+		return ast::Domain::Unknown;
+
+	return match->second;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void clearVariableDomainMap(VariableDomainMap &variableDomainMap)
+{
+	for (auto &variableDeclaration : variableDomainMap)
+		variableDeclaration.second = ast::Domain::Unknown;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -28,363 +51,529 @@ enum class OperationResult
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct TermDomainVisitor
+enum class EvaluationResult
 {
-	static ast::Domain visit(ast::BinaryOperation &binaryOperation)
+	True,
+	False,
+	Unknown,
+	Error,
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+EvaluationResult isArithmetic(const ast::Term &term, VariableDomainMap &variableDomainMap);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct IsTermArithmeticVisitor
+{
+	static EvaluationResult visit(const ast::BinaryOperation &binaryOperation, VariableDomainMap &variableDomainMap)
 	{
-		const auto leftDomain = domain(binaryOperation.left);
-		const auto rightDomain = domain(binaryOperation.right);
+		const auto isLeftArithemtic = isArithmetic(binaryOperation.left, variableDomainMap);
+		const auto isRightArithmetic = isArithmetic(binaryOperation.right, variableDomainMap);
 
-		if (leftDomain == ast::Domain::General || rightDomain == ast::Domain::General)
-			return ast::Domain::General;
+		if (isLeftArithemtic == EvaluationResult::Error || isRightArithmetic == EvaluationResult::Error)
+			return EvaluationResult::Error;
 
-		if (leftDomain == ast::Domain::Integer || rightDomain == ast::Domain::Integer)
-			return ast::Domain::Integer;
+		if (isLeftArithemtic == EvaluationResult::False || isRightArithmetic == EvaluationResult::False)
+			return EvaluationResult::Error;
 
-		return ast::Domain::Unknown;
+		if (isLeftArithemtic == EvaluationResult::Unknown || isRightArithmetic == EvaluationResult::Unknown)
+			return EvaluationResult::Unknown;
+
+		return EvaluationResult::True;
 	}
 
-	static ast::Domain visit(ast::Boolean &)
+	static EvaluationResult visit(const ast::Boolean &, VariableDomainMap &)
 	{
-		return ast::Domain::General;
+		return EvaluationResult::False;
 	}
 
-	static ast::Domain visit(ast::Function &function)
+	static EvaluationResult visit(const ast::Function &function, VariableDomainMap &)
 	{
-		return function.declaration->domain;
+		switch (function.declaration->domain)
+		{
+			case ast::Domain::General:
+				return EvaluationResult::False;
+			case ast::Domain::Integer:
+				return EvaluationResult::True;
+			case ast::Domain::Unknown:
+				return EvaluationResult::Unknown;
+		}
+
+		return EvaluationResult::Unknown;
 	}
 
-	static ast::Domain visit(ast::Integer &)
+	static EvaluationResult visit(const ast::Integer &, VariableDomainMap &)
 	{
-		return ast::Domain::Integer;
+		return EvaluationResult::True;
 	}
 
-	static ast::Domain visit(ast::Interval &interval)
+	static EvaluationResult visit(const ast::Interval &interval, VariableDomainMap &variableDomainMap)
 	{
-		const auto fromDomain = domain(interval.from);
-		const auto toDomain = domain(interval.to);
+		const auto isFromArithmetic = isArithmetic(interval.from, variableDomainMap);
+		const auto isToArithmetic = isArithmetic(interval.to, variableDomainMap);
 
-		if (fromDomain == ast::Domain::General || toDomain == ast::Domain::General)
-			return ast::Domain::General;
+		if (isFromArithmetic == EvaluationResult::Error || isToArithmetic == EvaluationResult::Error)
+			return EvaluationResult::Error;
 
-		if (fromDomain == ast::Domain::Integer || toDomain == ast::Domain::Integer)
-			return ast::Domain::Integer;
+		if (isFromArithmetic == EvaluationResult::False || isToArithmetic == EvaluationResult::False)
+			return EvaluationResult::Error;
 
-		return ast::Domain::Unknown;
+		if (isFromArithmetic == EvaluationResult::Unknown || isToArithmetic == EvaluationResult::Unknown)
+			return EvaluationResult::Unknown;
+
+		return EvaluationResult::True;
 	}
 
-	static ast::Domain visit(ast::SpecialInteger &)
+	static EvaluationResult visit(const ast::SpecialInteger &, VariableDomainMap &)
 	{
-		// TODO: check correctness
-		return ast::Domain::Integer;
+		return EvaluationResult::False;
 	}
 
-	static ast::Domain visit(ast::String &)
+	static EvaluationResult visit(const ast::String &, VariableDomainMap &)
 	{
-		return ast::Domain::General;
+		return EvaluationResult::False;
 	}
 
-	static ast::Domain visit(ast::UnaryOperation &unaryOperation)
+	static EvaluationResult visit(const ast::UnaryOperation &unaryOperation, VariableDomainMap &variableDomainMap)
 	{
-		return domain(unaryOperation.argument);
+		const auto isArgumentArithmetic = isArithmetic(unaryOperation.argument, variableDomainMap);
+
+		switch (unaryOperation.operator_)
+		{
+			case ast::UnaryOperation::Operator::Absolute:
+				return (isArgumentArithmetic == EvaluationResult::False ? EvaluationResult::Error : isArgumentArithmetic);
+		}
+
+		return EvaluationResult::Unknown;
 	}
 
-	static ast::Domain visit(ast::Variable &variable)
+	static EvaluationResult visit(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
 	{
-		return variable.declaration->domain;
+		switch (domain(variable, variableDomainMap))
+		{
+			case ast::Domain::General:
+				return EvaluationResult::False;
+			case ast::Domain::Integer:
+				return EvaluationResult::True;
+			case ast::Domain::Unknown:
+				return EvaluationResult::Unknown;
+		}
+
+		return EvaluationResult::Unknown;
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Domain domain(ast::Term &term)
+EvaluationResult isArithmetic(const ast::Term &term, VariableDomainMap &variableDomainMap)
 {
-	return term.accept(TermDomainVisitor());
+	return term.accept(IsTermArithmeticVisitor(), variableDomainMap);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool isVariable(const ast::Term &term, const ast::VariableDeclaration &variableDeclaration)
-{
-	if (!term.is<ast::Variable>())
-		return false;
-
-	auto &variable = term.get<ast::Variable>();
-
-	return (variable.declaration == &variableDeclaration);
-}
+EvaluationResult evaluate(const ast::Formula &formula, VariableDomainMap &variableDomainMap);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct VariableDomainInFormulaVisitor
+struct EvaluateFormulaVisitor
 {
-	static ast::Domain visit(ast::And &and_, ast::VariableDeclaration &variableDeclaration)
+	static EvaluationResult visit(const ast::And &and_, VariableDomainMap &variableDomainMap)
 	{
-		bool integer = false;
+		bool someFalse = false;
+		bool someUnknown = false;
 
-		for (auto &argument : and_.arguments)
+		for (const auto &argument : and_.arguments)
 		{
-			const auto domain = argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
+			const auto result = evaluate(argument, variableDomainMap);
 
-			if (domain == ast::Domain::General)
-				return ast::Domain::General;
-
-			if (domain == ast::Domain::Integer)
-				integer = true;
+			switch (result)
+			{
+				case EvaluationResult::Error:
+					return EvaluationResult::Error;
+				case EvaluationResult::True:
+					break;
+				case EvaluationResult::False:
+					someFalse = true;
+					break;
+				case EvaluationResult::Unknown:
+					someUnknown = true;
+					break;
+			}
 		}
 
-		if (integer)
-			return ast::Domain::Integer;
+		if (someFalse)
+			return EvaluationResult::False;
 
-		return ast::Domain::Unknown;
+		if (someUnknown)
+			return EvaluationResult::Unknown;
+
+		return EvaluationResult::True;
 	}
 
-	static ast::Domain visit(ast::Biconditional &biconditional, ast::VariableDeclaration &variableDeclaration)
+	static EvaluationResult visit(const ast::Biconditional &biconditional, VariableDomainMap &variableDomainMap)
 	{
-		const auto leftDomain = biconditional.left.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
-		const auto rightDomain = biconditional.right.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
+		const auto leftResult = evaluate(biconditional.left, variableDomainMap);
+		const auto rightResult = evaluate(biconditional.right, variableDomainMap);
 
-		if (leftDomain == ast::Domain::General || rightDomain == ast::Domain::General)
-			return ast::Domain::General;
+		if (leftResult == EvaluationResult::Error || rightResult == EvaluationResult::Error)
+			return EvaluationResult::Error;
 
-		if (leftDomain == ast::Domain::Integer || rightDomain == ast::Domain::Integer)
-			return ast::Domain::Integer;
+		if (leftResult == EvaluationResult::Unknown || rightResult == EvaluationResult::Unknown)
+			return EvaluationResult::Unknown;
 
-		return ast::Domain::Unknown;
+		return (leftResult == rightResult ? EvaluationResult::True : EvaluationResult::False);
 	}
 
-	static ast::Domain visit(ast::Boolean &, ast::VariableDeclaration &)
+	static EvaluationResult visit(const ast::Boolean &boolean, VariableDomainMap &)
 	{
-		// Variable doesn’t occur in Booleans, hence it’s still considered integer until the contrary is found
-		return ast::Domain::Unknown;
+		return (boolean.value == true ? EvaluationResult::True : EvaluationResult::False);
 	}
 
-	static ast::Domain visit(ast::Comparison &comparison, ast::VariableDeclaration &variableDeclaration)
+	static EvaluationResult visit(const ast::Comparison &comparison, VariableDomainMap &variableDomainMap)
 	{
-		const auto leftIsVariable = isVariable(comparison.left, variableDeclaration);
-		const auto rightIsVariable = isVariable(comparison.right, variableDeclaration);
+		const auto isLeftArithmetic = isArithmetic(comparison.left, variableDomainMap);
+		const auto isRightArithmetic = isArithmetic(comparison.right, variableDomainMap);
 
-		// TODO: implement more cases
-		if (!leftIsVariable && !rightIsVariable)
-			return ast::Domain::Unknown;
+		if (isLeftArithmetic == EvaluationResult::Error || isRightArithmetic == EvaluationResult::Error)
+			return EvaluationResult::Error;
 
-		auto &otherSide = (leftIsVariable ? comparison.right : comparison.left);
+		if (isLeftArithmetic == EvaluationResult::Unknown || isRightArithmetic == EvaluationResult::Unknown)
+			return EvaluationResult::Unknown;
 
-		return domain(otherSide);
-	}
+		if (isLeftArithmetic == isRightArithmetic)
+			return EvaluationResult::Unknown;
 
-	static ast::Domain visit(ast::Exists &exists, ast::VariableDeclaration &variableDeclaration)
-	{
-		return exists.argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
-	}
-
-	static ast::Domain visit(ast::ForAll &forAll, ast::VariableDeclaration &variableDeclaration)
-	{
-		return forAll.argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
-	}
-
-	static ast::Domain visit(ast::Implies &implies, ast::VariableDeclaration &variableDeclaration)
-	{
-		const auto antecedentDomain = implies.antecedent.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
-		const auto consequentDomain = implies.antecedent.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
-
-		if (antecedentDomain == ast::Domain::General || consequentDomain == ast::Domain::General)
-			return ast::Domain::General;
-
-		if (antecedentDomain == ast::Domain::Integer || consequentDomain == ast::Domain::Integer)
-			return ast::Domain::Integer;
-
-		return ast::Domain::Unknown;
-	}
-
-	static ast::Domain visit(ast::In &in, ast::VariableDeclaration &variableDeclaration)
-	{
-		const auto elementIsVariable = isVariable(in.element, variableDeclaration);
-		const auto setIsVariable = isVariable(in.set, variableDeclaration);
-
-		// TODO: implement more cases
-		if (!elementIsVariable && !setIsVariable)
-			return ast::Domain::Unknown;
-
-		auto &otherSide = (elementIsVariable ? in.set : in.element);
-
-		return domain(otherSide);
-	}
-
-	static ast::Domain visit(ast::Not &not_, ast::VariableDeclaration &variableDeclaration)
-	{
-		return not_.argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
-	}
-
-	static ast::Domain visit(ast::Or &or_, ast::VariableDeclaration &variableDeclaration)
-	{
-		bool integer = false;
-
-		for (auto &argument : or_.arguments)
+		// Handle the case where one side is arithmetic but the other one isn’t
+		switch (comparison.operator_)
 		{
-			const auto domain = argument.accept(VariableDomainInFormulaVisitor(), variableDeclaration);
+			case ast::Comparison::Operator::Equal:
+				return EvaluationResult::False;
+			case ast::Comparison::Operator::NotEqual:
+				return EvaluationResult::True;
+			default:
+				// TODO: implement more cases
+				return EvaluationResult::Unknown;
+		}
+	}
 
-			if (domain == ast::Domain::General)
-				return ast::Domain::General;
+	static EvaluationResult visit(const ast::Exists &exists, VariableDomainMap &variableDomainMap)
+	{
+		return evaluate(exists.argument, variableDomainMap);
+	}
 
-			if (domain == ast::Domain::Integer)
-				integer = true;
+	static EvaluationResult visit(const ast::ForAll &forAll, VariableDomainMap &variableDomainMap)
+	{
+		return evaluate(forAll.argument, variableDomainMap);
+	}
+
+	static EvaluationResult visit(const ast::Implies &implies, VariableDomainMap &variableDomainMap)
+	{
+		const auto antecedentResult = evaluate(implies.antecedent, variableDomainMap);
+		const auto consequentResult = evaluate(implies.consequent, variableDomainMap);
+
+		if (antecedentResult == EvaluationResult::Error || consequentResult == EvaluationResult::Error)
+			return EvaluationResult::Error;
+
+		if (antecedentResult == EvaluationResult::False)
+			return EvaluationResult::True;
+
+		if (consequentResult == EvaluationResult::True)
+			return EvaluationResult::True;
+
+		if (antecedentResult == EvaluationResult::True && consequentResult == EvaluationResult::False)
+			return EvaluationResult::False;
+
+		return EvaluationResult::Unknown;
+	}
+
+	static EvaluationResult visit(const ast::In &in, VariableDomainMap &variableDomainMap)
+	{
+		const auto isElementArithmetic = isArithmetic(in.element, variableDomainMap);
+		const auto isSetArithmetic = isArithmetic(in.set, variableDomainMap);
+
+		if (isElementArithmetic == EvaluationResult::Error || isSetArithmetic == EvaluationResult::Error)
+			return EvaluationResult::Error;
+
+		if (isElementArithmetic == EvaluationResult::Unknown || isSetArithmetic == EvaluationResult::Unknown)
+			return EvaluationResult::Unknown;
+
+		if (isElementArithmetic == isSetArithmetic)
+			return EvaluationResult::Unknown;
+
+		// If one side is arithmetic, but the other one isn’t, set inclusion is never satisfied
+		return EvaluationResult::False;
+	}
+
+	static EvaluationResult visit(const ast::Not &not_, VariableDomainMap &variableDomainMap)
+	{
+		const auto result = evaluate(not_.argument, variableDomainMap);
+
+		if (result == EvaluationResult::Error || result == EvaluationResult::Unknown)
+			return result;
+
+		return (result == EvaluationResult::True ? EvaluationResult::False : EvaluationResult::True);
+	}
+
+	static EvaluationResult visit(const ast::Or &or_, VariableDomainMap &variableDomainMap)
+	{
+		bool someTrue = false;
+		bool someUnknown = false;
+
+		for (const auto &argument : or_.arguments)
+		{
+			const auto result = evaluate(argument, variableDomainMap);
+
+			switch (result)
+			{
+				case EvaluationResult::Error:
+					return EvaluationResult::Error;
+				case EvaluationResult::True:
+					someTrue = true;
+					break;
+				case EvaluationResult::False:
+					break;
+				case EvaluationResult::Unknown:
+					someUnknown = true;
+					break;
+			}
 		}
 
-		if (integer)
-			return ast::Domain::Integer;
+		if (someTrue)
+			return EvaluationResult::True;
 
-		return ast::Domain::Unknown;
+		if (someUnknown)
+			return EvaluationResult::Unknown;
+
+		return EvaluationResult::False;
 	}
 
-	static ast::Domain visit(ast::Predicate &predicate, ast::VariableDeclaration &variableDeclaration)
+	static EvaluationResult visit(const ast::Predicate &predicate, VariableDomainMap &variableDomainMap)
 	{
-		// TODO: check implementation for nested arguments
+		assert(predicate.arguments.size() == predicate.declaration->arity());
 
-		// Inherit the domain of the predicate’s parameters
 		for (size_t i = 0; i < predicate.arguments.size(); i++)
 		{
-			auto &argument = predicate.arguments[i];
+			const auto &argument = predicate.arguments[i];
+			const auto &parameter = predicate.declaration->parameters[i];
 
-			if (!argument.is<ast::Variable>())
+			if (parameter.domain != ast::Domain::Integer)
 				continue;
 
-			auto &variable = argument.get<ast::Variable>();
+			const auto isArgumentArithmetic = isArithmetic(argument, variableDomainMap);
 
-			if (variable.declaration != &variableDeclaration)
-				continue;
-
-			auto &parameter = predicate.declaration->parameters[i];
-
-			return parameter.domain;
+			if (isArgumentArithmetic == EvaluationResult::Error || isArgumentArithmetic == EvaluationResult::False)
+				return isArgumentArithmetic;
 		}
 
-		return ast::Domain::Unknown;
+		return EvaluationResult::Unknown;
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Recursively finds every variable declaration and executes functor to the formula in the scope of the declaration
+EvaluationResult evaluate(const ast::Formula &formula, VariableDomainMap &variableDomainMap)
+{
+	return formula.accept(EvaluateFormulaVisitor(), variableDomainMap);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+OperationResult detectIntegerVariables(ast::Formula &formula, ast::Formula &definition, VariableDomainMap &variableDomainMap);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct DetectIntegerVariablesVisitor
 {
-	static OperationResult visit(ast::And &and_)
+	static OperationResult visit(ast::And &and_, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
 		for (auto &argument : and_.arguments)
-			if (argument.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+			if (detectIntegerVariables(argument, definition, variableDomainMap) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Biconditional &biconditional)
+	static OperationResult visit(ast::Biconditional &biconditional, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (biconditional.left.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+		if (detectIntegerVariables(biconditional.left, definition, variableDomainMap) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
-		if (biconditional.right.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+		if (detectIntegerVariables(biconditional.right, definition, variableDomainMap) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Boolean &)
+	static OperationResult visit(ast::Boolean &, ast::Formula &, VariableDomainMap &)
 	{
 		return OperationResult::Unchanged;
 	}
 
-	static OperationResult visit(ast::Comparison &)
+	static OperationResult visit(ast::Comparison &, ast::Formula &, VariableDomainMap &)
 	{
 		return OperationResult::Unchanged;
 	}
 
-	static OperationResult visit(ast::Exists &exists)
+	static OperationResult visit(ast::Exists &exists, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (exists.argument.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+		if (detectIntegerVariables(exists.argument, definition, variableDomainMap) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		for (auto &variableDeclaration : exists.variables)
-			if (variableDeclaration->domain != ast::Domain::General)
+		{
+			if (variableDeclaration->domain != ast::Domain::Unknown)
+				continue;
+
+			clearVariableDomainMap(variableDomainMap);
+
+			auto argumentResult = evaluate(exists.argument, variableDomainMap);
+			auto definitionResult = evaluate(definition, variableDomainMap);
+
+			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
+			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
 			{
-				auto newDomain = exists.argument.accept(VariableDomainInFormulaVisitor(), *variableDeclaration);
-
-				if (variableDeclaration->domain == newDomain)
-					continue;
-
-				operationResult = OperationResult::Changed;
-				variableDeclaration->domain = newDomain;
+				continue;
 			}
+
+			// As a hypothesis, make the parameter’s domain noninteger
+			variableDomainMap[variableDeclaration.get()] = ast::Domain::General;
+
+			argumentResult = evaluate(exists.argument, variableDomainMap);
+			definitionResult = evaluate(definition, variableDomainMap);
+
+			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
+			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
+			{
+				// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+				operationResult = OperationResult::Changed;
+				variableDeclaration->domain = ast::Domain::Integer;
+			}
+		}
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::ForAll &forAll)
+	static OperationResult visit(ast::ForAll &forAll, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (forAll.argument.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+		if (detectIntegerVariables(forAll.argument, definition, variableDomainMap) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		for (auto &variableDeclaration : forAll.variables)
-			if (variableDeclaration->domain != ast::Domain::General)
+		{
+			if (variableDeclaration->domain != ast::Domain::Unknown)
+				continue;
+
+			clearVariableDomainMap(variableDomainMap);
+
+			auto argumentResult = evaluate(forAll.argument, variableDomainMap);
+			auto definitionResult = evaluate(definition, variableDomainMap);
+
+			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
+			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
 			{
-				auto newDomain = forAll.argument.accept(VariableDomainInFormulaVisitor(), *variableDeclaration);
-
-				if (variableDeclaration->domain == newDomain)
-					continue;
-
-				operationResult = OperationResult::Changed;
-				variableDeclaration->domain = newDomain;
+				continue;
 			}
+
+			// As a hypothesis, make the parameter’s domain noninteger
+			variableDomainMap[variableDeclaration.get()] = ast::Domain::General;
+
+			argumentResult = evaluate(forAll.argument, variableDomainMap);
+			definitionResult = evaluate(definition, variableDomainMap);
+
+			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
+			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
+			{
+				// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+				operationResult = OperationResult::Changed;
+				variableDeclaration->domain = ast::Domain::Integer;
+			}
+		}
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Implies &implies)
+	static OperationResult visit(ast::Implies &implies, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (implies.antecedent.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+		if (detectIntegerVariables(implies.antecedent, definition, variableDomainMap) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
-		if (implies.consequent.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+		if (detectIntegerVariables(implies.consequent, definition, variableDomainMap) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::In &)
+	static OperationResult visit(ast::In &, ast::Formula &, VariableDomainMap &)
 	{
 		return OperationResult::Unchanged;
 	}
 
-	static OperationResult visit(ast::Not &not_)
+	static OperationResult visit(ast::Not &not_, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
-		return not_.argument.accept(DetectIntegerVariablesVisitor());
+		return detectIntegerVariables(not_.argument, definition, variableDomainMap);
 	}
 
-	static OperationResult visit(ast::Or &or_)
+	static OperationResult visit(ast::Or &or_, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
 		for (auto &argument : or_.arguments)
-			if (argument.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
+			if (detectIntegerVariables(argument, definition, variableDomainMap) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Predicate &)
+	static OperationResult visit(ast::Predicate &predicate, ast::Formula &, VariableDomainMap &)
 	{
-		return OperationResult::Unchanged;
+		auto operationResult = OperationResult::Unchanged;
+
+		assert(predicate.arguments.size() == predicate.declaration->arity());
+
+		// Propagate integer domains from predicates to variables
+		for (size_t i = 0; i < predicate.arguments.size(); i++)
+		{
+			auto &variableArgument = predicate.arguments[i];
+			auto &parameter = predicate.declaration->parameters[i];
+
+			if (parameter.domain != ast::Domain::Integer)
+				continue;
+
+			if (!variableArgument.is<ast::Variable>())
+				continue;
+
+			auto &variable = variableArgument.get<ast::Variable>();
+
+			if (variable.declaration->domain == ast::Domain::Integer)
+				continue;
+
+			operationResult = OperationResult::Changed;
+			variable.declaration->domain = ast::Domain::Integer;
+		}
+
+		return operationResult;
 	}
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+OperationResult detectIntegerVariables(ast::Formula &formula, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+{
+	return formula.accept(DetectIntegerVariablesVisitor(), definition, variableDomainMap);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -392,7 +581,8 @@ struct DetectIntegerVariablesVisitor
 // That is, completed formulas are either variable-free or universally quantified
 void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 {
-	auto operationResult{OperationResult::Changed};
+	VariableDomainMap variableDomainMap;
+	auto operationResult = OperationResult::Changed;
 
 	while (operationResult == OperationResult::Changed)
 	{
@@ -400,12 +590,14 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 
 		for (auto &completedFormula : completedFormulas)
 		{
+			if (detectIntegerVariables(completedFormula, completedFormula, variableDomainMap) == OperationResult::Changed)
+				operationResult = OperationResult::Changed;
+
 			if (!completedFormula.is<ast::ForAll>())
 				continue;
 
 			auto &forAll = completedFormula.get<ast::ForAll>();
 
-			// TODO: check that integrity constraints are also handled
 			if (!forAll.argument.is<ast::Biconditional>())
 				continue;
 
@@ -417,38 +609,42 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 			auto &predicate = biconditional.left.get<ast::Predicate>();
 			auto &definition = biconditional.right;
 
-			if (definition.accept(DetectIntegerVariablesVisitor()) == OperationResult::Changed)
-				operationResult = OperationResult::Changed;
-
-			for (auto &variableDeclaration : forAll.variables)
-				if (variableDeclaration->domain != ast::Domain::General)
-				{
-					auto newDomain = forAll.argument.accept(VariableDomainInFormulaVisitor(), *variableDeclaration);
-
-					if (variableDeclaration->domain == newDomain)
-						continue;
-
-					operationResult = OperationResult::Changed;
-					variableDeclaration->domain = newDomain;
-				}
-
 			assert(predicate.arguments.size() == predicate.declaration->arity());
 
-			// Update parameter domains
+			if (detectIntegerVariables(definition, definition, variableDomainMap) == OperationResult::Changed)
+				operationResult = OperationResult::Changed;
+
 			for (size_t i = 0; i < predicate.arguments.size(); i++)
 			{
 				auto &variableArgument = predicate.arguments[i];
+				auto &parameter = predicate.declaration->parameters[i];
 
 				assert(variableArgument.is<ast::Variable>());
 
 				auto &variable = variableArgument.get<ast::Variable>();
-				auto &parameter = predicate.declaration->parameters[i];
 
-				if (parameter.domain == variable.declaration->domain)
+				if (parameter.domain != ast::Domain::Unknown)
 					continue;
 
-				operationResult = OperationResult::Changed;
-				parameter.domain = variable.declaration->domain;
+				clearVariableDomainMap(variableDomainMap);
+
+				auto result = evaluate(definition, variableDomainMap);
+
+				if (result == EvaluationResult::Error || result == EvaluationResult::False)
+					continue;
+
+				// As a hypothesis, make the parameter’s domain noninteger
+				variableDomainMap[variable.declaration] = ast::Domain::General;
+
+				result = evaluate(definition, variableDomainMap);
+
+				if (result == EvaluationResult::Error || result == EvaluationResult::False)
+				{
+					// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+					operationResult = OperationResult::Changed;
+					variable.declaration->domain = ast::Domain::Integer;
+					parameter.domain = ast::Domain::Integer;
+				}
 			}
 		}
 	}

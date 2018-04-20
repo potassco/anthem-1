@@ -322,6 +322,22 @@ inline output::ColorStream &print(output::ColorStream &stream, const Variable &v
 
 inline output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext, bool)
 {
+	const auto domainSuffix =
+		[&variableDeclaration]()
+		{
+			switch (variableDeclaration.domain)
+			{
+				case Domain::Unknown:
+					return "";
+				case Domain::General:
+					return "g";
+				case Domain::Integer:
+					return "i";
+			}
+
+			return "";
+		};
+
 	const auto printVariableDeclaration =
 		[&](const auto *prefix, auto &variableIDs) -> output::ColorStream &
 		{
@@ -334,7 +350,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const VariableDec
 				matchingVariableID = emplaceResult.first;
 			}
 
-			const auto variableName = std::string(prefix) + std::to_string(matchingVariableID->second);
+			const auto variableName = std::string(prefix) + std::to_string(matchingVariableID->second) + domainSuffix();
 
 			return (stream << output::Variable(variableName.c_str()));
 		};

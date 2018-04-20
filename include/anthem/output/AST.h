@@ -35,6 +35,7 @@ struct PrintContext
 	std::map<const VariableDeclaration *, size_t> userVariableIDs;
 	std::map<const VariableDeclaration *, size_t> headVariableIDs;
 	std::map<const VariableDeclaration *, size_t> bodyVariableIDs;
+	std::map<const VariableDeclaration *, size_t> integerVariableIDs;
 
 	const Context &context;
 };
@@ -338,6 +339,9 @@ inline output::ColorStream &print(output::ColorStream &stream, const VariableDec
 
 			return (stream << output::Variable(variableName.c_str()));
 		};
+
+	if (variableDeclaration.domain == Domain::Integer)
+		return printVariableDeclaration(IntegerVariablePrefix, printContext.integerVariableIDs);
 
 	switch (variableDeclaration.type)
 	{

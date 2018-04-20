@@ -75,8 +75,8 @@ struct Context
 
 	output::Logger logger;
 
-	bool performSimplification = false;
-	bool performCompletion = false;
+	bool performSimplification{false};
+	bool performCompletion{false};
 
 	std::vector<std::unique_ptr<ast::PredicateDeclaration>> predicateDeclarations;
 	ast::PredicateDeclaration::Visibility defaultPredicateVisibility{ast::PredicateDeclaration::Visibility::Visible};

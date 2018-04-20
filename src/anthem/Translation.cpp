@@ -126,6 +126,38 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		ast::print(context.logger.outputStream(), completedFormula, printContext);
 		context.logger.outputStream() << std::endl;
 	}
+
+	// Print specifiers for integer predicate parameters
+	for (auto &predicateDeclaration : context.predicateDeclarations)
+	{
+		// Check that the predicate is used and not declared #external
+		if (!predicateDeclaration->isUsed || predicateDeclaration->isExternal)
+			continue;
+
+		const auto isPredicateVisible =
+			(predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Visible)
+			|| (predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Default
+				&& context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Visible);
+
+		// If the predicate ought to be visible, don’t eliminate it
+		if (!isPredicateVisible)
+			continue;
+
+		for (size_t i = 0; i < predicateDeclaration->parameters.size(); i++)
+		{
+			auto &parameter = predicateDeclaration->parameters[i];
+
+			if (parameter.domain != Domain::Integer)
+				continue;
+
+			context.logger.outputStream()
+				<< output::Keyword("int")
+				<< "(" << predicateDeclaration->name
+				<< "/" << output::Number(predicateDeclaration->arity())
+				<< "@" << output::Number(i + 1)
+				<< ")" << std::endl;
+		}
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

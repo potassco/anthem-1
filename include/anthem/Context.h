@@ -35,8 +35,8 @@ struct Context
 
 	output::Logger logger;
 
-	bool performSimplification = false;
-	bool performCompletion = false;
+	bool performSimplification{false};
+	bool performCompletion{false};
 
 	std::optional<std::vector<PredicateSignatureMeta>> visiblePredicateSignatures;
 	std::optional<std::vector<PredicateSignatureMeta>> externalPredicateSignatures;

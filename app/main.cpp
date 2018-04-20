@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
 	if (version)
 	{
-		std::cout << "anthem version 0.1.7+git" << std::endl;
+		std::cout << "anthem version 0.1.8" << std::endl;
 		return EXIT_SUCCESS;
 	}
 

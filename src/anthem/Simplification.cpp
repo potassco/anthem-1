@@ -5,6 +5,7 @@
 #include <anthem/ASTCopy.h>
 #include <anthem/Equality.h>
 #include <anthem/SimplificationVisitors.h>
+#include <anthem/Type.h>
 #include <anthem/output/AST.h>
 
 namespace anthem
@@ -512,6 +513,34 @@ struct SimplificationRuleNegatedComparison
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleIntegerSetInclusion
+{
+	static constexpr const auto Description = "(F in G) === (F = G) if F and G are integer variables";
+
+	static OperationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::In>())
+			return OperationResult::Unchanged;
+
+		auto &in = formula.get<ast::In>();
+
+		const auto elementType = type(in.element);
+		const auto setType = type(in.set);
+
+		if (elementType.domain != Domain::Integer || setType.domain != Domain::Integer
+		    || elementType.setSize != SetSize::Unit || setType.setSize != SetSize::Unit)
+		{
+			return OperationResult::Unchanged;
+		}
+
+		formula = ast::Formula::make<ast::Comparison>(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
+
+		return OperationResult::Changed;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto simplifyWithDefaultRules =
 	simplify
 	<
@@ -526,7 +555,8 @@ const auto simplifyWithDefaultRules =
 		SimplificationRuleSubsumptionInBiconditionals,
 		SimplificationRuleDeMorganForConjunctions,
 		SimplificationRuleImplicationFromDisjunction,
-		SimplificationRuleNegatedComparison
+		SimplificationRuleNegatedComparison,
+		SimplificationRuleIntegerSetInclusion
 	>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,6 @@
 #include <anthem/IntegerVariableDetection.h>
 
+#include <anthem/Arithmetics.h>
 #include <anthem/ASTCopy.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
@@ -44,107 +45,11 @@ void clearVariableDomainMap(VariableDomainMap &variableDomainMap)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-EvaluationResult isArithmetic(const ast::Term &term, VariableDomainMap &variableDomainMap);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct IsTermArithmeticVisitor
+struct VariableDomainMapAccessor
 {
-	static EvaluationResult visit(const ast::BinaryOperation &binaryOperation, VariableDomainMap &variableDomainMap)
+	ast::Domain operator()(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
 	{
-		const auto isLeftArithemtic = isArithmetic(binaryOperation.left, variableDomainMap);
-		const auto isRightArithmetic = isArithmetic(binaryOperation.right, variableDomainMap);
-
-		if (isLeftArithemtic == EvaluationResult::Error || isRightArithmetic == EvaluationResult::Error)
-			return EvaluationResult::Error;
-
-		if (isLeftArithemtic == EvaluationResult::False || isRightArithmetic == EvaluationResult::False)
-			return EvaluationResult::Error;
-
-		if (isLeftArithemtic == EvaluationResult::Unknown || isRightArithmetic == EvaluationResult::Unknown)
-			return EvaluationResult::Unknown;
-
-		return EvaluationResult::True;
-	}
-
-	static EvaluationResult visit(const ast::Boolean &, VariableDomainMap &)
-	{
-		return EvaluationResult::False;
-	}
-
-	static EvaluationResult visit(const ast::Function &function, VariableDomainMap &)
-	{
-		switch (function.declaration->domain)
-		{
-			case ast::Domain::General:
-				return EvaluationResult::False;
-			case ast::Domain::Integer:
-				return EvaluationResult::True;
-			case ast::Domain::Unknown:
-				return EvaluationResult::Unknown;
-		}
-
-		return EvaluationResult::Unknown;
-	}
-
-	static EvaluationResult visit(const ast::Integer &, VariableDomainMap &)
-	{
-		return EvaluationResult::True;
-	}
-
-	static EvaluationResult visit(const ast::Interval &interval, VariableDomainMap &variableDomainMap)
-	{
-		const auto isFromArithmetic = isArithmetic(interval.from, variableDomainMap);
-		const auto isToArithmetic = isArithmetic(interval.to, variableDomainMap);
-
-		if (isFromArithmetic == EvaluationResult::Error || isToArithmetic == EvaluationResult::Error)
-			return EvaluationResult::Error;
-
-		if (isFromArithmetic == EvaluationResult::False || isToArithmetic == EvaluationResult::False)
-			return EvaluationResult::Error;
-
-		if (isFromArithmetic == EvaluationResult::Unknown || isToArithmetic == EvaluationResult::Unknown)
-			return EvaluationResult::Unknown;
-
-		return EvaluationResult::True;
-	}
-
-	static EvaluationResult visit(const ast::SpecialInteger &, VariableDomainMap &)
-	{
-		return EvaluationResult::False;
-	}
-
-	static EvaluationResult visit(const ast::String &, VariableDomainMap &)
-	{
-		return EvaluationResult::False;
-	}
-
-	static EvaluationResult visit(const ast::UnaryOperation &unaryOperation, VariableDomainMap &variableDomainMap)
-	{
-		const auto isArgumentArithmetic = isArithmetic(unaryOperation.argument, variableDomainMap);
-
-		switch (unaryOperation.operator_)
-		{
-			case ast::UnaryOperation::Operator::Absolute:
-				return (isArgumentArithmetic == EvaluationResult::False ? EvaluationResult::Error : isArgumentArithmetic);
-		}
-
-		return EvaluationResult::Unknown;
-	}
-
-	static EvaluationResult visit(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
-	{
-		switch (domain(variable, variableDomainMap))
-		{
-			case ast::Domain::General:
-				return EvaluationResult::False;
-			case ast::Domain::Integer:
-				return EvaluationResult::True;
-			case ast::Domain::Unknown:
-				return EvaluationResult::Unknown;
-		}
-
-		return EvaluationResult::Unknown;
+		return domain(variable, variableDomainMap);
 	}
 };
 
@@ -152,7 +57,7 @@ struct IsTermArithmeticVisitor
 
 EvaluationResult isArithmetic(const ast::Term &term, VariableDomainMap &variableDomainMap)
 {
-	return term.accept(IsTermArithmeticVisitor(), variableDomainMap);
+	return isArithmetic<VariableDomainMapAccessor>(term, variableDomainMap);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

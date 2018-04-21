@@ -586,6 +586,7 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 
 			assert(predicate.arguments.size() == predicate.declaration->arity());
 
+			// TODO: refactor
 			if (detectIntegerVariables(definition, definition, variableDomainMap) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
 

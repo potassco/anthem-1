@@ -149,6 +149,114 @@ EvaluationResult isArithmetic(const ast::Term &term, Arguments &&... arguments)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+EvaluationResult isInteger(const ast::Term &term);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct IsTermIntegerVisitor
+{
+	static EvaluationResult visit(const ast::BinaryOperation &binaryOperation)
+	{
+		const auto isLeftArithemtic = isArithmetic(binaryOperation.left);
+		const auto isRightArithmetic = isArithmetic(binaryOperation.right);
+
+		if (isLeftArithemtic == EvaluationResult::Error || isRightArithmetic == EvaluationResult::Error)
+			return EvaluationResult::Error;
+
+		if (isLeftArithemtic == EvaluationResult::False || isRightArithmetic == EvaluationResult::False)
+			return EvaluationResult::Error;
+
+		if (binaryOperation.operator_ == ast::BinaryOperation::Operator::Division)
+			return EvaluationResult::False;
+
+		if (isLeftArithemtic == EvaluationResult::Unknown || isRightArithmetic == EvaluationResult::Unknown)
+			return EvaluationResult::Unknown;
+
+		return EvaluationResult::True;
+	}
+
+	static EvaluationResult visit(const ast::Boolean &)
+	{
+		return EvaluationResult::False;
+	}
+
+	static EvaluationResult visit(const ast::Function &function)
+	{
+		switch (function.declaration->domain)
+		{
+			case ast::Domain::General:
+				return EvaluationResult::False;
+			case ast::Domain::Integer:
+				return EvaluationResult::True;
+			case ast::Domain::Unknown:
+				return EvaluationResult::Unknown;
+		}
+
+		return EvaluationResult::Unknown;
+	}
+
+	static EvaluationResult visit(const ast::Integer &)
+	{
+		return EvaluationResult::True;
+	}
+
+	template <class... Arguments>
+	static EvaluationResult visit(const ast::Interval &)
+	{
+		return EvaluationResult::False;
+	}
+
+	template <class... Arguments>
+	static EvaluationResult visit(const ast::SpecialInteger &)
+	{
+		return EvaluationResult::False;
+	}
+
+	template <class... Arguments>
+	static EvaluationResult visit(const ast::String &)
+	{
+		return EvaluationResult::False;
+	}
+
+	template <class... Arguments>
+	static EvaluationResult visit(const ast::UnaryOperation &unaryOperation)
+	{
+		const auto isArgumentArithmetic = isArithmetic(unaryOperation.argument);
+
+		switch (unaryOperation.operator_)
+		{
+			case ast::UnaryOperation::Operator::Absolute:
+				return (isArgumentArithmetic == EvaluationResult::False ? EvaluationResult::Error : isArgumentArithmetic);
+		}
+
+		return EvaluationResult::Unknown;
+	}
+
+	static EvaluationResult visit(const ast::Variable &variable)
+	{
+		switch (variable.declaration->domain)
+		{
+			case ast::Domain::General:
+				return EvaluationResult::False;
+			case ast::Domain::Integer:
+				return EvaluationResult::True;
+			case ast::Domain::Unknown:
+				return EvaluationResult::Unknown;
+		}
+
+		return EvaluationResult::Unknown;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline EvaluationResult isInteger(const ast::Term &term)
+{
+	return term.accept(IsTermIntegerVisitor());
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 }
 
 #endif

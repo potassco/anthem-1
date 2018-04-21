@@ -565,6 +565,39 @@ struct CheckIfQuantifiedFormulaFalseFunctor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct CheckIfCompletedFormulaTrueFunctor
+{
+	OperationResult operator()(ast::VariableDeclaration &variableDeclaration,
+		ast::Formula &, ast::Formula &completedFormula, VariableDomainMap &variableDomainMap)
+	{
+		if (variableDeclaration.domain != ast::Domain::Unknown)
+			return OperationResult::Unchanged;
+
+		clearVariableDomainMap(variableDomainMap);
+
+		auto result = evaluate(completedFormula, variableDomainMap);
+
+		if (result == EvaluationResult::Error || result == EvaluationResult::True)
+			return OperationResult::Unchanged;
+
+		// As a hypothesis, make the parameter’s domain noninteger
+		variableDomainMap[&variableDeclaration] = ast::Domain::General;
+
+		result = evaluate(completedFormula, variableDomainMap);
+
+		if (result == EvaluationResult::Error || result == EvaluationResult::True)
+		{
+			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			variableDeclaration.domain = ast::Domain::Integer;
+			return OperationResult::Changed;
+		}
+
+		return OperationResult::Unchanged;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // Assumes the completed formulas to be in translated but not simplified form.
 // That is, completed formulas are either variable-free or universally quantified
 void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
@@ -579,6 +612,9 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 		for (auto &completedFormula : completedFormulas)
 		{
 			if (completedFormula.accept(ForEachVariableDeclarationVisitor<CheckIfQuantifiedFormulaFalseFunctor>(), variableDomainMap) == OperationResult::Changed)
+				operationResult = OperationResult::Changed;
+
+			if (completedFormula.accept(ForEachVariableDeclarationVisitor<CheckIfCompletedFormulaTrueFunctor>(), completedFormula, variableDomainMap) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
 
 			if (!completedFormula.is<ast::ForAll>())

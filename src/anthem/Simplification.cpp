@@ -4,8 +4,8 @@
 
 #include <anthem/ASTCopy.h>
 #include <anthem/Equality.h>
-#include <anthem/output/AST.h>
 #include <anthem/SimplificationVisitors.h>
+#include <anthem/output/AST.h>
 
 namespace anthem
 {
@@ -100,7 +100,7 @@ struct ReplaceVariableInFormulaVisitor : public ast::RecursiveFormulaVisitor<Rep
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class SimplificationRule>
-SimplificationResult simplify(ast::Formula &formula)
+OperationResult simplify(ast::Formula &formula)
 {
 	return SimplificationRule::apply(formula);
 }
@@ -108,10 +108,10 @@ SimplificationResult simplify(ast::Formula &formula)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class FirstSimplificationRule, class SecondSimplificationRule, class... OtherSimplificationRules>
-SimplificationResult simplify(ast::Formula &formula)
+OperationResult simplify(ast::Formula &formula)
 {
-	if (simplify<FirstSimplificationRule>(formula) == SimplificationResult::Simplified)
-		return SimplificationResult::Simplified;
+	if (simplify<FirstSimplificationRule>(formula) == OperationResult::Changed)
+		return OperationResult::Changed;
 
 	return simplify<SecondSimplificationRule, OtherSimplificationRules...>(formula);
 }
@@ -122,19 +122,19 @@ struct SimplificationRuleExistsWithoutQuantifiedVariables
 {
 	static constexpr const auto Description = "exists () (F) === F";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Exists>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &exists = formula.get<ast::Exists>();
 
 		if (!exists.variables.empty())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		formula = std::move(exists.argument);
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -144,20 +144,20 @@ struct SimplificationRuleTrivialAssignmentInExists
 {
 	static constexpr const auto Description = "exists X (X = Y) === #true";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Exists>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		const auto &exists = formula.get<ast::Exists>();
 
 		if (!exists.argument.is<ast::Comparison>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		const auto &comparison = exists.argument.get<ast::Comparison>();
 
 		if (comparison.operator_ != ast::Comparison::Operator::Equal)
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		const auto matchingAssignment = std::find_if(exists.variables.cbegin(), exists.variables.cend(),
 			[&](const auto &variableDeclaration)
@@ -167,11 +167,11 @@ struct SimplificationRuleTrivialAssignmentInExists
 			});
 
 		if (matchingAssignment == exists.variables.cend())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		formula = ast::Formula::make<ast::Boolean>(true);
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -181,20 +181,20 @@ struct SimplificationRuleAssignmentInExists
 {
 	static constexpr const auto Description = "exists X (X = t and F(X)) === exists () (F(t))";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Exists>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &exists = formula.get<ast::Exists>();
 
 		if (!exists.argument.is<ast::And>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &and_ = exists.argument.get<ast::And>();
 		auto &arguments = and_.arguments;
 
-		auto simplificationResult = SimplificationResult::Unchanged;
+		auto simplificationResult = OperationResult::Unchanged;
 
 		for (auto i = exists.variables.begin(); i != exists.variables.end();)
 		{
@@ -225,7 +225,7 @@ struct SimplificationRuleAssignmentInExists
 				arguments.erase(j);
 
 				wasVariableReplaced = true;
-				simplificationResult = SimplificationResult::Simplified;
+				simplificationResult = OperationResult::Changed;
 
 				break;
 			}
@@ -249,19 +249,19 @@ struct SimplificationRuleEmptyConjunction
 {
 	static constexpr const auto Description = "[empty conjunction] === #true";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::And>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &and_ = formula.get<ast::And>();
 
 		if (!and_.arguments.empty())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		formula = ast::Formula::make<ast::Boolean>(true);
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -271,19 +271,19 @@ struct SimplificationRuleOneElementConjunction
 {
 	static constexpr const auto Description = "[conjunction of only F] === F";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::And>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &and_ = formula.get<ast::And>();
 
 		if (and_.arguments.size() != 1)
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		formula = std::move(and_.arguments.front());
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -293,19 +293,19 @@ struct SimplificationRuleTrivialExists
 {
 	static constexpr const auto Description = "exists ... ([#true/#false]) === [#true/#false]";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Exists>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &exists = formula.get<ast::Exists>();
 
 		if (!exists.argument.is<ast::Boolean>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		formula = std::move(exists.argument);
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -315,21 +315,21 @@ struct SimplificationRuleInWithPrimitiveArguments
 {
 	static constexpr const auto Description = "[primitive A] in [primitive B] === A = B";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::In>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &in = formula.get<ast::In>();
 
 		assert(ast::isPrimitive(in.element));
 
 		if (!ast::isPrimitive(in.element) || !ast::isPrimitive(in.set))
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -339,10 +339,10 @@ struct SimplificationRuleSubsumptionInBiconditionals
 {
 	static constexpr const auto Description = "(F <-> (F and G)) === (F -> G)";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Biconditional>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &biconditional = formula.get<ast::Biconditional>();
 
@@ -353,7 +353,7 @@ struct SimplificationRuleSubsumptionInBiconditionals
 		const auto rightIsAnd = biconditional.right.is<ast::And>();
 
 		if (!(leftIsPredicate && rightIsAnd) && !(rightIsPredicate && leftIsAnd))
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &predicateSide = (leftIsPredicate ? biconditional.left : biconditional.right);
 		auto &andSide = (leftIsPredicate ? biconditional.right : biconditional.left);
@@ -367,13 +367,13 @@ struct SimplificationRuleSubsumptionInBiconditionals
 			});
 
 		if (matchingPredicate == and_.arguments.cend())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		and_.arguments.erase(matchingPredicate);
 
 		formula = ast::Formula::make<ast::Implies>(std::move(predicateSide), std::move(andSide));
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -383,21 +383,21 @@ struct SimplificationRuleDoubleNegation
 {
 	static constexpr const auto Description = "not not F === F";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Not>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &not_ = formula.get<ast::Not>();
 
 		if (!not_.argument.is<ast::Not>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &notNot = not_.argument.get<ast::Not>();
 
 		formula = std::move(notNot.argument);
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -407,15 +407,15 @@ struct SimplificationRuleDeMorganForConjunctions
 {
 	static constexpr const auto Description = "(not (F and G)) === (not F or not G)";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Not>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &not_ = formula.get<ast::Not>();
 
 		if (!not_.argument.is<ast::And>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &and_ = not_.argument.get<ast::And>();
 
@@ -424,7 +424,7 @@ struct SimplificationRuleDeMorganForConjunctions
 
 		formula = ast::Formula::make<ast::Or>(std::move(and_.arguments));
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -434,21 +434,21 @@ struct SimplificationRuleImplicationFromDisjunction
 {
 	static constexpr const auto Description = "(not F or G) === (F -> G)";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Or>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &or_ = formula.get<ast::Or>();
 
 		if (or_.arguments.size() != 2)
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		const auto leftIsNot = or_.arguments[0].is<ast::Not>();
 		const auto rightIsNot = or_.arguments[1].is<ast::Not>();
 
 		if (leftIsNot == rightIsNot)
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &negativeSide = leftIsNot ? or_.arguments[0] : or_.arguments[1];
 		auto &positiveSide = leftIsNot ? or_.arguments[1] : or_.arguments[0];
@@ -460,7 +460,7 @@ struct SimplificationRuleImplicationFromDisjunction
 
 		formula = ast::Formula::make<ast::Implies>(std::move(negativeSideArgument), std::move(positiveSide));
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -470,15 +470,15 @@ struct SimplificationRuleNegatedComparison
 {
 	static constexpr const auto Description = "(not F [comparison] G) === (F [negated comparison] G)";
 
-	static SimplificationResult apply(ast::Formula &formula)
+	static OperationResult apply(ast::Formula &formula)
 	{
 		if (!formula.is<ast::Not>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &not_ = formula.get<ast::Not>();
 
 		if (!not_.argument.is<ast::Comparison>())
-			return SimplificationResult::Unchanged;
+			return OperationResult::Unchanged;
 
 		auto &comparison = not_.argument.get<ast::Comparison>();
 
@@ -506,7 +506,7 @@ struct SimplificationRuleNegatedComparison
 
 		formula = std::move(comparison);
 
-		return SimplificationResult::Simplified;
+		return OperationResult::Changed;
 	}
 };
 
@@ -535,7 +535,7 @@ const auto simplifyWithDefaultRules =
 struct SimplifyFormulaVisitor : public ast::FormulaSimplificationVisitor<SimplifyFormulaVisitor>
 {
 	// Do nothing for all other types of expressions
-	static SimplificationResult accept(ast::Formula &formula)
+	static OperationResult accept(ast::Formula &formula)
 	{
 		return simplifyWithDefaultRules(formula);
 	}
@@ -545,7 +545,7 @@ struct SimplifyFormulaVisitor : public ast::FormulaSimplificationVisitor<Simplif
 
 void simplify(ast::Formula &formula)
 {
-	while (formula.accept(SimplifyFormulaVisitor(), formula) == SimplificationResult::Simplified);
+	while (formula.accept(SimplifyFormulaVisitor(), formula) == OperationResult::Changed);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

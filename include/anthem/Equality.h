@@ -3,7 +3,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>
-#include <anthem/Tristate.h>
+#include <anthem/Utils.h>
 
 namespace anthem
 {

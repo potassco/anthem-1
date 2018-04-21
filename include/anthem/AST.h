@@ -3,7 +3,6 @@
 
 #include <anthem/ASTForward.h>
 #include <anthem/Domain.h>
-#include <anthem/Tristate.h>
 
 namespace anthem
 {

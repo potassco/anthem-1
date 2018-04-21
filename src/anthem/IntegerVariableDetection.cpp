@@ -5,6 +5,7 @@
 #include <anthem/ASTVisitors.h>
 #include <anthem/Exception.h>
 #include <anthem/Simplification.h>
+#include <anthem/Utils.h>
 #include <anthem/output/AST.h>
 
 namespace anthem
@@ -40,24 +41,6 @@ void clearVariableDomainMap(VariableDomainMap &variableDomainMap)
 	for (auto &variableDeclaration : variableDomainMap)
 		variableDeclaration.second = ast::Domain::Unknown;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-enum class OperationResult
-{
-	Unchanged,
-	Changed,
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-enum class EvaluationResult
-{
-	True,
-	False,
-	Unknown,
-	Error,
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -6,6 +6,7 @@
 
 * optional detection of integer variables and integer predicate parameters
 * command-line option `--detect-integers` to enable integer variable detection
+* support for declaring functions integer with the `#external` directive
 
 ## 0.1.8 (2018-04-20)
 

@@ -381,163 +381,117 @@ EvaluationResult evaluate(const ast::Formula &formula, VariableDomainMap &variab
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-OperationResult detectIntegerVariables(ast::Formula &formula, ast::Formula &definition, VariableDomainMap &variableDomainMap);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct DetectIntegerVariablesVisitor
+template <class Functor>
+struct ForEachVariableDeclarationVisitor
 {
-	static OperationResult visit(ast::And &and_, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	template <class... Arguments>
+	static OperationResult visit(ast::And &and_, Arguments &&... arguments)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
 		for (auto &argument : and_.arguments)
-			if (detectIntegerVariables(argument, definition, variableDomainMap) == OperationResult::Changed)
+			if (argument.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Biconditional &biconditional, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	template <class... Arguments>
+	static OperationResult visit(ast::Biconditional &biconditional, Arguments &&... arguments)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (detectIntegerVariables(biconditional.left, definition, variableDomainMap) == OperationResult::Changed)
+		if (biconditional.left.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
-		if (detectIntegerVariables(biconditional.right, definition, variableDomainMap) == OperationResult::Changed)
+		if (biconditional.right.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Boolean &, ast::Formula &, VariableDomainMap &)
+	template <class... Arguments>
+	static OperationResult visit(ast::Boolean &, Arguments &&...)
 	{
 		return OperationResult::Unchanged;
 	}
 
-	static OperationResult visit(ast::Comparison &, ast::Formula &, VariableDomainMap &)
+	template <class... Arguments>
+	static OperationResult visit(ast::Comparison &, Arguments &&...)
 	{
 		return OperationResult::Unchanged;
 	}
 
-	static OperationResult visit(ast::Exists &exists, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	template <class... Arguments>
+	static OperationResult visit(ast::Exists &exists, Arguments &&... arguments)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (detectIntegerVariables(exists.argument, definition, variableDomainMap) == OperationResult::Changed)
+		if (exists.argument.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		for (auto &variableDeclaration : exists.variables)
-		{
-			if (variableDeclaration->domain != ast::Domain::Unknown)
-				continue;
-
-			clearVariableDomainMap(variableDomainMap);
-
-			auto argumentResult = evaluate(exists.argument, variableDomainMap);
-			auto definitionResult = evaluate(definition, variableDomainMap);
-
-			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
-			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
-			{
-				continue;
-			}
-
-			// As a hypothesis, make the parameter’s domain noninteger
-			variableDomainMap[variableDeclaration.get()] = ast::Domain::General;
-
-			argumentResult = evaluate(exists.argument, variableDomainMap);
-			definitionResult = evaluate(definition, variableDomainMap);
-
-			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
-			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
-			{
-				// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			if (Functor()(*variableDeclaration, exists.argument, std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
-				variableDeclaration->domain = ast::Domain::Integer;
-			}
-		}
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::ForAll &forAll, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	template <class... Arguments>
+	static OperationResult visit(ast::ForAll &forAll, Arguments &&... arguments)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (detectIntegerVariables(forAll.argument, definition, variableDomainMap) == OperationResult::Changed)
+		if (forAll.argument.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		for (auto &variableDeclaration : forAll.variables)
-		{
-			if (variableDeclaration->domain != ast::Domain::Unknown)
-				continue;
-
-			clearVariableDomainMap(variableDomainMap);
-
-			auto argumentResult = evaluate(forAll.argument, variableDomainMap);
-			auto definitionResult = evaluate(definition, variableDomainMap);
-
-			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
-			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
-			{
-				continue;
-			}
-
-			// As a hypothesis, make the parameter’s domain noninteger
-			variableDomainMap[variableDeclaration.get()] = ast::Domain::General;
-
-			argumentResult = evaluate(forAll.argument, variableDomainMap);
-			definitionResult = evaluate(definition, variableDomainMap);
-
-			if (argumentResult == EvaluationResult::Error || argumentResult == EvaluationResult::False
-			    || definitionResult == EvaluationResult::Error || definitionResult == EvaluationResult::False)
-			{
-				// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			if (Functor()(*variableDeclaration, forAll.argument, std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
-				variableDeclaration->domain = ast::Domain::Integer;
-			}
-		}
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Implies &implies, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	template <class... Arguments>
+	static OperationResult visit(ast::Implies &implies, Arguments &&... arguments)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
-		if (detectIntegerVariables(implies.antecedent, definition, variableDomainMap) == OperationResult::Changed)
+		if (implies.antecedent.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
-		if (detectIntegerVariables(implies.consequent, definition, variableDomainMap) == OperationResult::Changed)
+		if (implies.consequent.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 			operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::In &, ast::Formula &, VariableDomainMap &)
+	template <class... Arguments>
+	static OperationResult visit(ast::In &, Arguments &&...)
 	{
 		return OperationResult::Unchanged;
 	}
 
-	static OperationResult visit(ast::Not &not_, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	template <class... Arguments>
+	static OperationResult visit(ast::Not &not_, Arguments &&... arguments)
 	{
-		return detectIntegerVariables(not_.argument, definition, variableDomainMap);
+		return not_.argument.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...);
 	}
 
-	static OperationResult visit(ast::Or &or_, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	template <class... Arguments>
+	static OperationResult visit(ast::Or &or_, Arguments &&... arguments)
 	{
 		auto operationResult = OperationResult::Unchanged;
 
 		for (auto &argument : or_.arguments)
-			if (detectIntegerVariables(argument, definition, variableDomainMap) == OperationResult::Changed)
+			if (argument.accept(ForEachVariableDeclarationVisitor(), std::forward<Arguments>(arguments)...) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
 
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Predicate &, ast::Formula &, VariableDomainMap &)
+	template <class... Arguments>
+	static OperationResult visit(ast::Predicate &, Arguments &&...)
 	{
 		return OperationResult::Unchanged;
 	}
@@ -545,10 +499,69 @@ struct DetectIntegerVariablesVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-OperationResult detectIntegerVariables(ast::Formula &formula, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+struct CheckIfDefinitionFalseFunctor
 {
-	return formula.accept(DetectIntegerVariablesVisitor(), definition, variableDomainMap);
-}
+	OperationResult operator()(ast::VariableDeclaration &variableDeclaration,
+		ast::Formula &, ast::Formula &definition, VariableDomainMap &variableDomainMap)
+	{
+		if (variableDeclaration.domain != ast::Domain::Unknown)
+			return OperationResult::Unchanged;
+
+		clearVariableDomainMap(variableDomainMap);
+
+		auto result = evaluate(definition, variableDomainMap);
+
+		if (result == EvaluationResult::Error || result == EvaluationResult::False)
+			return OperationResult::Unchanged;
+
+		// As a hypothesis, make the parameter’s domain noninteger
+		variableDomainMap[&variableDeclaration] = ast::Domain::General;
+
+		result = evaluate(definition, variableDomainMap);
+
+		if (result == EvaluationResult::Error || result == EvaluationResult::False)
+		{
+			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			variableDeclaration.domain = ast::Domain::Integer;
+			return OperationResult::Changed;
+		}
+
+		return OperationResult::Unchanged;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct CheckIfQuantifiedFormulaFalseFunctor
+{
+	OperationResult operator()(ast::VariableDeclaration &variableDeclaration,
+		ast::Formula &quantifiedFormula, VariableDomainMap &variableDomainMap)
+	{
+		if (variableDeclaration.domain != ast::Domain::Unknown)
+			return OperationResult::Unchanged;
+
+		clearVariableDomainMap(variableDomainMap);
+
+		auto result = evaluate(quantifiedFormula, variableDomainMap);
+
+		if (result == EvaluationResult::Error || result == EvaluationResult::False)
+			return OperationResult::Unchanged;
+
+		// As a hypothesis, make the parameter’s domain noninteger
+		variableDomainMap[&variableDeclaration] = ast::Domain::General;
+
+		result = evaluate(quantifiedFormula, variableDomainMap);
+
+		if (result == EvaluationResult::Error || result == EvaluationResult::False)
+		{
+			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			variableDeclaration.domain = ast::Domain::Integer;
+			return OperationResult::Changed;
+		}
+
+		return OperationResult::Unchanged;
+	}
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -565,7 +578,7 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 
 		for (auto &completedFormula : completedFormulas)
 		{
-			if (detectIntegerVariables(completedFormula, completedFormula, variableDomainMap) == OperationResult::Changed)
+			if (completedFormula.accept(ForEachVariableDeclarationVisitor<CheckIfQuantifiedFormulaFalseFunctor>(), variableDomainMap) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
 
 			if (!completedFormula.is<ast::ForAll>())
@@ -584,11 +597,10 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 			auto &predicate = biconditional.left.get<ast::Predicate>();
 			auto &definition = biconditional.right;
 
-			assert(predicate.arguments.size() == predicate.declaration->arity());
-
-			// TODO: refactor
-			if (detectIntegerVariables(definition, definition, variableDomainMap) == OperationResult::Changed)
+			if (completedFormula.accept(ForEachVariableDeclarationVisitor<CheckIfDefinitionFalseFunctor>(), definition, variableDomainMap) == OperationResult::Changed)
 				operationResult = OperationResult::Changed;
+
+			assert(predicate.arguments.size() == predicate.declaration->arity());
 
 			for (size_t i = 0; i < predicate.arguments.size(); i++)
 			{
@@ -599,28 +611,7 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 
 				auto &variable = variableArgument.get<ast::Variable>();
 
-				if (parameter.domain != ast::Domain::Unknown)
-					continue;
-
-				clearVariableDomainMap(variableDomainMap);
-
-				auto result = evaluate(definition, variableDomainMap);
-
-				if (result == EvaluationResult::Error || result == EvaluationResult::False)
-					continue;
-
-				// As a hypothesis, make the parameter’s domain noninteger
-				variableDomainMap[variable.declaration] = ast::Domain::General;
-
-				result = evaluate(definition, variableDomainMap);
-
-				if (result == EvaluationResult::Error || result == EvaluationResult::False)
-				{
-					// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
-					operationResult = OperationResult::Changed;
-					variable.declaration->domain = ast::Domain::Integer;
-					parameter.domain = ast::Domain::Integer;
-				}
+				parameter.domain = variable.declaration->domain;
 			}
 		}
 	}

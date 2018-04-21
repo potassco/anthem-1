@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include <anthem/Arithmetics.h>
 #include <anthem/ASTCopy.h>
 #include <anthem/Equality.h>
 #include <anthem/SimplificationVisitors.h>
@@ -512,6 +513,31 @@ struct SimplificationRuleNegatedComparison
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct SimplificationRuleIntegerSetInclusion
+{
+	static constexpr const auto Description = "(F in G) === (F = G) if F and G are integer variables";
+
+	static OperationResult apply(ast::Formula &formula)
+	{
+		if (!formula.is<ast::In>())
+			return OperationResult::Unchanged;
+
+		auto &in = formula.get<ast::In>();
+
+		const auto isElementInteger = isInteger(in.element);
+		const auto isSetInteger = isInteger(in.set);
+
+		if (isElementInteger != EvaluationResult::True || isSetInteger != EvaluationResult::True)
+			return OperationResult::Unchanged;
+
+		formula = ast::Formula::make<ast::Comparison>(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
+
+		return OperationResult::Changed;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto simplifyWithDefaultRules =
 	simplify
 	<
@@ -526,7 +552,8 @@ const auto simplifyWithDefaultRules =
 		SimplificationRuleSubsumptionInBiconditionals,
 		SimplificationRuleDeMorganForConjunctions,
 		SimplificationRuleImplicationFromDisjunction,
-		SimplificationRuleNegatedComparison
+		SimplificationRuleNegatedComparison,
+		SimplificationRuleIntegerSetInclusion
 	>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

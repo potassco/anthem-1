@@ -537,34 +537,9 @@ struct DetectIntegerVariablesVisitor
 		return operationResult;
 	}
 
-	static OperationResult visit(ast::Predicate &predicate, ast::Formula &, VariableDomainMap &)
+	static OperationResult visit(ast::Predicate &, ast::Formula &, VariableDomainMap &)
 	{
-		auto operationResult = OperationResult::Unchanged;
-
-		assert(predicate.arguments.size() == predicate.declaration->arity());
-
-		// Propagate integer domains from predicates to variables
-		for (size_t i = 0; i < predicate.arguments.size(); i++)
-		{
-			auto &variableArgument = predicate.arguments[i];
-			auto &parameter = predicate.declaration->parameters[i];
-
-			if (parameter.domain != ast::Domain::Integer)
-				continue;
-
-			if (!variableArgument.is<ast::Variable>())
-				continue;
-
-			auto &variable = variableArgument.get<ast::Variable>();
-
-			if (variable.declaration->domain == ast::Domain::Integer)
-				continue;
-
-			operationResult = OperationResult::Changed;
-			variable.declaration->domain = ast::Domain::Integer;
-		}
-
-		return operationResult;
+		return OperationResult::Unchanged;
 	}
 };
 

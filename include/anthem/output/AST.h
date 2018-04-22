@@ -35,6 +35,7 @@ struct PrintContext
 	std::map<const VariableDeclaration *, size_t> userVariableIDs;
 	std::map<const VariableDeclaration *, size_t> headVariableIDs;
 	std::map<const VariableDeclaration *, size_t> bodyVariableIDs;
+	std::map<const VariableDeclaration *, size_t> integerVariableIDs;
 
 	const Context &context;
 };
@@ -322,22 +323,6 @@ inline output::ColorStream &print(output::ColorStream &stream, const Variable &v
 
 inline output::ColorStream &print(output::ColorStream &stream, const VariableDeclaration &variableDeclaration, PrintContext &printContext, bool)
 {
-	const auto domainSuffix =
-		[&variableDeclaration]()
-		{
-			switch (variableDeclaration.domain)
-			{
-				case Domain::Unknown:
-					return "";
-				case Domain::Noninteger:
-					return "n";
-				case Domain::Integer:
-					return "i";
-			}
-
-			return "";
-		};
-
 	const auto printVariableDeclaration =
 		[&](const auto *prefix, auto &variableIDs) -> output::ColorStream &
 		{
@@ -350,10 +335,13 @@ inline output::ColorStream &print(output::ColorStream &stream, const VariableDec
 				matchingVariableID = emplaceResult.first;
 			}
 
-			const auto variableName = std::string(prefix) + std::to_string(matchingVariableID->second) + domainSuffix();
+			const auto variableName = std::string(prefix) + std::to_string(matchingVariableID->second);
 
 			return (stream << output::Variable(variableName.c_str()));
 		};
+
+	if (variableDeclaration.domain == Domain::Integer)
+		return printVariableDeclaration(IntegerVariablePrefix, printContext.integerVariableIDs);
 
 	switch (variableDeclaration.type)
 	{

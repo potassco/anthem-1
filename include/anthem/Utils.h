@@ -13,6 +13,7 @@ namespace anthem
 constexpr const auto HeadVariablePrefix = "V";
 constexpr const auto BodyVariablePrefix = "X";
 constexpr const auto UserVariablePrefix = "U";
+constexpr const auto IntegerVariablePrefix = "N";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

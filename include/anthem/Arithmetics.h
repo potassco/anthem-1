@@ -1,6 +1,7 @@
 #ifndef __ANTHEM__ARITHMETICS_H
 #define __ANTHEM__ARITHMETICS_H
 
+#include <anthem/AST.h>
 #include <anthem/Utils.h>
 
 namespace anthem
@@ -59,7 +60,7 @@ struct IsTermArithmeticVisitor
 	{
 		switch (function.declaration->domain)
 		{
-			case Domain::General:
+			case Domain::Noninteger:
 				return EvaluationResult::False;
 			case Domain::Integer:
 				return EvaluationResult::True;
@@ -127,7 +128,7 @@ struct IsTermArithmeticVisitor
 
 		switch (domain)
 		{
-			case Domain::General:
+			case Domain::Noninteger:
 				return EvaluationResult::False;
 			case Domain::Integer:
 				return EvaluationResult::True;
@@ -184,7 +185,7 @@ struct IsTermIntegerVisitor
 	{
 		switch (function.declaration->domain)
 		{
-			case Domain::General:
+			case Domain::Noninteger:
 				return EvaluationResult::False;
 			case Domain::Integer:
 				return EvaluationResult::True;
@@ -236,7 +237,7 @@ struct IsTermIntegerVisitor
 	{
 		switch (variable.declaration->domain)
 		{
-			case Domain::General:
+			case Domain::Noninteger:
 				return EvaluationResult::False;
 			case Domain::Integer:
 				return EvaluationResult::True;

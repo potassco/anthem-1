@@ -403,7 +403,7 @@ struct CheckIfDefinitionFalseFunctor
 			return OperationResult::Unchanged;
 
 		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = Domain::General;
+		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
 
 		result = evaluate(definition, variableDomainMap);
 
@@ -436,7 +436,7 @@ struct CheckIfQuantifiedFormulaFalseFunctor
 			return OperationResult::Unchanged;
 
 		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = Domain::General;
+		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
 
 		result = evaluate(quantifiedFormula, variableDomainMap);
 
@@ -469,7 +469,7 @@ struct CheckIfCompletedFormulaTrueFunctor
 			return OperationResult::Unchanged;
 
 		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = Domain::General;
+		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
 
 		result = evaluate(completedFormula, variableDomainMap);
 

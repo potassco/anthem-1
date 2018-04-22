@@ -45,7 +45,7 @@ enum class OperationResult
 
 enum class Domain
 {
-	General,
+	Noninteger,
 	Integer,
 	Unknown,
 };

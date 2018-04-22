@@ -329,8 +329,8 @@ inline output::ColorStream &print(output::ColorStream &stream, const VariableDec
 			{
 				case Domain::Unknown:
 					return "";
-				case Domain::General:
-					return "g";
+				case Domain::Noninteger:
+					return "n";
 				case Domain::Integer:
 					return "i";
 			}

@@ -148,7 +148,7 @@ struct FunctionDeclaration
 
 	std::string name;
 	size_t arity;
-	Domain domain{Domain::General};
+	Domain domain{Domain::Noninteger};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

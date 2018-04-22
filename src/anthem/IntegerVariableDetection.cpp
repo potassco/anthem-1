@@ -1,11 +1,11 @@
 #include <anthem/IntegerVariableDetection.h>
 
-#include <anthem/Arithmetics.h>
 #include <anthem/ASTCopy.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
 #include <anthem/Exception.h>
 #include <anthem/Simplification.h>
+#include <anthem/Type.h>
 #include <anthem/Utils.h>
 #include <anthem/output/AST.h>
 
@@ -55,9 +55,9 @@ struct VariableDomainMapAccessor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-EvaluationResult isArithmetic(const ast::Term &term, VariableDomainMap &variableDomainMap)
+Type type(const ast::Term &term, VariableDomainMap &variableDomainMap)
 {
-	return isArithmetic<VariableDomainMapAccessor>(term, variableDomainMap);
+	return type<VariableDomainMapAccessor>(term, variableDomainMap);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,19 +122,22 @@ struct EvaluateFormulaVisitor
 
 	static EvaluationResult visit(const ast::Comparison &comparison, VariableDomainMap &variableDomainMap)
 	{
-		const auto isLeftArithmetic = isArithmetic(comparison.left, variableDomainMap);
-		const auto isRightArithmetic = isArithmetic(comparison.right, variableDomainMap);
+		const auto leftType = type(comparison.left, variableDomainMap);
+		const auto rightType = type(comparison.right, variableDomainMap);
 
-		if (isLeftArithmetic == EvaluationResult::Error || isRightArithmetic == EvaluationResult::Error)
-			return EvaluationResult::Error;
+		// Comparisons with empty sets always return false
+		if (leftType.setSize == SetSize::Empty || rightType.setSize == SetSize::Empty)
+			return EvaluationResult::False;
 
-		if (isLeftArithmetic == EvaluationResult::Unknown || isRightArithmetic == EvaluationResult::Unknown)
+		// If either side has an unknown domain, the result is unknown
+		if (leftType.domain == Domain::Unknown || rightType.domain == Domain::Unknown)
 			return EvaluationResult::Unknown;
 
-		if (isLeftArithmetic == isRightArithmetic)
+		// If both sides have the same domain, the result is unknown
+		if (leftType.domain == rightType.domain)
 			return EvaluationResult::Unknown;
 
-		// Handle the case where one side is arithmetic but the other one isn’t
+		// If one side is integer, but the other one isn’t, they are not equal
 		switch (comparison.operator_)
 		{
 			case ast::Comparison::Operator::Equal:
@@ -179,19 +182,25 @@ struct EvaluateFormulaVisitor
 
 	static EvaluationResult visit(const ast::In &in, VariableDomainMap &variableDomainMap)
 	{
-		const auto isElementArithmetic = isArithmetic(in.element, variableDomainMap);
-		const auto isSetArithmetic = isArithmetic(in.set, variableDomainMap);
+		const auto elementType = type(in.element, variableDomainMap);
+		const auto setType = type(in.set, variableDomainMap);
 
-		if (isElementArithmetic == EvaluationResult::Error || isSetArithmetic == EvaluationResult::Error)
-			return EvaluationResult::Error;
+		// The element to test shouldn’t be empty or a proper set by itself
+		assert(elementType.setSize != SetSize::Empty && elementType.setSize != SetSize::Multi);
 
-		if (isElementArithmetic == EvaluationResult::Unknown || isSetArithmetic == EvaluationResult::Unknown)
+		// If the set is empty, no element can be selected
+		if (setType.setSize == SetSize::Empty)
+			return EvaluationResult::False;
+
+		// If one of the sides has an unknown type, the result is unknown
+		if (elementType.domain == Domain::Unknown || setType.domain == Domain::Unknown)
 			return EvaluationResult::Unknown;
 
-		if (isElementArithmetic == isSetArithmetic)
+		// If both sides have the same domain, the result is unknown
+		if (elementType.domain == setType.domain)
 			return EvaluationResult::Unknown;
 
-		// If one side is arithmetic, but the other one isn’t, set inclusion is never satisfied
+		// If one side is integer, but the other one isn’t, set inclusion is never satisfied
 		return EvaluationResult::False;
 	}
 
@@ -250,10 +259,10 @@ struct EvaluateFormulaVisitor
 			if (parameter.domain != Domain::Integer)
 				continue;
 
-			const auto isArgumentArithmetic = isArithmetic(argument, variableDomainMap);
+			const auto argumentType = type(argument, variableDomainMap);
 
-			if (isArgumentArithmetic == EvaluationResult::Error || isArgumentArithmetic == EvaluationResult::False)
-				return isArgumentArithmetic;
+			if (argumentType.domain == Domain::Noninteger || argumentType.setSize == SetSize::Empty)
+				return EvaluationResult::Error;
 		}
 
 		return EvaluationResult::Unknown;
@@ -397,15 +406,10 @@ struct CheckIfDefinitionFalseFunctor
 
 		clearVariableDomainMap(variableDomainMap);
 
-		auto result = evaluate(definition, variableDomainMap);
-
-		if (result == EvaluationResult::Error || result == EvaluationResult::False)
-			return OperationResult::Unchanged;
-
 		// As a hypothesis, make the parameter’s domain noninteger
 		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
 
-		result = evaluate(definition, variableDomainMap);
+		const auto result = evaluate(definition, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::False)
 		{
@@ -430,15 +434,10 @@ struct CheckIfQuantifiedFormulaFalseFunctor
 
 		clearVariableDomainMap(variableDomainMap);
 
-		auto result = evaluate(quantifiedFormula, variableDomainMap);
-
-		if (result == EvaluationResult::Error || result == EvaluationResult::False)
-			return OperationResult::Unchanged;
-
 		// As a hypothesis, make the parameter’s domain noninteger
 		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
 
-		result = evaluate(quantifiedFormula, variableDomainMap);
+		const auto result = evaluate(quantifiedFormula, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::False)
 		{
@@ -463,15 +462,10 @@ struct CheckIfCompletedFormulaTrueFunctor
 
 		clearVariableDomainMap(variableDomainMap);
 
-		auto result = evaluate(completedFormula, variableDomainMap);
-
-		if (result == EvaluationResult::Error || result == EvaluationResult::True)
-			return OperationResult::Unchanged;
-
 		// As a hypothesis, make the parameter’s domain noninteger
 		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
 
-		result = evaluate(completedFormula, variableDomainMap);
+		const auto result = evaluate(completedFormula, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::True)
 		{

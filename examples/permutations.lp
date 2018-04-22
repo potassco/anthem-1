@@ -1,5 +1,5 @@
 #show p/2.
-#external integer(n(0)).
+%#external integer(n(0)).
 
 {p(1..n, 1..n)}.
 

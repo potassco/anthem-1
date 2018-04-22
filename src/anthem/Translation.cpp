@@ -155,7 +155,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 				<< "(" << predicateDeclaration->name
 				<< "/" << output::Number(predicateDeclaration->arity())
 				<< "@" << output::Number(i + 1)
-				<< ")." << std::endl;
+				<< ")" << std::endl;
 		}
 	}
 }

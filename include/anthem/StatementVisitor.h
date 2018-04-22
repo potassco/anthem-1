@@ -237,7 +237,7 @@ struct StatementVisitor
 				const size_t arity = aritySymbol.number();
 
 				auto functionDeclaration = context.findOrCreateFunctionDeclaration(function.name, arity);
-				functionDeclaration->domain = ast::Domain::Integer;
+				functionDeclaration->domain = Domain::Integer;
 
 				return true;
 			};

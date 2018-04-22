@@ -2,7 +2,7 @@
 #define __ANTHEM__AST_H
 
 #include <anthem/ASTForward.h>
-#include <anthem/Domain.h>
+#include <anthem/Utils.h>
 
 namespace anthem
 {

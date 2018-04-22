@@ -14,7 +14,7 @@ namespace anthem
 
 struct DefaultVariableDomainAccessor
 {
-	ast::Domain operator()(const ast::Variable &variable)
+	Domain operator()(const ast::Variable &variable)
 	{
 		return variable.declaration->domain;
 	}
@@ -59,11 +59,11 @@ struct IsTermArithmeticVisitor
 	{
 		switch (function.declaration->domain)
 		{
-			case ast::Domain::General:
+			case Domain::General:
 				return EvaluationResult::False;
-			case ast::Domain::Integer:
+			case Domain::Integer:
 				return EvaluationResult::True;
-			case ast::Domain::Unknown:
+			case Domain::Unknown:
 				return EvaluationResult::Unknown;
 		}
 
@@ -127,11 +127,11 @@ struct IsTermArithmeticVisitor
 
 		switch (domain)
 		{
-			case ast::Domain::General:
+			case Domain::General:
 				return EvaluationResult::False;
-			case ast::Domain::Integer:
+			case Domain::Integer:
 				return EvaluationResult::True;
-			case ast::Domain::Unknown:
+			case Domain::Unknown:
 				return EvaluationResult::Unknown;
 		}
 
@@ -184,11 +184,11 @@ struct IsTermIntegerVisitor
 	{
 		switch (function.declaration->domain)
 		{
-			case ast::Domain::General:
+			case Domain::General:
 				return EvaluationResult::False;
-			case ast::Domain::Integer:
+			case Domain::Integer:
 				return EvaluationResult::True;
-			case ast::Domain::Unknown:
+			case Domain::Unknown:
 				return EvaluationResult::Unknown;
 		}
 
@@ -236,11 +236,11 @@ struct IsTermIntegerVisitor
 	{
 		switch (variable.declaration->domain)
 		{
-			case ast::Domain::General:
+			case Domain::General:
 				return EvaluationResult::False;
-			case ast::Domain::Integer:
+			case Domain::Integer:
 				return EvaluationResult::True;
-			case ast::Domain::Unknown:
+			case Domain::Unknown:
 				return EvaluationResult::Unknown;
 		}
 

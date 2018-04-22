@@ -18,19 +18,19 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-using VariableDomainMap = std::map<const ast::VariableDeclaration *, ast::Domain>;
+using VariableDomainMap = std::map<const ast::VariableDeclaration *, Domain>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Domain domain(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
+Domain domain(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
 {
-	if (variable.declaration->domain != ast::Domain::Unknown)
+	if (variable.declaration->domain != Domain::Unknown)
 		return variable.declaration->domain;
 
 	const auto match = variableDomainMap.find(variable.declaration);
 
 	if (match == variableDomainMap.end())
-		return ast::Domain::Unknown;
+		return Domain::Unknown;
 
 	return match->second;
 }
@@ -40,14 +40,14 @@ ast::Domain domain(const ast::Variable &variable, VariableDomainMap &variableDom
 void clearVariableDomainMap(VariableDomainMap &variableDomainMap)
 {
 	for (auto &variableDeclaration : variableDomainMap)
-		variableDeclaration.second = ast::Domain::Unknown;
+		variableDeclaration.second = Domain::Unknown;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct VariableDomainMapAccessor
 {
-	ast::Domain operator()(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
+	Domain operator()(const ast::Variable &variable, VariableDomainMap &variableDomainMap)
 	{
 		return domain(variable, variableDomainMap);
 	}
@@ -247,7 +247,7 @@ struct EvaluateFormulaVisitor
 			const auto &argument = predicate.arguments[i];
 			const auto &parameter = predicate.declaration->parameters[i];
 
-			if (parameter.domain != ast::Domain::Integer)
+			if (parameter.domain != Domain::Integer)
 				continue;
 
 			const auto isArgumentArithmetic = isArithmetic(argument, variableDomainMap);
@@ -392,7 +392,7 @@ struct CheckIfDefinitionFalseFunctor
 	OperationResult operator()(ast::VariableDeclaration &variableDeclaration,
 		ast::Formula &, ast::Formula &definition, VariableDomainMap &variableDomainMap)
 	{
-		if (variableDeclaration.domain != ast::Domain::Unknown)
+		if (variableDeclaration.domain != Domain::Unknown)
 			return OperationResult::Unchanged;
 
 		clearVariableDomainMap(variableDomainMap);
@@ -403,14 +403,14 @@ struct CheckIfDefinitionFalseFunctor
 			return OperationResult::Unchanged;
 
 		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = ast::Domain::General;
+		variableDomainMap[&variableDeclaration] = Domain::General;
 
 		result = evaluate(definition, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::False)
 		{
 			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
-			variableDeclaration.domain = ast::Domain::Integer;
+			variableDeclaration.domain = Domain::Integer;
 			return OperationResult::Changed;
 		}
 
@@ -425,7 +425,7 @@ struct CheckIfQuantifiedFormulaFalseFunctor
 	OperationResult operator()(ast::VariableDeclaration &variableDeclaration,
 		ast::Formula &quantifiedFormula, VariableDomainMap &variableDomainMap)
 	{
-		if (variableDeclaration.domain != ast::Domain::Unknown)
+		if (variableDeclaration.domain != Domain::Unknown)
 			return OperationResult::Unchanged;
 
 		clearVariableDomainMap(variableDomainMap);
@@ -436,14 +436,14 @@ struct CheckIfQuantifiedFormulaFalseFunctor
 			return OperationResult::Unchanged;
 
 		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = ast::Domain::General;
+		variableDomainMap[&variableDeclaration] = Domain::General;
 
 		result = evaluate(quantifiedFormula, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::False)
 		{
 			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
-			variableDeclaration.domain = ast::Domain::Integer;
+			variableDeclaration.domain = Domain::Integer;
 			return OperationResult::Changed;
 		}
 
@@ -458,7 +458,7 @@ struct CheckIfCompletedFormulaTrueFunctor
 	OperationResult operator()(ast::VariableDeclaration &variableDeclaration,
 		ast::Formula &, ast::Formula &completedFormula, VariableDomainMap &variableDomainMap)
 	{
-		if (variableDeclaration.domain != ast::Domain::Unknown)
+		if (variableDeclaration.domain != Domain::Unknown)
 			return OperationResult::Unchanged;
 
 		clearVariableDomainMap(variableDomainMap);
@@ -469,14 +469,14 @@ struct CheckIfCompletedFormulaTrueFunctor
 			return OperationResult::Unchanged;
 
 		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = ast::Domain::General;
+		variableDomainMap[&variableDeclaration] = Domain::General;
 
 		result = evaluate(completedFormula, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::True)
 		{
 			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
-			variableDeclaration.domain = ast::Domain::Integer;
+			variableDeclaration.domain = Domain::Integer;
 			return OperationResult::Changed;
 		}
 

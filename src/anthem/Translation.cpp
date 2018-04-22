@@ -147,7 +147,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		{
 			auto &parameter = predicateDeclaration->parameters[i];
 
-			if (parameter.domain != ast::Domain::Integer)
+			if (parameter.domain != Domain::Integer)
 				continue;
 
 			context.logger.outputStream()

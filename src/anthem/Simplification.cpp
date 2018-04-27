@@ -4,8 +4,8 @@
 
 #include <anthem/ASTCopy.h>
 #include <anthem/Equality.h>
-#include <anthem/output/AST.h>
 #include <anthem/SimplificationVisitors.h>
+#include <anthem/output/AST.h>
 
 namespace anthem
 {

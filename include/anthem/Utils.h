@@ -1,13 +1,6 @@
 #ifndef __ANTHEM__UTILS_H
 #define __ANTHEM__UTILS_H
 
-#include <iostream>
-
-#include <clingo.hh>
-
-#include <anthem/Context.h>
-#include <anthem/Location.h>
-
 namespace anthem
 {
 

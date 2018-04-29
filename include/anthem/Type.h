@@ -2,6 +2,7 @@
 #define __ANTHEM__TYPE_H
 
 #include <anthem/AST.h>
+#include <anthem/ASTUtils.h>
 #include <anthem/Utils.h>
 
 namespace anthem
@@ -11,16 +12,6 @@ namespace anthem
 //
 // Type
 //
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct DefaultVariableDomainAccessor
-{
-	Domain operator()(const ast::Variable &variable)
-	{
-		return variable.declaration->domain;
-	}
-};
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class VariableDomainAccessor = DefaultVariableDomainAccessor, class... Arguments>

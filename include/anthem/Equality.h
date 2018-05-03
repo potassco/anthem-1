@@ -268,8 +268,8 @@ struct TermEqualityVisitor
 			return Tristate::Unknown;
 		}
 
-		if (equal(binaryOperation.left, binaryOperation.right) == Tristate::True
-		    && equal(binaryOperation.right, binaryOperation.left) == Tristate::True)
+		if (equal(binaryOperation.left, otherBinaryOperation.right) == Tristate::True
+		    && equal(binaryOperation.right, otherBinaryOperation.left) == Tristate::True)
 		{
 			return Tristate::True;
 		}

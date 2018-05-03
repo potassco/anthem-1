@@ -50,4 +50,34 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 
 		CHECK(output.str() == "(U1 > U2 -> #false)\n");
 	}
+
+	SECTION("biconditionals are replaced with implifactions with choice rules")
+	{
+		context.performCompletion = true;
+
+		input << "{p(a)}.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "forall V1 (p(V1) -> V1 = a)\n");
+	}
+
+	SECTION("biconditionals are replaced with implifactions with complicated choice rules")
+	{
+		context.performCompletion = true;
+
+		input << "{p(n + 5)}.";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "forall V1 (p(V1) -> V1 in (n + 5))\n");
+	}
+
+	SECTION("biconditionals are not replaced with implifactions with nonchoice rules")
+	{
+		context.performCompletion = true;
+
+		input << "p(a).";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "forall V1 (p(V1) <-> V1 = a)\n");
+	}
 }

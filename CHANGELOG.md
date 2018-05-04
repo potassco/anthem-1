@@ -12,6 +12,7 @@
 ### Bug Fixes
 
 * fixes incorrect translation of unsupported choice rules with multiple elements by returning an error instead
+* fixes precedence of intervals by enclosing them in parentheses
 
 ## 0.1.8 (2018-04-20)
 

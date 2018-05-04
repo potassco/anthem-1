@@ -9,6 +9,10 @@
 * new simplification rule applying to integer variables
 * support for declaring functions integer with the `#external` directive
 
+### Bug Fixes
+
+* fixes incorrect translation of unsupported choice rules with multiple elements by returning an error instead
+
 ## 0.1.8 (2018-04-20)
 
 ### Features

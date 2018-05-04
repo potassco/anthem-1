@@ -40,8 +40,36 @@ ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, c
 
 		assert(otherPredicate.arguments.size() == parameters.size());
 
+		auto &freeVariables = scopedFormula.freeVariables;
+
 		// Each formula with the predicate as its consequent currently has its own copy of the predicate’s parameters
 		// These need to be linked to the new, unique set of parameters
+
+		// First, remove the free variables whose occurrences will be relinked, which is why they are no longer needed
+		const auto isFreeVariableUnneeded =
+			[&](const auto &freeVariable)
+			{
+				const auto matchesVariableToBeReplaced = std::find_if(otherPredicate.arguments.cbegin(), otherPredicate.arguments.cend(),
+					[&](const ast::Term &argument)
+					{
+						assert(argument.is<ast::Variable>());
+						const auto &otherVariable = argument.get<ast::Variable>();
+
+						return (freeVariable.get() == otherVariable.declaration);
+					});
+
+				return (matchesVariableToBeReplaced != otherPredicate.arguments.cend());
+			};
+
+		freeVariables.erase(std::remove_if(freeVariables.begin(), freeVariables.end(), isFreeVariableUnneeded), freeVariables.end());
+
+		// Currently, only rules with singleton heads are supported
+		// Rules with multiple elements in the head are not yet handled correctly by the head variable detection mechanism
+		for (const auto &freeVariable : freeVariables)
+			if (freeVariable->type == ast::VariableDeclaration::Type::Head)
+				throw CompletionException("cannot perform completion, only singleton rule heads supported currently");
+
+		// Second, link all occurrences of the deleted free variable to the new, unique parameter
 		for (size_t i = 0; i < parameters.size(); i++)
 		{
 			assert(otherPredicate.arguments[i].is<ast::Variable>());
@@ -49,16 +77,6 @@ ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, c
 
 			scopedFormula.formula.accept(ast::ReplaceVariableInFormulaVisitor(), scopedFormula.formula, otherVariable.declaration, parameters[i].get());
 		}
-
-		// Remove all the head variables, because they are not free variables after completion
-		const auto isHeadVariable =
-			[](const auto &variableDeclaration)
-			{
-				return variableDeclaration->type == ast::VariableDeclaration::Type::Head;
-			};
-
-		auto &freeVariables = scopedFormula.freeVariables;
-		freeVariables.erase(std::remove_if(freeVariables.begin(), freeVariables.end(), isHeadVariable), freeVariables.end());
 
 		if (freeVariables.empty())
 			disjunction.get<ast::Or>().arguments.emplace_back(std::move(implies.antecedent));

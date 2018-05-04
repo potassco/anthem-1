@@ -9,11 +9,12 @@
 ## Usage
 
 ```bash
-$ anthem [--complete] [--simplify] file...
+$ anthem [--no-complete] [--no-simplify] [--no-detect-integers] file...
 ```
 
-`--complete` instructs `anthem` to perform Clark’s completion on the translated formulas.
-With the option `--simplify`, the output formulas are simplified by applying several basic transformation rules.
+By default, `anthem` performs Clark’s completion on the translated formulas, detects which variables are integer, and simplifies the output by applying several basic transformation rules.
+
+These processing steps can be turned off with the options `--no-complete`, `--no-simplify`, and `--no-detect-integers`.
 
 ## Building
 

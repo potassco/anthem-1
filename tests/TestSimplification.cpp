@@ -40,7 +40,7 @@ TEST_CASE("[simplification] Rules are simplified correctly", "[simplification]")
 		input << ":- not covered(I), I = 1..n.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "((not covered(U1) and U1 in 1..n) -> #false)\n");
+		CHECK(output.str() == "((not covered(U1) and U1 in (1..n)) -> #false)\n");
 	}
 
 	SECTION("comparisons")

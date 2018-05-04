@@ -26,7 +26,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		anthem::translate("input", input, context);
 	
 		CHECK(output.str() ==
-			"forall N1 (p(N1) <-> N1 in 1..5)\n"
+			"forall N1 (p(N1) <-> N1 in (1..5))\n"
 			"int(p/1@1)\n");
 	}
 
@@ -38,7 +38,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		anthem::translate("input", input, context);
 	
 		CHECK(output.str() ==
-			"forall V1 (p(V1) <-> (V1 in 1..5 or V1 = error))\n");
+			"forall V1 (p(V1) <-> (V1 in (1..5) or V1 = error))\n");
 	}
 	
 	SECTION("integer parameter with arithmetics")
@@ -47,7 +47,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		anthem::translate("input", input, context);
 	
 		CHECK(output.str() ==
-			"forall N1 (p(N1) <-> N1 in ((2 + 1..5) * 2))\n"
+			"forall N1 (p(N1) <-> N1 in ((2 + (1..5)) * 2))\n"
 			"int(p/1@1)\n");
 	}
 	
@@ -59,7 +59,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		anthem::translate("input", input, context);
 	
 		CHECK(output.str() ==
-			"forall N1 (p(N1) <-> N1 in 1..5)\n"
+			"forall N1 (p(N1) <-> N1 in (1..5))\n"
 			"forall N2 (q(N2) <-> exists N3 (p(N3) and N2 in ((N3 + 5) / 3)))\n"
 			"int(p/1@1)\n"
 			"int(q/1@1)\n");
@@ -74,7 +74,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		anthem::translate("input", input, context);
 		
 		CHECK(output.str() ==
-			"forall N1 (p(N1) <-> N1 in 1..5)\n"
+			"forall N1 (p(N1) <-> N1 in (1..5))\n"
 			"forall V1 (q(V1) <-> V1 = error)\n"
 			"forall N2, V2, N3 (r(N2, V2, N3) <-> exists N4 (p(N4) and N2 = (N4 ** 2) and q(V2) and p(N3)))\n"
 			"int(p/1@1)\n"
@@ -89,7 +89,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		anthem::translate("input", input, context);
 	
 		CHECK(output.str() ==
-			"forall N1 (p(N1) <-> N1 in 2..n)\n"
+			"forall N1 (p(N1) <-> N1 in (2..n))\n"
 			"int(p/1@1)\n");
 	}
 	

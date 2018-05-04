@@ -219,16 +219,16 @@ inline output::ColorStream &print(output::ColorStream &stream, const Integer &in
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext, bool)
+inline output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext, bool omitParentheses)
 {
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << "(";
 
 	print(stream, interval.from, printContext);
 	stream << "..";
 	print(stream, interval.to, printContext);
 
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;

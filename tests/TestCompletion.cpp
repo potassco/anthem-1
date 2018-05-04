@@ -123,7 +123,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		anthem::translate("input", input, context);
 
 		CHECK(output.str() ==
-			"forall V1 (f(V1) <-> (exists U1 (V1 = f(f(f(f(U1)))) and f(U1)) or V1 in 1..5))\n");
+			"forall V1 (f(V1) <-> (exists U1 (V1 = f(f(f(f(U1)))) and f(U1)) or V1 in (1..5)))\n");
 	}
 
 	SECTION("useless implications")
@@ -152,8 +152,8 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 
 		CHECK(output.str() ==
 			"forall V1 (covered(V1) <-> exists U1 in(V1, U1))\n"
-			"forall V2, V3 (in(V2, V3) -> (V2 in 1..n and V3 in 1..r))\n"
-			"forall U2 (U2 in 1..n -> covered(U2))\n"
+			"forall V2, V3 (in(V2, V3) -> (V2 in (1..n) and V3 in (1..r)))\n"
+			"forall U2 (U2 in (1..n) -> covered(U2))\n"
 			"forall U3, U4, U5 (not in(U3, U4) or not in(U5, U4) or not exists X1 (X1 in (U3 + U5) and in(X1, U4)))\n");
 	}
 
@@ -190,6 +190,6 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		input << "adj(X, Y) :- X = 1..n, Y = 1..n, |X - Y| = 1.";
 		anthem::translate("input", input, context);
 
-		CHECK(output.str() == "forall V1, V2 (adj(V1, V2) <-> (V1 in 1..n and V2 in 1..n and |V1 - V2| = 1))\n");
+		CHECK(output.str() == "forall V1, V2 (adj(V1, V2) <-> (V1 in (1..n) and V2 in (1..n) and |V1 - V2| = 1))\n");
 	}
 }

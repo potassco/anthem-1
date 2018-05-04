@@ -150,7 +150,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 
 		// TODO: simplify further
 		CHECK(output.str() ==
-			"forall V1 (a(V1) <-> exists U1 (c(V1) = c(U1) and U1 in 1..4))\n");
+			"forall V1 (a(V1) <-> exists U1 (c(V1) = c(U1) and U1 in (1..4)))\n");
 	}
 
 	SECTION("simple propositions are hidden correctly")

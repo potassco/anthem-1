@@ -2,10 +2,14 @@
 
 ## (unreleased)
 
+### Changes
+
+* turns on completion and simplification by default, which can now be switched off with `--no-complete` and `--no-simplify`
+
 ### Features
 
-* optional detection of integer variables and integer predicate parameters
-* command-line option `--detect-integers` to enable integer variable detection
+* detection of integer variables and integer predicate parameters
+* command-line option `--no-detect-integers` to disable integer variable detection
 * new simplification rule applying to integer variables
 * support for declaring functions integer with the `#external` directive
 

@@ -16,9 +16,9 @@ int main(int argc, char **argv)
 		("h,help", "Display this help message")
 		("v,version", "Display version information")
 		("i,input", "Input files", cxxopts::value<std::vector<std::string>>())
-		("s,simplify", "Simplify the output")
-		("c,complete", "Perform completion")
-		("d,detect-integers", "Detect integer variables")
+		("no-simplify", "Do not simplify the output")
+		("no-complete", "Do not perform completion")
+		("no-detect-integers", "Do not detect integer variables")
 		("color", "Colorize output (always, never, auto)", cxxopts::value<std::string>()->default_value("auto"))
 		("parentheses", "Parenthesis style (normal, full)", cxxopts::value<std::string>()->default_value("normal"))
 		("p,log-priority", "Log messages starting from this priority (debug, info, warning, error)", cxxopts::value<std::string>()->default_value("info"));
@@ -49,9 +49,9 @@ int main(int argc, char **argv)
 		if (parseResult.count("input") > 0)
 			inputFiles = parseResult["input"].as<std::vector<std::string>>();
 
-		context.performSimplification = (parseResult.count("simplify") > 0);
-		context.performCompletion = (parseResult.count("complete") > 0);
-		context.performIntegerDetection = (parseResult.count("detect-integers") > 0);
+		context.performSimplification = (parseResult.count("no-simplify") == 0);
+		context.performCompletion = (parseResult.count("no-complete") == 0);
+		context.performIntegerDetection = (parseResult.count("no-detect-integers") == 0);
 		colorPolicyString = parseResult["color"].as<std::string>();
 		parenthesisStyleString = parseResult["parentheses"].as<std::string>();
 		logPriorityString = parseResult["log-priority"].as<std::string>();

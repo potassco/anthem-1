@@ -296,6 +296,9 @@ inline output::ColorStream &print(output::ColorStream &stream, const UnaryOperat
 		case UnaryOperation::Operator::Absolute:
 			stream << "|";
 			break;
+		case UnaryOperation::Operator::Minus:
+			stream << "-";
+			break;
 	}
 
 	print(stream, unaryOperation.argument, printContext, true);
@@ -304,6 +307,8 @@ inline output::ColorStream &print(output::ColorStream &stream, const UnaryOperat
 	{
 		case UnaryOperation::Operator::Absolute:
 			stream << "|";
+			break;
+		case UnaryOperation::Operator::Minus:
 			break;
 	}
 

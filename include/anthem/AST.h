@@ -318,7 +318,8 @@ struct UnaryOperation
 {
 	enum class Operator
 	{
-		Absolute
+		Absolute,
+		Minus
 	};
 
 	explicit UnaryOperation(Operator operator_, Term &&argument)

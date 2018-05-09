@@ -114,19 +114,20 @@ struct TermTypeVisitor
 	template <class... Arguments>
 	static Type visit(const ast::UnaryOperation &unaryOperation, Arguments &&... arguments)
 	{
-		assert(unaryOperation.operator_ == ast::UnaryOperation::Operator::Absolute);
+		assert(unaryOperation.operator_ == ast::UnaryOperation::Operator::Absolute
+			|| unaryOperation.operator_ == ast::UnaryOperation::Operator::Minus);
 
 		const auto argumentType = type<VariableDomainAccessor>(unaryOperation.argument, std::forward<Arguments>(arguments)...);
 
-		// Absolute value of an empty set returns an empty set
+		// Absolute/negative value of an empty set returns an empty set
 		if (argumentType.setSize == SetSize::Empty)
 			return {Domain::Unknown, SetSize::Empty};
 
-		// Absolute value of nonintegers returns an empty set
+		// Absolute/negative value of nonintegers returns an empty set
 		if (argumentType.domain == Domain::Noninteger)
 			return {Domain::Unknown, SetSize::Empty};
 
-		// Absolute value of integers returns the same type
+		// Absolute/negative value of integers returns the same type
 		if (argumentType.domain == Domain::Integer)
 			return argumentType;
 

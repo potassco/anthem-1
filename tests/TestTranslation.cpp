@@ -304,4 +304,20 @@ TEST_CASE("[translation] Rules are translated correctly", "[translation]")
 
 		CHECK(output.str() == "((V1 in U1 and V2 in (U1 ** U1) and exists X1, X2 (X1 in U1 and X2 in (1..n) and X1 = X2)) -> p(V1, V2))\n");
 	}
+
+	SECTION("unary minus")
+	{
+		input << "p(-5).";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "(V1 in -5 -> p(V1))\n");
+	}
+
+	SECTION("unary minus in interval")
+	{
+		input << "p(-5..5).";
+		anthem::translate("input", input, context);
+
+		CHECK(output.str() == "(V1 in (-5..5) -> p(V1))\n");
+	}
 }

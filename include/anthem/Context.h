@@ -4,6 +4,7 @@
 #include <optional>
 
 #include <anthem/AST.h>
+#include <anthem/HeadTranslationMode.h>
 #include <anthem/output/Logger.h>
 #include <anthem/output/ParenthesisStyle.h>
 
@@ -67,6 +68,7 @@ struct Context
 
 	output::Logger logger;
 
+	HeadTranslationMode headTranslationMode{HeadTranslationMode::Direct};
 	bool performSimplification{false};
 	bool performCompletion{false};
 	bool performIntegerDetection{false};

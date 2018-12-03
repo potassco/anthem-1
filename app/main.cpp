@@ -16,6 +16,7 @@ int main(int argc, char **argv)
 		("h,help", "Display this help message")
 		("v,version", "Display version information")
 		("i,input", "Input files", cxxopts::value<std::vector<std::string>>())
+		("head-translation", "Translate the head directly (direct) or to prepare for completion (for-completion)", cxxopts::value<std::string>()->default_value("direct"))
 		("no-simplify", "Do not simplify the output")
 		("no-complete", "Do not perform completion")
 		("no-detect-integers", "Do not detect integer variables")
@@ -35,6 +36,7 @@ int main(int argc, char **argv)
 	bool help;
 	bool version;
 	std::vector<std::string> inputFiles;
+	std::string headTranslationModeString;
 	std::string colorPolicyString;
 	std::string parenthesisStyleString;
 	std::string logPriorityString;
@@ -49,6 +51,7 @@ int main(int argc, char **argv)
 		if (parseResult.count("input") > 0)
 			inputFiles = parseResult["input"].as<std::vector<std::string>>();
 
+		headTranslationModeString = parseResult["head-translation"].as<std::string>();
 		context.performSimplification = (parseResult.count("no-simplify") == 0);
 		context.performCompletion = (parseResult.count("no-complete") == 0);
 		context.performIntegerDetection = (parseResult.count("no-detect-integers") == 0);
@@ -74,6 +77,18 @@ int main(int argc, char **argv)
 	{
 		std::cout << "anthem version 0.1.9+git" << std::endl;
 		return EXIT_SUCCESS;
+	}
+
+	if (headTranslationModeString == "direct")
+		context.headTranslationMode = anthem::HeadTranslationMode::Direct;
+	else if (headTranslationModeString == "for-completion")
+		context.headTranslationMode = anthem::HeadTranslationMode::ForCompletion;
+	else
+	{
+		context.logger.log(anthem::output::Priority::Error) << "unknown head mode “" << headTranslationModeString << "”";
+		context.logger.errorStream() << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
 	}
 
 	if (colorPolicyString == "auto")

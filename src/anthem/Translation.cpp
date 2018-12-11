@@ -61,6 +61,38 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	ast::PrintContext printContext(context);
 
+	if (context.headTranslationMode == HeadTranslationMode::Direct)
+	{
+		std::vector<ast::Formula> universallyClosedFormulas;
+		universallyClosedFormulas.reserve(scopedFormulas.size());
+
+		// Build the universal closure
+		for (auto &scopedFormula : scopedFormulas)
+		{
+			auto universallyClosedFormula = (scopedFormula.freeVariables.empty())
+				? std::move(scopedFormula.formula)
+				: ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
+
+			universallyClosedFormulas.emplace_back(std::move(universallyClosedFormula));
+		}
+
+		// Detect integer variables
+		if (context.performIntegerDetection)
+			detectIntegerVariables(universallyClosedFormulas);
+
+		// Simplify output if specified
+		for (auto &universallyClosedFormula : universallyClosedFormulas)
+		{
+			if (context.performSimplification)
+				simplify(universallyClosedFormula);
+
+			ast::print(context.logger.outputStream(), universallyClosedFormula, printContext);
+			context.logger.outputStream() << std::endl;
+		}
+
+		return;
+	}
+
 	if (!context.performCompletion)
 	{
 		// Simplify output if specified

@@ -7,6 +7,7 @@
 #include <anthem/ComparisonOperator.h>
 #include <anthem/Term.h>
 #include <anthem/Utils.h>
+// TODO: check necessity
 #include <anthem/output/Formatting.h>
 
 namespace anthem

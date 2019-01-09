@@ -5,7 +5,6 @@
 #include <anthem/ASTVisitors.h>
 #include <anthem/Exception.h>
 #include <anthem/Simplification.h>
-#include <anthem/output/AST.h>
 
 namespace anthem
 {

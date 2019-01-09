@@ -106,9 +106,9 @@ int main(int argc, char **argv)
 	}
 
 	if (parenthesisStyleString == "normal")
-		context.parenthesisStyle = anthem::ast::ParenthesisStyle::Normal;
+		context.parenthesisStyle = anthem::output::ParenthesisStyle::Normal;
 	else if (parenthesisStyleString == "full")
-		context.parenthesisStyle = anthem::ast::ParenthesisStyle::Full;
+		context.parenthesisStyle = anthem::output::ParenthesisStyle::Full;
 	else
 	{
 		context.logger.log(anthem::output::Priority::Error) << "unknown parenthesis style “" << parenthesisStyleString << "”";

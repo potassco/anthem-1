@@ -11,7 +11,7 @@
 #include <anthem/IntegerVariableDetection.h>
 #include <anthem/Simplification.h>
 #include <anthem/StatementVisitor.h>
-#include <anthem/output/AST.h>
+#include <anthem/output/FormatterHumanReadable.h>
 
 namespace anthem
 {
@@ -59,7 +59,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
 
-	ast::PrintContext printContext(context);
+	output::PrintContext printContext(context);
 
 	if (context.headTranslationMode == HeadTranslationMode::Direct)
 	{
@@ -86,7 +86,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			if (context.performSimplification)
 				simplify(universallyClosedFormula);
 
-			ast::print(context.logger.outputStream(), universallyClosedFormula, printContext);
+			output::print<output::FormatterHumanReadable>(context.logger.outputStream(), universallyClosedFormula, printContext);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -108,7 +108,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 		for (const auto &scopedFormula : scopedFormulas)
 		{
-			ast::print(context.logger.outputStream(), scopedFormula.formula, printContext);
+			output::print<output::FormatterHumanReadable>(context.logger.outputStream(), scopedFormula.formula, printContext);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -155,7 +155,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	for (const auto &completedFormula : completedFormulas)
 	{
-		ast::print(context.logger.outputStream(), completedFormula, printContext);
+		output::print<output::FormatterHumanReadable>(context.logger.outputStream(), completedFormula, printContext);
 		context.logger.outputStream() << std::endl;
 	}
 

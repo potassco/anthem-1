@@ -86,7 +86,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			if (context.performSimplification)
 				simplify(universallyClosedFormula);
 
-			ast::print(context.logger.outputStream(), universallyClosedFormula, printContext);
+			output::print<output::FormatterHumanReadable>(context.logger.outputStream(), universallyClosedFormula, printContext);
 			context.logger.outputStream() << std::endl;
 		}
 

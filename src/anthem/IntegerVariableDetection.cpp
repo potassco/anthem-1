@@ -1,5 +1,7 @@
 #include <anthem/IntegerVariableDetection.h>
 
+#include <map>
+
 #include <anthem/ASTCopy.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
@@ -8,7 +10,6 @@
 #include <anthem/Simplification.h>
 #include <anthem/Type.h>
 #include <anthem/Utils.h>
-#include <anthem/output/AST.h>
 
 namespace anthem
 {

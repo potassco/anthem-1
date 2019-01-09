@@ -169,7 +169,7 @@ struct HeadLiteralTranslateDirectlyToConsequentVisitor
 		return ast::Formula::make<ast::Or>(std::move(arguments));
 	}
 
-	std::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
+	std::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, Context &, ast::VariableStack &)
 	{
 		throw TranslationException(headLiteral.location, "aggregates currently unsupported");
 	}

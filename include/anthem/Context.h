@@ -81,7 +81,7 @@ struct Context
 	bool externalStatementsUsed{false};
 	bool showStatementsUsed{false};
 
-	ast::ParenthesisStyle parenthesisStyle = ast::ParenthesisStyle::Normal;
+	output::ParenthesisStyle parenthesisStyle{output::ParenthesisStyle::Normal};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

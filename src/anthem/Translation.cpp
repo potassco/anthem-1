@@ -12,6 +12,7 @@
 #include <anthem/Simplification.h>
 #include <anthem/StatementVisitor.h>
 #include <anthem/output/FormatterHumanReadable.h>
+#include <anthem/output/FormatterTPTP.h>
 
 namespace anthem
 {
@@ -61,6 +62,32 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	output::PrintContext printContext(context);
 
+	const auto print =
+		[&](const auto &value)
+		{
+			switch (context.outputFormat)
+			{
+				case OutputFormat::HumanReadable:
+					output::print<output::FormatterHumanReadable>(context.logger.outputStream(), value, printContext);
+					break;
+				case OutputFormat::TPTP:
+				{
+					const auto formulaName = std::string("formula") + std::to_string(printContext.currentFormulaID);
+
+					context.logger.outputStream()
+						<< output::Keyword("tff")
+						<< "(" << output::Function(formulaName.c_str())
+						<< ", axiom, ";
+					output::print<output::FormatterTPTP>(context.logger.outputStream(), value, printContext);
+					context.logger.outputStream() << ").";
+
+					break;
+				}
+			}
+
+			printContext.currentFormulaID++;
+		};
+
 	if (context.headTranslationMode == HeadTranslationMode::Direct)
 	{
 		std::vector<ast::Formula> universallyClosedFormulas;
@@ -86,7 +113,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			if (context.performSimplification)
 				simplify(universallyClosedFormula);
 
-			output::print<output::FormatterHumanReadable>(context.logger.outputStream(), universallyClosedFormula, printContext);
+			print(universallyClosedFormula);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -108,7 +135,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 		for (const auto &scopedFormula : scopedFormulas)
 		{
-			output::print<output::FormatterHumanReadable>(context.logger.outputStream(), scopedFormula.formula, printContext);
+			print(scopedFormula.formula);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -155,7 +182,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	for (const auto &completedFormula : completedFormulas)
 	{
-		output::print<output::FormatterHumanReadable>(context.logger.outputStream(), completedFormula, printContext);
+		print(completedFormula);
 		context.logger.outputStream() << std::endl;
 	}
 

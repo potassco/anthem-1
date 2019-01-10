@@ -17,6 +17,7 @@ int main(int argc, char **argv)
 		("v,version", "Display version information")
 		("i,input", "Input files", cxxopts::value<std::vector<std::string>>())
 		("head-translation", "Translate the head directly (direct) or to prepare for completion (for-completion)", cxxopts::value<std::string>()->default_value("direct"))
+		("output-format", "Output format (human-readable, tptp)", cxxopts::value<std::string>()->default_value("human-readable"))
 		("no-simplify", "Do not simplify the output")
 		("no-complete", "Do not perform completion")
 		("no-detect-integers", "Do not detect integer variables")
@@ -37,6 +38,7 @@ int main(int argc, char **argv)
 	bool version;
 	std::vector<std::string> inputFiles;
 	std::string headTranslationModeString;
+	std::string outputFormatString;
 	std::string colorPolicyString;
 	std::string parenthesisStyleString;
 	std::string logPriorityString;
@@ -52,6 +54,7 @@ int main(int argc, char **argv)
 			inputFiles = parseResult["input"].as<std::vector<std::string>>();
 
 		headTranslationModeString = parseResult["head-translation"].as<std::string>();
+		outputFormatString = parseResult["output-format"].as<std::string>();
 		context.performSimplification = (parseResult.count("no-simplify") == 0);
 		context.performCompletion = (parseResult.count("no-complete") == 0);
 		context.performIntegerDetection = (parseResult.count("no-detect-integers") == 0);
@@ -86,6 +89,18 @@ int main(int argc, char **argv)
 	else
 	{
 		context.logger.log(anthem::output::Priority::Error) << "unknown head mode “" << headTranslationModeString << "”";
+		context.logger.errorStream() << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
+	}
+
+	if (outputFormatString == "human-readable")
+		context.outputFormat = anthem::OutputFormat::HumanReadable;
+	else if (outputFormatString == "tptp")
+		context.outputFormat = anthem::OutputFormat::TPTP;
+	else
+	{
+		context.logger.log(anthem::output::Priority::Error) << "unknown output format “" << headTranslationModeString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

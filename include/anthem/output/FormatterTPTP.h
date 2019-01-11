@@ -267,7 +267,7 @@ struct FormatterTPTP
 	// Expressions
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-	static output::ColorStream &print(output::ColorStream &stream, const ast::And &and_, PrintContext &printContext, bool omitParentheses)
+	static output::ColorStream &print(output::ColorStream &stream, const ast::And &and_, PrintContext &printContext, bool)
 	{
 		stream << "(";
 
@@ -284,7 +284,7 @@ struct FormatterTPTP
 		return stream;
 	}
 
-	static output::ColorStream &print(output::ColorStream &stream, const ast::Biconditional &biconditional, PrintContext &printContext, bool omitParentheses)
+	static output::ColorStream &print(output::ColorStream &stream, const ast::Biconditional &biconditional, PrintContext &printContext, bool)
 	{
 		stream << "(";
 
@@ -363,7 +363,7 @@ struct FormatterTPTP
 		return stream;
 	}
 
-	static output::ColorStream &print(output::ColorStream &stream, const ast::Implies &implies, PrintContext &printContext, bool omitParentheses)
+	static output::ColorStream &print(output::ColorStream &stream, const ast::Implies &implies, PrintContext &printContext, bool)
 	{
 		stream << "(";
 		print(stream, implies.antecedent, printContext, false);

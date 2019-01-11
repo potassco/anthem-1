@@ -26,7 +26,7 @@ namespace anthem
 
 struct FunctionTermTranslateDirectlyVisitor
 {
-	std::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
+	std::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
 	{
 		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
 			throw TranslationException(literal.location, "double-negated literals currently unsupported");
@@ -169,7 +169,7 @@ struct HeadLiteralTranslateDirectlyToConsequentVisitor
 		return ast::Formula::make<ast::Or>(std::move(arguments));
 	}
 
-	std::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, Context &, ast::VariableStack &)
+	std::optional<ast::Formula> visit(const Clingo::AST::Aggregate &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &, Context &, ast::VariableStack &)
 	{
 		throw TranslationException(headLiteral.location, "aggregates currently unsupported");
 	}

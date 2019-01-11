@@ -3,6 +3,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>
+#include <anthem/Exception.h>
 #include <anthem/Utils.h>
 
 namespace anthem
@@ -107,6 +108,8 @@ struct EvaluateFormulaVisitor
 			case ast::Comparison::Operator::GreaterThan:
 				return (rightType.domain == Domain::Integer) ? EvaluationResult::True : EvaluationResult::False;
 		}
+
+		throw TranslationException("unknown operator, please report to bug tracker");
 	}
 
 	template <class... Arguments>

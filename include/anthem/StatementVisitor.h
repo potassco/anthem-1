@@ -37,7 +37,7 @@ inline void reduce(ast::Implies &implies)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Translating the head directly doesn’t allow for later completion but leads to a simpler result
-void translateRuleDirectly(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+void translateRuleDirectly(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	RuleContext ruleContext;
 	ast::VariableStack variableStack;
@@ -69,7 +69,7 @@ void translateRuleDirectly(const Clingo::AST::Rule &rule, const Clingo::AST::Sta
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateRuleForCompletion(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+void translateRuleForCompletion(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	RuleContext ruleContext;
 	ast::VariableStack variableStack;

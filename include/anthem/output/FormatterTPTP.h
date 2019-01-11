@@ -86,10 +86,6 @@ struct FormatterTPTP
 			return stream;
 		}
 
-		stream << "(";
-		print(stream, comparison.left, printContext, false);
-		stream << " ";
-
 		switch (comparison.operator_)
 		{
 			case ast::Comparison::Operator::GreaterThan:
@@ -108,7 +104,9 @@ struct FormatterTPTP
 				throw TranslationException("equality operators require infix notation, please report this to the bug tracker");
 		}
 
-		stream << " ";
+		stream << "(";
+		print(stream, comparison.left, printContext, false);
+		stream << ", ";
 		print(stream, comparison.right, printContext, false);
 		stream << ")";
 
@@ -262,9 +260,6 @@ struct FormatterTPTP
 				break;
 		}
 
-		if (variableDeclaration.domain == Domain::Integer)
-			stream << ": " << output::Operator("$int");
-
 		return stream;
 	}
 
@@ -308,10 +303,24 @@ struct FormatterTPTP
 
 		for (auto i = exists.variables.cbegin(); i != exists.variables.cend(); i++)
 		{
+			const auto &variableDeclaration = **i;
+
 			if (i != exists.variables.cbegin())
 				stream << ", ";
 
-			print(stream, **i, printContext, true);
+			print(stream, variableDeclaration, printContext, true);
+
+			switch (variableDeclaration.domain)
+			{
+				case Domain::Integer:
+					stream << ": " << output::Keyword("$int");
+					break;
+				case Domain::Noninteger:
+					stream << ": " << output::Keyword("$i");
+					break;
+				default:
+					break;
+			}
 		}
 
 		stream << "]: ";
@@ -327,10 +336,24 @@ struct FormatterTPTP
 
 		for (auto i = forAll.variables.cbegin(); i != forAll.variables.cend(); i++)
 		{
+			const auto &variableDeclaration = **i;
+
 			if (i != forAll.variables.cbegin())
 				stream << ", ";
 
-			print(stream, **i, printContext, true);
+			print(stream, variableDeclaration, printContext, true);
+
+			switch (variableDeclaration.domain)
+			{
+				case Domain::Integer:
+					stream << ": " << output::Keyword("$int");
+					break;
+				case Domain::Noninteger:
+					stream << ": " << output::Keyword("$i");
+					break;
+				default:
+					break;
+			}
 		}
 
 		stream << "]: ";

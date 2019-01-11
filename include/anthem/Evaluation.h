@@ -97,9 +97,15 @@ struct EvaluateFormulaVisitor
 				return EvaluationResult::False;
 			case ast::Comparison::Operator::NotEqual:
 				return EvaluationResult::True;
-			default:
-				// TODO: implement more cases
-				return EvaluationResult::Unknown;
+			// Integers are smaller than nonintegers
+			case ast::Comparison::Operator::LessThan:
+				return (leftType.domain == Domain::Integer) ? EvaluationResult::True : EvaluationResult::False;
+			case ast::Comparison::Operator::LessEqual:
+				return (leftType.domain == Domain::Integer) ? EvaluationResult::True : EvaluationResult::False;
+			case ast::Comparison::Operator::GreaterEqual:
+				return (rightType.domain == Domain::Integer) ? EvaluationResult::True : EvaluationResult::False;
+			case ast::Comparison::Operator::GreaterThan:
+				return (rightType.domain == Domain::Integer) ? EvaluationResult::True : EvaluationResult::False;
 		}
 	}
 

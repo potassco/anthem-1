@@ -62,7 +62,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	output::PrintContext printContext(context);
 
-	const auto print =
+	const auto printFormula =
 		[&](const auto &value)
 		{
 			switch (context.outputFormat)
@@ -113,7 +113,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			if (context.performSimplification)
 				simplify(universallyClosedFormula);
 
-			print(universallyClosedFormula);
+			printFormula(universallyClosedFormula);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -135,7 +135,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 		for (const auto &scopedFormula : scopedFormulas)
 		{
-			print(scopedFormula.formula);
+			printFormula(scopedFormula.formula);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -182,7 +182,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	for (const auto &completedFormula : completedFormulas)
 	{
-		print(completedFormula);
+		printFormula(completedFormula);
 		context.logger.outputStream() << std::endl;
 	}
 

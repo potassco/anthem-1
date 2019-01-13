@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 		("h,help", "Display this help message")
 		("v,version", "Display version information")
 		("i,input", "Input files", cxxopts::value<std::vector<std::string>>())
-		("head-translation", "Translate the head directly (direct) or to prepare for completion (for-completion)", cxxopts::value<std::string>()->default_value("direct"))
+		("mode", "Translation mode (here-and-there, completion)", cxxopts::value<std::string>()->default_value("here-and-there"))
 		("output-format", "Output format (human-readable, tptp)", cxxopts::value<std::string>()->default_value("human-readable"))
 		("no-simplify", "Do not simplify the output")
 		("no-complete", "Do not perform completion")
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	bool help;
 	bool version;
 	std::vector<std::string> inputFiles;
-	std::string headTranslationModeString;
+	std::string translationModeString;
 	std::string outputFormatString;
 	std::string colorPolicyString;
 	std::string parenthesisStyleString;
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 		if (parseResult.count("input") > 0)
 			inputFiles = parseResult["input"].as<std::vector<std::string>>();
 
-		headTranslationModeString = parseResult["head-translation"].as<std::string>();
+		translationModeString = parseResult["mode"].as<std::string>();
 		outputFormatString = parseResult["output-format"].as<std::string>();
 		context.performSimplification = (parseResult.count("no-simplify") == 0);
 		context.performCompletion = (parseResult.count("no-complete") == 0);
@@ -82,13 +82,13 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	if (headTranslationModeString == "direct")
-		context.headTranslationMode = anthem::HeadTranslationMode::Direct;
-	else if (headTranslationModeString == "for-completion")
-		context.headTranslationMode = anthem::HeadTranslationMode::ForCompletion;
+	if (translationModeString == "here-and-there")
+		context.translationMode = anthem::TranslationMode::HereAndThere;
+	else if (translationModeString == "completion")
+		context.translationMode = anthem::TranslationMode::Completion;
 	else
 	{
-		context.logger.log(anthem::output::Priority::Error) << "unknown head mode “" << headTranslationModeString << "”";
+		context.logger.log(anthem::output::Priority::Error) << "unknown head mode “" << translationModeString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 		context.outputFormat = anthem::OutputFormat::TPTP;
 	else
 	{
-		context.logger.log(anthem::output::Priority::Error) << "unknown output format “" << headTranslationModeString << "”";
+		context.logger.log(anthem::output::Priority::Error) << "unknown output format “" << translationModeString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

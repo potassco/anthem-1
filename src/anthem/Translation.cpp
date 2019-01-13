@@ -72,7 +72,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 					break;
 				case OutputFormat::TPTP:
 				{
-					const auto formulaName = std::string("formula") + std::to_string(printContext.currentFormulaID);
+					const auto formulaName = std::string("formula") + std::to_string(printContext.currentFormulaID + 1);
 
 					context.logger.outputStream()
 						<< output::Keyword("tff")

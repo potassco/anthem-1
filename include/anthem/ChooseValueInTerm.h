@@ -185,11 +185,13 @@ struct ChooseValueInTermVisitor
 					{
 						ast::Comparison zEqualToQ(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), ast::Variable(parameterQ.get()));
 						and_.arguments.emplace_back(std::move(zEqualToQ));
+						break;
 					}
 					case ast::BinaryOperation::Operator::Modulo:
 					{
 						ast::Comparison zEqualToR(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), ast::Variable(parameterR.get()));
 						and_.arguments.emplace_back(std::move(zEqualToR));
+						break;
 					}
 					default:
 						throw TranslationException("unexpected binary operation, please report this to the bug tracker");

@@ -66,6 +66,11 @@ class Exception: public std::exception
 			return m_plainMessage.c_str();
 		}
 
+		void setLocation(const Location &location)
+		{
+			m_location = location;
+		}
+
 		const Location &location() const
 		{
 			return m_location;

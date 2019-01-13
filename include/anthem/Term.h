@@ -19,16 +19,16 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOperator, const Clingo::AST::Term &term)
+ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOperator)
 {
 	switch (binaryOperator)
 	{
 		case Clingo::AST::BinaryOperator::XOr:
-			throw TranslationException(term.location, "binary operation “xor” currently unsupported");
+			throw TranslationException("binary operation “xor” currently unsupported");
 		case Clingo::AST::BinaryOperator::Or:
-			throw TranslationException(term.location, "binary operation “or” currently unsupported");
+			throw TranslationException("binary operation “or” currently unsupported");
 		case Clingo::AST::BinaryOperator::And:
-			throw TranslationException(term.location, "binary operation “and” currently unsupported");
+			throw TranslationException("binary operation “and” currently unsupported");
 		case Clingo::AST::BinaryOperator::Plus:
 			return ast::BinaryOperation::Operator::Plus;
 		case Clingo::AST::BinaryOperator::Minus:
@@ -43,7 +43,22 @@ ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOpera
 			return ast::BinaryOperation::Operator::Power;
 	}
 
-	throw TranslationException(term.location, "unknown binary operation");
+	throw TranslationException("unknown binary operation");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOperator, const Clingo::AST::Term &term)
+{
+	try
+	{
+		return translate(binaryOperator);
+	}
+	catch (TranslationException &exception)
+	{
+		exception.setLocation(term.location);
+		throw;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

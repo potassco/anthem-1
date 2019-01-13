@@ -191,12 +191,12 @@ struct StatementVisitor
 	{
 		context.logger.log(output::Priority::Debug, statement.location) << "reading rule";
 
-		switch (context.headTranslationMode)
+		switch (context.translationMode)
 		{
-			case HeadTranslationMode::Direct:
+			case TranslationMode::HereAndThere:
 				translateRuleDirectly(rule, statement, scopedFormulas, context);
 				break;
-			case HeadTranslationMode::ForCompletion:
+			case TranslationMode::Completion:
 				translateRuleForCompletion(rule, statement, scopedFormulas, context);
 				break;
 		}

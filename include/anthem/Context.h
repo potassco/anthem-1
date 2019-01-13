@@ -4,7 +4,7 @@
 #include <optional>
 
 #include <anthem/AST.h>
-#include <anthem/HeadTranslationMode.h>
+#include <anthem/TranslationMode.h>
 #include <anthem/OutputFormat.h>
 #include <anthem/output/Logger.h>
 #include <anthem/output/ParenthesisStyle.h>
@@ -69,7 +69,7 @@ struct Context
 
 	output::Logger logger;
 
-	HeadTranslationMode headTranslationMode{HeadTranslationMode::Direct};
+	TranslationMode translationMode{TranslationMode::HereAndThere};
 	OutputFormat outputFormat{OutputFormat::HumanReadable};
 	bool performSimplification{false};
 	bool performCompletion{false};

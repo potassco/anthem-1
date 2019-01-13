@@ -88,7 +88,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			printContext.currentFormulaID++;
 		};
 
-	if (context.headTranslationMode == HeadTranslationMode::Direct)
+	if (context.translationMode == TranslationMode::HereAndThere)
 	{
 		std::vector<ast::Formula> universallyClosedFormulas;
 		universallyClosedFormulas.reserve(scopedFormulas.size());

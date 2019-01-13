@@ -4,6 +4,7 @@
 #include <anthem/AST.h>
 #include <anthem/ASTCopy.h>
 #include <anthem/Body.h>
+#include <anthem/BodyDirect.h>
 #include <anthem/Head.h>
 #include <anthem/HeadDirect.h>
 #include <anthem/RuleContext.h>
@@ -44,7 +45,7 @@ void translateRuleDirectly(const Clingo::AST::Rule &rule, const Clingo::AST::Sta
 	variableStack.push(&ruleContext.freeVariables);
 
 	// Directly translate the head
-	auto consequent = rule.head.data.accept(HeadLiteralTranslateDirectlyToConsequentVisitor(), rule.head, ruleContext, context, variableStack);
+	auto consequent = rule.head.data.accept(direct::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
 
 	ast::And antecedent;
 
@@ -53,15 +54,11 @@ void translateRuleDirectly(const Clingo::AST::Rule &rule, const Clingo::AST::Sta
 	{
 		const auto &bodyLiteral = *i;
 
-		auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, ruleContext, context, variableStack);
-
-		if (!argument)
-			throw TranslationException(bodyLiteral.location, "could not translate body literal");
-
-		antecedent.arguments.emplace_back(std::move(argument.value()));
+		auto argument = bodyLiteral.data.accept(direct::BodyBodyLiteralTranslateVisitor(), bodyLiteral, context, ruleContext, variableStack);
+		antecedent.arguments.emplace_back(std::move(argument));
 	}
 
-	ast::Implies formula(std::move(antecedent), std::move(consequent.value()));
+	ast::Implies formula(std::move(antecedent), std::move(consequent));
 	ast::ScopedFormula scopedFormula(std::move(formula), std::move(ruleContext.freeVariables));
 	scopedFormulas.emplace_back(std::move(scopedFormula));
 	reduce(scopedFormulas.back().formula.get<ast::Implies>());

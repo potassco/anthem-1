@@ -5,6 +5,7 @@
 #include <optional>
 
 #include <anthem/AST.h>
+#include <anthem/ChooseValueInTerm.h>
 #include <anthem/ComparisonOperator.h>
 #include <anthem/Exception.h>
 #include <anthem/RuleContext.h>
@@ -13,6 +14,8 @@
 
 namespace anthem
 {
+namespace direct
+{
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -20,175 +23,120 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Translate Head directly
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-struct FunctionTermTranslateDirectlyVisitor
+ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoiceRule, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
 {
-	std::optional<ast::Formula> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
+	auto predicateDeclaration = context.findOrCreatePredicateDeclaration(function.name, function.arguments.size());
+	predicateDeclaration->isUsed = true;
+
+	ast::VariableDeclarationPointers parameters;
+	parameters.reserve(function.arguments.size());
+
+	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
+
+	ast::And and_;
+	and_.arguments.reserve(parameters.size());
+
+	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 	{
-		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
-			throw TranslationException(literal.location, "double-negated literals currently unsupported");
-
-		auto predicateDeclaration = context.findOrCreatePredicateDeclaration(function.name, function.arguments.size());
-		predicateDeclaration->isUsed = true;
-
-		if (function.arguments.empty())
-		{
-			if (literal.sign == Clingo::AST::Sign::None)
-				return ast::Predicate(predicateDeclaration);
-			else if (literal.sign == Clingo::AST::Sign::Negation)
-				return ast::Not(ast::Predicate(predicateDeclaration));
-		}
-
-		// Create new body variable declarations
-		ast::VariableDeclarationPointers parameters;
-		parameters.reserve(function.arguments.size());
-
-		for (size_t i = 0; i < function.arguments.size(); i++)
-			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
-
-		// TODO: implement pushing with scoped guards to avoid bugs
-		variableStack.push(&parameters);
-
-		ast::And conjunction;
-
-		for (size_t i = 0; i < function.arguments.size(); i++)
-		{
-			auto &argument = function.arguments[i];
-			conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[i].get()), translate(argument, ruleContext, context, variableStack)));
-		}
-
-		variableStack.pop();
-
-		ast::Predicate predicate(predicateDeclaration);
-		predicate.arguments.reserve(function.arguments.size());
-
-		for (size_t i = 0; i < function.arguments.size(); i++)
-			predicate.arguments.emplace_back(ast::Variable(parameters[i].get()));
-
-		auto antecedent = std::move(conjunction);
-
-		const auto makeConsequent =
-			[&]() -> ast::Formula
-			{
-				if (literal.sign == Clingo::AST::Sign::None)
-					return std::move(predicate);
-
-				return ast::Formula::make<ast::Not>(std::move(predicate));
-			};
-
-		ast::Implies implies(std::move(antecedent), makeConsequent());
-
-		return ast::ForAll(std::move(parameters), std::move(implies));
+		auto &argument = function.arguments[i];
+		and_.arguments.emplace_back(chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
 	}
 
-	template<class T>
-	std::optional<ast::Formula> visit(const T &, const Clingo::AST::Term &term, const Clingo::AST::Literal &, RuleContext &, Context &, ast::VariableStack &)
-	{
-		throw TranslationException(term.location, "term currently unsupported in this context, function expected");
-		return std::nullopt;
-	}
-};
+	const auto makePredicate =
+		[&]()
+		{
+			ast::Predicate predicate(predicateDeclaration);
+
+			for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+				predicate.arguments.emplace_back(ast::Variable(parameters[i].get()));
+
+			return predicate;
+		};
+
+	const auto makeImplication =
+		[&]() -> ast::Formula
+		{
+			if (!isChoiceRule)
+				return makePredicate();
+
+			ast::Or or_;
+			or_.arguments.reserve(2);
+			or_.arguments.emplace_back(makePredicate());
+			or_.arguments.emplace_back(ast::Not(makePredicate()));
+
+			return or_;
+		};
+
+	ast::Implies implies(std::move(and_), makeImplication());
+
+	return ast::ForAll(std::move(parameters), std::move(implies));
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct LiteralTranslateDirectlyVisitor
+struct HeadLiteralTranslateToConsequentVisitor
 {
-	std::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &literal, RuleContext &, Context &, ast::VariableStack &)
+	ast::Formula visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
-		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
-			throw TranslationException(literal.location, "double-negated head literals currently unsupported");
+		if (aggregate.left_guard || aggregate.right_guard)
+			throw TranslationException(headLiteral.location, "aggregates with left or right guards not yet supported in rule head");
 
-		const auto value = (literal.sign == Clingo::AST::Sign::None) ? boolean.value : !boolean.value;
+		if (aggregate.elements.size() != 1)
+			throw TranslationException("aggregates with more than one element not yet supported in rule head");
 
-		return ast::Formula::make<ast::Boolean>(value);
+		if (!aggregate.elements[0].condition.empty())
+			throw TranslationException(headLiteral.location, "conditional literals not yet supported in rule head");
+
+		if (aggregate.elements[0].literal.sign != Clingo::AST::Sign::None)
+			throw TranslationException(headLiteral.location, "negated literals in aggregates not yet supported in rule head");
+
+		const auto &literal = aggregate.elements[0].literal;
+
+		if (!literal.data.is<Clingo::AST::Term>())
+			throw TranslationException(headLiteral.location, "only terms currently supported in aggregates in rule head");
+
+		const auto &term = literal.data.get<Clingo::AST::Term>();
+
+		if (!term.data.is<Clingo::AST::Function>())
+			throw TranslationException(headLiteral.location, "only atoms currently supported in aggregates in rule head");
+
+		const auto &function = term.data.get<Clingo::AST::Function>();
+
+		return makeHeadFormula(function, true, context, ruleContext, variableStack);
 	}
 
-	std::optional<ast::Formula> visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
-		// Comparisons should never have a sign, because these are converted to positive comparisons by clingo
 		if (literal.sign != Clingo::AST::Sign::None)
-			throw TranslationException(literal.location, "negated comparisons currently unsupported");
+			throw TranslationException(literal.location, "negated head literals not yet supported in rule head");
 
-		const auto operator_ = translate(comparison.comparison);
+		if (literal.data.is<Clingo::AST::Boolean>())
+			return ast::Boolean(literal.data.get<Clingo::AST::Boolean>().value);
 
-		ast::VariableDeclarationPointers parameters;
-		parameters.reserve(2);
-		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
-		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
+		if (!literal.data.is<Clingo::AST::Term>())
+			throw TranslationException(headLiteral.location, "only terms currently supported in literals in rule head");
 
-		ast::And conjunction;
-		conjunction.arguments.reserve(3);
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[0].get()), translate(comparison.left, ruleContext, context, variableStack)));
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[1].get()), translate(comparison.right, ruleContext, context, variableStack)));
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::Comparison>(operator_, ast::Variable(parameters[0].get()), ast::Variable(parameters[1].get())));
+		const auto &term = literal.data.get<Clingo::AST::Term>();
 
-		return ast::Formula::make<ast::ForAll>(std::move(parameters), std::move(conjunction));
-	}
+		if (!term.data.is<Clingo::AST::Function>())
+			throw TranslationException(headLiteral.location, "only atoms currently supported in literals in rule head");
 
-	std::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
-	{
-		return term.data.accept(FunctionTermTranslateDirectlyVisitor(), term, literal, ruleContext, context, variableStack);
+		const auto &function = term.data.get<Clingo::AST::Function>();
+
+		return makeHeadFormula(function, false, context, ruleContext, variableStack);
 	}
 
 	template<class T>
-	std::optional<ast::Formula> visit(const T &, const Clingo::AST::Literal &literal, RuleContext &, Context &, ast::VariableStack &)
+	ast::Formula visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &, RuleContext &, ast::VariableStack &)
 	{
-		throw TranslationException(literal.location, "only disjunctions and comparisons of literals allowed as head literals");
-		return std::nullopt;
+		throw TranslationException(headLiteral.location, "head literal not yet supported in rule head, expected literal or aggregate");
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct HeadLiteralTranslateDirectlyToConsequentVisitor
-{
-	std::optional<ast::Formula> visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
-	{
-		if (literal.sign == Clingo::AST::Sign::DoubleNegation)
-			throw TranslationException(literal.location, "double-negated head literals currently unsupported");
-
-		return literal.data.accept(LiteralTranslateDirectlyVisitor(), literal, ruleContext, context, variableStack);
-	}
-
-	std::optional<ast::Formula> visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
-	{
-		std::vector<ast::Formula> arguments;
-		arguments.reserve(disjunction.elements.size());
-
-		for (const auto &conditionalLiteral : disjunction.elements)
-		{
-			if (!conditionalLiteral.condition.empty())
-				throw TranslationException(headLiteral.location, "conditional head literals currently unsupported");
-
-			auto argument = visit(conditionalLiteral.literal, headLiteral, ruleContext, context, variableStack);
-
-			if (!argument)
-				throw TranslationException(headLiteral.location, "could not parse argument");
-
-			arguments.emplace_back(std::move(argument.value()));
-		}
-
-		return ast::Formula::make<ast::Or>(std::move(arguments));
-	}
-
-	std::optional<ast::Formula> visit(const Clingo::AST::Aggregate &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &, Context &, ast::VariableStack &)
-	{
-		throw TranslationException(headLiteral.location, "aggregates currently unsupported");
-	}
-
-	template<class T>
-	std::optional<ast::Formula> visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &, Context &, ast::VariableStack &)
-	{
-		throw TranslationException(headLiteral.location, "head literal currently unsupported in this context, expected literal, disjunction, or aggregate");
-		return std::nullopt;
-	}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
+}
 }
 
 #endif

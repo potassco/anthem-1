@@ -57,7 +57,7 @@ ast::UnaryOperation::Operator translate(Clingo::AST::UnaryOperator unaryOperator
 		case Clingo::AST::UnaryOperator::Minus:
 			return ast::UnaryOperation::Operator::Minus;
 		case Clingo::AST::UnaryOperator::Negation:
-			throw TranslationException(term.location, "binary operation “negation” currently unsupported");
+			throw TranslationException(term.location, "unary operation “negation” currently unsupported");
 	}
 
 	throw TranslationException(term.location, "unknown unary operation");

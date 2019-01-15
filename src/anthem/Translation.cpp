@@ -77,7 +77,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 					context.logger.outputStream()
 						<< output::Keyword("tff")
 						<< "(" << output::Function(formulaName.c_str())
-						<< ", axiom, ";
+						<< ", " << output::Keyword("axiom") << ", ";
 					output::print<output::FormatterTPTP>(context.logger.outputStream(), value, printContext);
 					context.logger.outputStream() << ").";
 

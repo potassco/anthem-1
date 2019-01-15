@@ -16,6 +16,7 @@ TEST_CASE("[placeholders] Programs with placeholders are correctly completed", "
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
+	context.translationMode = anthem::TranslationMode::Completion;
 	context.performSimplification = true;
 	context.performCompletion = true;
 

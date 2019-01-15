@@ -32,15 +32,15 @@ struct FormatterTPTP
 		switch (operator_)
 		{
 			case ast::BinaryOperation::Operator::Plus:
-				return (stream << output::Operator("$sum"));
+				return (stream << output::Keyword("$sum"));
 			case ast::BinaryOperation::Operator::Minus:
-				return (stream << output::Operator("$difference"));
+				return (stream << output::Keyword("$difference"));
 			case ast::BinaryOperation::Operator::Multiplication:
-				return (stream << output::Operator("$product"));
+				return (stream << output::Keyword("$product"));
 			case ast::BinaryOperation::Operator::Division:
-				return (stream << output::Operator("$quotient_e"));
+				return (stream << output::Keyword("$quotient_e"));
 			case ast::BinaryOperation::Operator::Modulo:
-				return (stream << output::Operator("$remainder_e"));
+				return (stream << output::Keyword("$remainder_e"));
 			case ast::BinaryOperation::Operator::Power:
 				throw TranslationException("power operator not implemented with TPTP");
 		}
@@ -89,16 +89,16 @@ struct FormatterTPTP
 		switch (comparison.operator_)
 		{
 			case ast::Comparison::Operator::GreaterThan:
-				stream << output::Operator("$greater");
+				stream << output::Keyword("$greater");
 				break;
 			case ast::Comparison::Operator::LessThan:
-				stream << output::Operator("$less");
+				stream << output::Keyword("$less");
 				break;
 			case ast::Comparison::Operator::LessEqual:
-				stream << output::Operator("$lesseq");
+				stream << output::Keyword("$lesseq");
 				break;
 			case ast::Comparison::Operator::GreaterEqual:
-				stream << output::Operator("$greatereq");
+				stream << output::Keyword("$greatereq");
 				break;
 			default:
 				throw TranslationException("equality operators require infix notation, please report this to the bug tracker");
@@ -146,7 +146,7 @@ struct FormatterTPTP
 	static output::ColorStream &print(output::ColorStream &stream, const ast::Integer &integer, PrintContext &, bool)
 	{
 		if (integer.value < 0)
-			return (stream << output::Operator("$uminus") << "(" << output::Number<int>(-integer.value) << ")");
+			return (stream << output::Keyword("$uminus") << "(" << output::Number<int>(-integer.value) << ")");
 
 		return (stream << output::Number<int>(integer.value));
 	}
@@ -200,7 +200,7 @@ struct FormatterTPTP
 			case ast::UnaryOperation::Operator::Absolute:
 				throw TranslationException("absolute value not implemented with TPTP");
 			case ast::UnaryOperation::Operator::Minus:
-				stream << output::Operator("$uminus") << "(";
+				stream << output::Keyword("$uminus") << "(";
 				break;
 		}
 
@@ -274,7 +274,7 @@ struct FormatterTPTP
 		for (auto i = and_.arguments.cbegin(); i != and_.arguments.cend(); i++)
 		{
 			if (i != and_.arguments.cbegin())
-				stream << " " << output::Keyword("&") << " ";
+				stream << " " << output::Operator("&") << " ";
 
 			print(stream, *i, printContext, false);
 		}
@@ -299,7 +299,7 @@ struct FormatterTPTP
 
 	static output::ColorStream &print(output::ColorStream &stream, const ast::Exists &exists, PrintContext &printContext, bool)
 	{
-		stream << "(" << output::Keyword("?") << "[";
+		stream << "(" << output::Operator("?") << "[";
 
 		for (auto i = exists.variables.cbegin(); i != exists.variables.cend(); i++)
 		{
@@ -332,7 +332,7 @@ struct FormatterTPTP
 
 	static output::ColorStream &print(output::ColorStream &stream, const ast::ForAll &forAll, PrintContext &printContext, bool)
 	{
-		stream << "(" << output::Keyword("!") << "[";
+		stream << "(" << output::Operator("!") << "[";
 
 		for (auto i = forAll.variables.cbegin(); i != forAll.variables.cend(); i++)
 		{
@@ -376,7 +376,7 @@ struct FormatterTPTP
 
 	static output::ColorStream &print(output::ColorStream &stream, const ast::Not &not_, PrintContext &printContext, bool)
 	{
-		stream << "(" << output::Keyword("~");
+		stream << "(" << output::Operator("~");
 		print(stream, not_.argument, printContext, false);
 		stream << ")";
 
@@ -391,7 +391,7 @@ struct FormatterTPTP
 		for (auto i = or_.arguments.cbegin(); i != or_.arguments.cend(); i++)
 		{
 			if (i != or_.arguments.cbegin())
-				stream << " " << output::Keyword("|") << " ";
+				stream << " " << output::Operator("|") << " ";
 
 			print(stream, *i, printContext, true);
 		}

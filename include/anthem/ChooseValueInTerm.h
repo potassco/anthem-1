@@ -59,7 +59,7 @@ struct ChooseValueInTermVisitor
 				ast::Comparison equals(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), std::move(function));
 
 				if (function.arguments.empty())
-					return equals;
+					return std::move(equals);
 
 				ast::VariableDeclarationPointers parameters;
 				parameters.reserve(symbol.arguments().size());

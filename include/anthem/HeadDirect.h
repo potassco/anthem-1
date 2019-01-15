@@ -65,7 +65,7 @@ ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoic
 			or_.arguments.emplace_back(makePredicate());
 			or_.arguments.emplace_back(ast::Not(makePredicate()));
 
-			return or_;
+			return std::move(or_);
 		};
 
 	ast::Implies implies(std::move(and_), makeImplication());

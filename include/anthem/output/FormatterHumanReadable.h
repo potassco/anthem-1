@@ -140,9 +140,9 @@ struct FormatterHumanReadable
 		if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 			stream << "(";
 
-		print(stream, in.element, printContext, true);
+		print(stream, in.element, printContext, false);
 		stream << " " << output::Keyword("in") << " ";
-		print(stream, in.set, printContext, true);
+		print(stream, in.set, printContext, false);
 
 		if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
 			stream << ")";
@@ -408,7 +408,7 @@ struct FormatterHumanReadable
 			if (i != or_.arguments.cbegin())
 				stream << " " << output::Keyword("or") << " ";
 
-			print(stream, *i, printContext, true);
+			print(stream, *i, printContext, false);
 		}
 
 		if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)

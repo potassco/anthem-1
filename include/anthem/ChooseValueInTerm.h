@@ -37,7 +37,7 @@ ast::Formula chooseValueInPrimitive(ast::Term &&term, ast::VariableDeclaration &
 
 struct ChooseValueInTermVisitor
 {
-	ast::Formula visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &, const ast::VariableStack &)
 	{
 		switch (symbol.type())
 		{
@@ -51,42 +51,13 @@ struct ChooseValueInTermVisitor
 				return chooseValueInPrimitive(ast::String(std::string(symbol.string())), variableDeclaration);
 			case Clingo::SymbolType::Function:
 			{
-				auto functionDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), symbol.arguments().size());
+				// Functions with arguments are represented as Clingo::AST::Function by the parser. At this
+				// point, we only have to handle (0-ary) constants
+				if (!symbol.arguments().empty())
+					throw TranslationException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to the bug tracker");
 
-				ast::Function function(functionDeclaration);
-				function.arguments.reserve(symbol.arguments().size());
-
-				ast::Comparison equals(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), std::move(function));
-
-				if (function.arguments.empty())
-					return std::move(equals);
-
-				ast::VariableDeclarationPointers parameters;
-				parameters.reserve(symbol.arguments().size());
-
-				for (int i = 0; i < static_cast<int>(symbol.arguments().size()); i++)
-				{
-					auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body);
-					function.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
-
-					parameters.emplace_back(std::move(variableDeclaration));
-				}
-
-				ast::And and_;
-				and_.arguments.reserve(parameters.size() + 1);
-				and_.arguments.emplace_back(std::move(equals));
-
-				for (int i = 0; i < static_cast<int>(symbol.arguments().size()); i++)
-				{
-					auto &parameter = *parameters[i];
-					const auto &argument = symbol.arguments()[i];
-
-					// TODO: the term argument is incorrect
-					auto chooseValueInArgument = visit(argument, term, parameter, context, ruleContext, variableStack);
-					and_.arguments.emplace_back(std::move(chooseValueInArgument));
-				}
-
-				return ast::Exists(std::move(parameters), std::move(and_));
+				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), symbol.arguments().size());
+				return chooseValueInPrimitive(ast::Function(constantDeclaration), variableDeclaration);
 			}
 		}
 
@@ -285,9 +256,45 @@ struct ChooseValueInTermVisitor
 		return ast::Exists(std::move(parameters), std::move(and_));
 	}
 
-	ast::Formula visit(const Clingo::AST::Function &, const Clingo::AST::Term &term, ast::VariableDeclaration &, Context &, RuleContext &, const ast::VariableStack &)
+	ast::Formula visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
-		throw TranslationException(term.location, "functions not yet supported in this context");
+		// Functions with arguments are represented as Clingo::AST::Function by the parser. At this point,
+		// we only have to handle functions with arguments
+		if (function.arguments.empty())
+			throw TranslationException(term.location, "unexpected 0-ary function, expected at least one argument, please report to the bug tracker");
+
+		auto functionDeclaration = context.findOrCreateFunctionDeclaration(function.name, function.arguments.size());
+
+		ast::Function astFunction(functionDeclaration);
+		astFunction.arguments.reserve(function.arguments.size());
+
+		ast::VariableDeclarationPointers parameters;
+		parameters.reserve(function.arguments.size());
+
+		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+		{
+			auto parameter = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body);
+			astFunction.arguments.emplace_back(ast::Variable(parameter.get()));
+
+			parameters.emplace_back(std::move(parameter));
+		}
+
+		ast::And and_;
+		and_.arguments.reserve(parameters.size() + 1);
+
+		ast::Comparison equals(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), std::move(astFunction));
+		and_.arguments.emplace_back(std::move(equals));
+
+		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+		{
+			auto &parameter = *parameters[i];
+			const auto &argument = function.arguments[i];
+
+			auto chooseValueInArgument = chooseValueInTerm(argument, parameter, context, ruleContext, variableStack);
+			and_.arguments.emplace_back(std::move(chooseValueInArgument));
+		}
+
+		return ast::Exists(std::move(parameters), std::move(and_));
 	}
 
 	ast::Formula visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, ast::VariableDeclaration &, Context &, RuleContext &, const ast::VariableStack &)

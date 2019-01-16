@@ -4,6 +4,7 @@
 #include <optional>
 
 #include <anthem/AST.h>
+#include <anthem/Semantics.h>
 #include <anthem/TranslationMode.h>
 #include <anthem/OutputFormat.h>
 #include <anthem/output/Logger.h>
@@ -84,6 +85,8 @@ struct Context
 	bool showStatementsUsed{false};
 
 	output::ParenthesisStyle parenthesisStyle{output::ParenthesisStyle::Normal};
+
+	Semantics semantics{Semantics::ClassicalLogic};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

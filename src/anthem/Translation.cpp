@@ -62,6 +62,16 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	output::PrintContext printContext(context);
 
+	switch (context.semantics)
+	{
+		case Semantics::ClassicalLogic:
+			context.logger.log(output::Priority::Info) << "output semantics: classical logic";
+			break;
+		case Semantics::LogicOfHereAndThere:
+			context.logger.log(output::Priority::Warning) << "output semantics: logic of here-and-there";
+			break;
+	}
+
 	const auto printFormula =
 		[&](const auto &value)
 		{
@@ -88,6 +98,11 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			printContext.currentFormulaID++;
 		};
 
+	if (context.performSimplification && context.semantics != Semantics::ClassicalLogic)
+		context.logger.log(output::Priority::Warning) << "simplifications not yet supported with logic of here-and-there";
+
+	const auto performSimplification = (context.performSimplification && context.semantics == Semantics::ClassicalLogic);
+
 	if (context.translationMode == TranslationMode::HereAndThere)
 	{
 		std::vector<ast::Formula> universallyClosedFormulas;
@@ -110,7 +125,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		// Simplify output if specified
 		for (auto &universallyClosedFormula : universallyClosedFormulas)
 		{
-			if (context.performSimplification)
+			if (performSimplification)
 				simplify(universallyClosedFormula);
 
 			printFormula(universallyClosedFormula);
@@ -123,7 +138,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 	if (!context.performCompletion)
 	{
 		// Simplify output if specified
-		if (context.performSimplification)
+		if (performSimplification)
 			for (auto &scopedFormula : scopedFormulas)
 				simplify(scopedFormula.formula);
 
@@ -174,7 +189,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		detectIntegerVariables(completedFormulas);
 
 	// Simplify output if specified
-	if (context.performSimplification)
+	if (performSimplification)
 		for (auto &completedFormula : completedFormulas)
 			simplify(completedFormula);
 

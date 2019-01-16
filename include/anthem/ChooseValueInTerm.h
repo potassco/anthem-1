@@ -219,9 +219,37 @@ struct ChooseValueInTermVisitor
 		throw LogicException("unreachable code, please report to bug tracker");
 	}
 
-	ast::Formula visit(const Clingo::AST::UnaryOperation &, const Clingo::AST::Term &, ast::VariableDeclaration &, Context &, RuleContext &, const ast::VariableStack &)
+	ast::Formula visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
-		throw TranslationException("unary operations not yet supported in this context");
+		switch (unaryOperation.unary_operator)
+		{
+			case Clingo::AST::UnaryOperator::Absolute:
+				throw TranslationException(term.location, "unary operation “absolute value” not yet supported in this context");
+			case Clingo::AST::UnaryOperator::Minus:
+			{
+				ast::VariableDeclarationPointers parameters;
+				parameters.reserve(1);
+				parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+
+				auto &parameterZPrime = parameters[0];
+
+				ast::And and_;
+				and_.arguments.reserve(2);
+
+				ast::UnaryOperation minusZPrime = ast::UnaryOperation(ast::UnaryOperation::Operator::Minus, ast::Variable(parameterZPrime.get()));
+				ast::Comparison equals(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), std::move(minusZPrime));
+				and_.arguments.emplace_back(std::move(equals));
+
+				auto chooseZPrimeInTPrime = chooseValueInTerm(unaryOperation.argument, *parameterZPrime, context, ruleContext, variableStack);
+				and_.arguments.emplace_back(std::move(chooseZPrimeInTPrime));
+
+				return ast::Exists(std::move(parameters), std::move(and_));
+			}
+			case Clingo::AST::UnaryOperator::Negation:
+				throw TranslationException(term.location, "unary operation “negation” not yet supported in this context");
+		};
+
+		throw LogicException("unreachable code, please report to bug tracker");
 	}
 
 	ast::Formula visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)

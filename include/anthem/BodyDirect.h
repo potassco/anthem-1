@@ -80,7 +80,7 @@ struct BodyTermTranslateVisitor
 	{
 		assert(!term.data.is<Clingo::AST::Function>());
 
-		throw TranslationException(term.location, "term currently unsupported in this context, expected function");
+		throw TranslationException(term.location, "term currently not yet supported in this context, expected function");
 	}
 };
 
@@ -88,8 +88,11 @@ struct BodyTermTranslateVisitor
 
 struct BodyLiteralTranslateVisitor
 {
-	ast::Formula visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, Context &, RuleContext &, ast::VariableStack &)
+	ast::Formula visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &literal, Context &, RuleContext &, ast::VariableStack &)
 	{
+		if (literal.sign != Clingo::AST::Sign::None)
+			throw TranslationException(literal.location, "negated booleans not expected, please report to bug tracker");
+
 		return ast::Boolean(boolean.value);
 	}
 
@@ -98,8 +101,11 @@ struct BodyLiteralTranslateVisitor
 		return term.data.accept(BodyTermTranslateVisitor(), literal, term, context, ruleContext, variableStack);
 	}
 
-	ast::Formula visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
+		if (literal.sign != Clingo::AST::Sign::None)
+			throw TranslationException(literal.location, "negated comparisons not expected, please report to bug tracker");
+
 		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(2);
 
@@ -128,7 +134,7 @@ struct BodyLiteralTranslateVisitor
 	template<class T>
 	ast::Formula visit(const T &, const Clingo::AST::Literal &literal, Context &, RuleContext &, ast::VariableStack &)
 	{
-		throw TranslationException(literal.location, "literal currently unsupported in this context, expected function or term");
+		throw TranslationException(literal.location, "literal not yet supported in this context, expected boolean, comparison, or term");
 	}
 };
 
@@ -141,13 +147,17 @@ struct BodyBodyLiteralTranslateVisitor
 		if (bodyLiteral.sign != Clingo::AST::Sign::None)
 			throw TranslationException(bodyLiteral.location, "only positive body literals supported currently");
 
+		// Negated literals require us to translate the rules to formulas in the logic of here-and-there
+		if (literal.sign != Clingo::AST::Sign::None)
+			context.semantics = Semantics::LogicOfHereAndThere;
+
 		return literal.data.accept(BodyLiteralTranslateVisitor(), literal, context, ruleContext, variableStack);
 	}
 
 	template<class T>
 	ast::Formula visit(const T &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &, RuleContext &, ast::VariableStack &)
 	{
-		throw TranslationException(bodyLiteral.location, "body literal currently unsupported in this context, expected literal");
+		throw TranslationException(bodyLiteral.location, "body literal not yet supported in this context, expected literal");
 	}
 };
 

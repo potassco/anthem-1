@@ -103,6 +103,9 @@ struct HeadLiteralTranslateToConsequentVisitor
 
 		const auto &function = term.data.get<Clingo::AST::Function>();
 
+		// Choice rules require us to translate the rules to formulas in the logic of here-and-there
+		context.semantics = Semantics::LogicOfHereAndThere;
+
 		return makeHeadFormula(function, true, context, ruleContext, variableStack);
 	}
 

@@ -40,7 +40,7 @@ struct BodyTermTranslateVisitor
 		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
-			parameters.back()->domain = Domain::Noninteger;
+			parameters.back()->domain = Domain::Program;
 			predicate.arguments.emplace_back(ast::Variable(parameters[i].get()));
 		}
 
@@ -113,7 +113,7 @@ struct BodyLiteralTranslateVisitor
 		for (size_t i = 0; i < 2; i++)
 		{
 			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
-			parameters.back()->domain = Domain::Noninteger;
+			parameters.back()->domain = Domain::Program;
 		}
 
 		ast::And and_;

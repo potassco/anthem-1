@@ -75,7 +75,7 @@ struct ChooseValueInTermVisitor
 			return chooseValueInPrimitive(ast::Variable(*matchingVariableDeclaration), variableDeclaration);
 
 		auto otherVariableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
-		otherVariableDeclaration->domain = Domain::Noninteger;
+		otherVariableDeclaration->domain = Domain::Program;
 		ast::Variable otherVariable(otherVariableDeclaration.get());
 		ruleContext.freeVariables.emplace_back(std::move(otherVariableDeclaration));
 
@@ -285,7 +285,7 @@ struct ChooseValueInTermVisitor
 		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			auto parameter = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body);
-			parameter->domain = Domain::Noninteger;
+			parameter->domain = Domain::Program;
 
 			astFunction.arguments.emplace_back(ast::Variable(parameter.get()));
 

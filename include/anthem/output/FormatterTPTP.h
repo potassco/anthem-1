@@ -315,7 +315,7 @@ struct FormatterTPTP
 				case Domain::Integer:
 					stream << ": " << output::Keyword("$int");
 					break;
-				case Domain::Noninteger:
+				case Domain::Program:
 					stream << ": " << output::Keyword("$i");
 					break;
 				default:
@@ -348,7 +348,7 @@ struct FormatterTPTP
 				case Domain::Integer:
 					stream << ": " << output::Keyword("$int");
 					break;
-				case Domain::Noninteger:
+				case Domain::Program:
 					stream << ": " << output::Keyword("$i");
 					break;
 				default:

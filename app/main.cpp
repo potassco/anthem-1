@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 		("no-simplify", "Do not simplify the output (only with completion translation mode)")
 		("no-complete", "Do not perform completion (only with completion translation mode)")
 		("no-detect-integers", "Do not detect integer variables (only with completion translation mode)")
+		("variable-domain", "Variable domain (auto, program, integer)", cxxopts::value<std::string>()->default_value("auto"))
 		("color", "Colorize output (always, never, auto)", cxxopts::value<std::string>()->default_value("auto"))
 		("parentheses", "Parenthesis style (normal, full) (only with human-readable output format)", cxxopts::value<std::string>()->default_value("normal"))
 		("p,log-priority", "Log messages starting from this priority (debug, info, warning, error)", cxxopts::value<std::string>()->default_value("info"));
@@ -39,6 +40,7 @@ int main(int argc, char **argv)
 	std::vector<std::string> inputFiles;
 	std::string translationModeString;
 	std::string outputFormatString;
+	std::string variableDomainString;
 	std::string colorPolicyString;
 	std::string parenthesisStyleString;
 	std::string logPriorityString;
@@ -58,6 +60,7 @@ int main(int argc, char **argv)
 		context.performSimplification = (parseResult.count("no-simplify") == 0);
 		context.performCompletion = (parseResult.count("no-complete") == 0);
 		context.performIntegerDetection = (parseResult.count("no-detect-integers") == 0);
+		variableDomainString = parseResult["variable-domain"].as<std::string>();
 		colorPolicyString = parseResult["color"].as<std::string>();
 		parenthesisStyleString = parseResult["parentheses"].as<std::string>();
 		logPriorityString = parseResult["log-priority"].as<std::string>();
@@ -101,6 +104,20 @@ int main(int argc, char **argv)
 	else
 	{
 		context.logger.log(anthem::output::Priority::Error) << "unknown output format “" << translationModeString << "”";
+		context.logger.errorStream() << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
+	}
+
+	if (variableDomainString == "auto")
+		context.variableDomain = anthem::Domain::Unknown;
+	else if (variableDomainString == "program")
+		context.variableDomain = anthem::Domain::Program;
+	else if (variableDomainString == "integer")
+		context.variableDomain = anthem::Domain::Integer;
+	else
+	{
+		context.logger.log(anthem::output::Priority::Error) << "unknown default variable domain “" << variableDomainString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

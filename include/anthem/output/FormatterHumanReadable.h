@@ -267,7 +267,12 @@ struct FormatterHumanReadable
 				return (stream << output::Variable(variableName.c_str()));
 			};
 
-		if (variableDeclaration.domain == Domain::Integer)
+		// TODO: remove code duplication
+		const auto domain = (printContext.context.variableDomain == Domain::Unknown)
+			? variableDeclaration.domain
+			: printContext.context.variableDomain;
+
+		if (domain == Domain::Integer)
 			return printVariableDeclaration(IntegerVariablePrefix, printContext.integerVariableIDs);
 
 		switch (variableDeclaration.type)

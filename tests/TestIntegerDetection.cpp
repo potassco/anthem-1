@@ -30,7 +30,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 			"int(p/1@1)\n");
 	}
 
-	SECTION("simple noninteger parameter")
+	SECTION("simple parameter that can take both symbolic and integer values")
 	{
 		input <<
 			"p(X) :- X = 1..5.\n"

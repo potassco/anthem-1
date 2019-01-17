@@ -221,7 +221,7 @@ struct EvaluateFormulaVisitor
 
 			const auto argumentType = type(argument, std::forward<Arguments>(arguments)...);
 
-			if (argumentType.domain == Domain::Noninteger || argumentType.setSize == SetSize::Empty)
+			if (argumentType.domain == Domain::Symbolic || argumentType.setSize == SetSize::Empty)
 				return EvaluationResult::Error;
 		}
 

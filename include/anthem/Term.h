@@ -87,6 +87,12 @@ struct TermTranslateVisitor
 			{
 				auto functionDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), symbol.arguments().size());
 
+				// TODO: remove workaround
+				// Currently, the integer detection doesn’t cover the return types of functions. Setting the
+				// return type to the symbolic domain lets us detect more integer variables. This workaround
+				// sets the symbolic domain by default until a proper return type detection is implemented
+				functionDeclaration->domain = Domain::Symbolic;
+
 				auto function = ast::Function(functionDeclaration);
 				function.arguments.reserve(symbol.arguments().size());
 
@@ -161,6 +167,12 @@ struct TermTranslateVisitor
 			arguments.emplace_back(translate(argument, ruleContext, context, variableStack));
 
 		auto functionDeclaration = context.findOrCreateFunctionDeclaration(function.name, function.arguments.size());
+
+		// TODO: remove workaround
+		// Currently, the integer detection doesn’t cover the return types of functions. Setting the
+		// return type to the symbolic domain lets us detect more integer variables. This workaround
+		// sets the symbolic domain by default until a proper return type detection is implemented
+		functionDeclaration->domain = Domain::Symbolic;
 
 		return ast::Term::make<ast::Function>(functionDeclaration, std::move(arguments));
 	}

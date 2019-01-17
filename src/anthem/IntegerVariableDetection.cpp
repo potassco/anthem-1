@@ -198,14 +198,14 @@ struct CheckIfDefinitionFalseFunctor
 
 		clearVariableDomainMap(variableDomainMap);
 
-		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
+		// As a hypothesis, make the parameter symbolic
+		variableDomainMap[&variableDeclaration] = Domain::Symbolic;
 
 		const auto result = evaluate(definition, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::False)
 		{
-			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			// If making the variable symbolic leads to a false or erroneous result, it’s proven to be integer
 			variableDeclaration.domain = Domain::Integer;
 			return OperationResult::Changed;
 		}
@@ -226,14 +226,14 @@ struct CheckIfQuantifiedFormulaFalseFunctor
 
 		clearVariableDomainMap(variableDomainMap);
 
-		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
+		// As a hypothesis, make the parameter symbolic
+		variableDomainMap[&variableDeclaration] = Domain::Symbolic;
 
 		const auto result = evaluate(quantifiedFormula, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::False)
 		{
-			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			// If making the variable symbolic leads to a false or erroneous result, it’s proven to be integer
 			variableDeclaration.domain = Domain::Integer;
 			return OperationResult::Changed;
 		}
@@ -254,14 +254,14 @@ struct CheckIfCompletedFormulaTrueFunctor
 
 		clearVariableDomainMap(variableDomainMap);
 
-		// As a hypothesis, make the parameter’s domain noninteger
-		variableDomainMap[&variableDeclaration] = Domain::Noninteger;
+		// As a hypothesis, make the parameter symbolic
+		variableDomainMap[&variableDeclaration] = Domain::Symbolic;
 
 		const auto result = evaluate(completedFormula, variableDomainMap);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::True)
 		{
-			// If making the variable noninteger leads to a false or erroneous result, it’s proven to be integer
+			// If making the variable symbolic leads to a false or erroneous result, it’s proven to be integer
 			variableDeclaration.domain = Domain::Integer;
 			return OperationResult::Changed;
 		}

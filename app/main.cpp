@@ -18,11 +18,11 @@ int main(int argc, char **argv)
 		("i,input", "Input files", cxxopts::value<std::vector<std::string>>())
 		("mode", "Translation mode (here-and-there, completion)", cxxopts::value<std::string>()->default_value("here-and-there"))
 		("output-format", "Output format (human-readable, tptp)", cxxopts::value<std::string>()->default_value("human-readable"))
-		("no-simplify", "Do not simplify the output")
-		("no-complete", "Do not perform completion")
-		("no-detect-integers", "Do not detect integer variables")
+		("no-simplify", "Do not simplify the output (only with completion translation mode)")
+		("no-complete", "Do not perform completion (only with completion translation mode)")
+		("no-detect-integers", "Do not detect integer variables (only with completion translation mode)")
 		("color", "Colorize output (always, never, auto)", cxxopts::value<std::string>()->default_value("auto"))
-		("parentheses", "Parenthesis style (normal, full)", cxxopts::value<std::string>()->default_value("normal"))
+		("parentheses", "Parenthesis style (normal, full) (only with human-readable output format)", cxxopts::value<std::string>()->default_value("normal"))
 		("p,log-priority", "Log messages starting from this priority (debug, info, warning, error)", cxxopts::value<std::string>()->default_value("info"));
 
 	options.parse_positional("input");

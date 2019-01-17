@@ -74,7 +74,7 @@ struct ChooseValueInTermVisitor
 		if (!isUndeclared)
 			return chooseValueInPrimitive(ast::Variable(*matchingVariableDeclaration), variableDeclaration);
 
-		auto otherVariableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
+		auto otherVariableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body, std::string(variable.name));
 		// TODO: should be Domain::Unknown
 		otherVariableDeclaration->domain = Domain::Symbolic;
 		ast::Variable otherVariable(otherVariableDeclaration.get());

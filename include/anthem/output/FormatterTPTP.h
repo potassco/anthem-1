@@ -310,7 +310,11 @@ struct FormatterTPTP
 
 			print(stream, variableDeclaration, printContext, true);
 
-			switch (variableDeclaration.domain)
+			const auto domain = (printContext.context.variableDomain == Domain::Unknown)
+				? variableDeclaration.domain
+				: printContext.context.variableDomain;
+
+			switch (domain)
 			{
 				case Domain::Integer:
 					stream << ": " << output::Keyword("$int");
@@ -343,13 +347,17 @@ struct FormatterTPTP
 
 			print(stream, variableDeclaration, printContext, true);
 
-			switch (variableDeclaration.domain)
+			const auto domain = (printContext.context.variableDomain == Domain::Unknown)
+				? variableDeclaration.domain
+				: printContext.context.variableDomain;
+
+			switch (domain)
 			{
-				case Domain::Integer:
-					stream << ": " << output::Keyword("$int");
-					break;
 				case Domain::Symbolic:
 					stream << ": " << output::Keyword("$i");
+					break;
+				case Domain::Integer:
+					stream << ": " << output::Keyword("$int");
 					break;
 				default:
 					break;

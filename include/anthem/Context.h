@@ -76,6 +76,9 @@ struct Context
 	bool performCompletion{false};
 	bool performIntegerDetection{false};
 
+	Semantics semantics{Semantics::ClassicalLogic};
+	Domain variableDomain{Domain::Unknown};
+
 	std::vector<std::unique_ptr<ast::PredicateDeclaration>> predicateDeclarations;
 	ast::PredicateDeclaration::Visibility defaultPredicateVisibility{ast::PredicateDeclaration::Visibility::Visible};
 
@@ -85,8 +88,6 @@ struct Context
 	bool showStatementsUsed{false};
 
 	output::ParenthesisStyle parenthesisStyle{output::ParenthesisStyle::Normal};
-
-	Semantics semantics{Semantics::ClassicalLogic};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -33,7 +33,7 @@ ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoic
 
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 	{
-		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
+		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 		parameters.back()->domain = Domain::Program;
 	}
 

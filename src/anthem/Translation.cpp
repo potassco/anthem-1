@@ -50,7 +50,7 @@ const auto printFormula =
 				break;
 			case OutputFormat::TPTP:
 			{
-				const auto formulaName = std::string("formula") + std::to_string(printContext.currentFormulaID + 1);
+				const auto formulaName = std::string("axiom") + std::to_string(printContext.currentFormulaID + 1);
 
 				stream
 					<< output::Keyword("tff")
@@ -68,7 +68,7 @@ const auto printFormula =
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const auto printType =
+const auto printTypeAnnotation =
 	[](const ast::PredicateDeclaration &predicateDeclaration, Context &context, output::PrintContext &printContext)
 	{
 		auto &stream = context.logger.outputStream();
@@ -80,7 +80,11 @@ const auto printType =
 				{
 					const auto &parameter = predicateDeclaration.parameters[i];
 
-					if (parameter.domain != Domain::Integer)
+					// TODO: remove code duplication
+					const auto domain = (printContext.context.variableDomain == Domain::Unknown)
+						? parameter.domain
+						: printContext.context.variableDomain;
+					if (domain != Domain::Integer)
 						continue;
 
 					stream
@@ -205,6 +209,25 @@ void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Contex
 		for (auto &completedFormula : completedFormulas)
 			simplify(completedFormula);
 
+	// Print specifiers for integer predicate parameters
+	for (auto &predicateDeclaration : context.predicateDeclarations)
+	{
+		// Check that the predicate is used and not declared #external
+		if (!predicateDeclaration->isUsed || predicateDeclaration->isExternal)
+			continue;
+
+		const auto isPredicateVisible =
+			(predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Visible)
+			|| (predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Default
+				&& context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Visible);
+
+		// If the predicate ought to be visible, don’t eliminate it
+		if (!isPredicateVisible)
+			continue;
+
+		printTypeAnnotation(*predicateDeclaration, context, printContext);
+	}
+
 	// TODO: remove variables that are not referenced after simplification
 
 	for (const auto &completedFormula : completedFormulas)
@@ -212,28 +235,6 @@ void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Contex
 		printFormula(completedFormula, context, printContext);
 		context.logger.outputStream() << std::endl;
 	}
-
-	// Print specifiers for integer predicate parameters
-	if (context.outputFormat == OutputFormat::HumanReadable)
-		for (auto &predicateDeclaration : context.predicateDeclarations)
-		{
-			// Check that the predicate is used and not declared #external
-			if (!predicateDeclaration->isUsed || predicateDeclaration->isExternal)
-				continue;
-
-			const auto isPredicateVisible =
-				(predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Visible)
-				|| (predicateDeclaration->visibility == ast::PredicateDeclaration::Visibility::Default
-					&& context.defaultPredicateVisibility == ast::PredicateDeclaration::Visibility::Visible);
-
-			// If the predicate ought to be visible, don’t eliminate it
-			if (!isPredicateVisible)
-				continue;
-
-			printType(*predicateDeclaration, context, printContext);
-		}
-	else
-		context.logger.log(output::Priority::Warning) << "type annotations for integer parameters not yet supported with TPTP";
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -275,8 +276,11 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Cont
 	}
 
 	// Print type annotations
-	for (const auto &predicateDeclaration : context.predicateDeclarations)
-		printType(*predicateDeclaration, context, printContext);
+	if (context.variableDomain == Domain::Unknown)
+		context.logger.log(output::Priority::Warning) << "type annotations not yet supported with automatic detection of variable domains";
+	else
+		for (const auto &predicateDeclaration : context.predicateDeclarations)
+			printTypeAnnotation(*predicateDeclaration, context, printContext);
 
 	// Print translated formulas
 	for (auto &universallyClosedFormula : universallyClosedFormulas)

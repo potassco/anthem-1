@@ -74,7 +74,7 @@ struct ChooseValueInTermVisitor
 		if (!isUndeclared)
 			return chooseValueInPrimitive(ast::Variable(*matchingVariableDeclaration), variableDeclaration);
 
-		auto otherVariableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body, std::string(variable.name));
+		auto otherVariableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
 		otherVariableDeclaration->domain = Domain::Program;
 		ast::Variable otherVariable(otherVariableDeclaration.get());
 		ruleContext.freeVariables.emplace_back(std::move(otherVariableDeclaration));

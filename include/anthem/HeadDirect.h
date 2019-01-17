@@ -34,7 +34,8 @@ ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoic
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 	{
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
-		parameters.back()->domain = Domain::Noninteger;
+		// TODO: should be Domain::Unknown
+		parameters.back()->domain = Domain::Symbolic;
 	}
 
 	ast::And and_;

@@ -32,7 +32,10 @@ ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoic
 	parameters.reserve(function.arguments.size());
 
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+	{
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
+		parameters.back()->domain = Domain::Noninteger;
+	}
 
 	ast::And and_;
 	and_.arguments.reserve(parameters.size());

@@ -75,6 +75,7 @@ struct ChooseValueInTermVisitor
 			return chooseValueInPrimitive(ast::Variable(*matchingVariableDeclaration), variableDeclaration);
 
 		auto otherVariableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
+		otherVariableDeclaration->domain = Domain::Noninteger;
 		ast::Variable otherVariable(otherVariableDeclaration.get());
 		ruleContext.freeVariables.emplace_back(std::move(otherVariableDeclaration));
 
@@ -92,7 +93,10 @@ struct ChooseValueInTermVisitor
 				parameters.reserve(2);
 
 				for (int i = 0; i < 2; i++)
+				{
 					parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+					parameters.back()->domain = Domain::Integer;
+				}
 
 				ast::BinaryOperation translatedBinaryOperation(operator_, ast::Variable(parameters[0].get()), ast::Variable(parameters[1].get()));
 
@@ -120,7 +124,10 @@ struct ChooseValueInTermVisitor
 				parameters.reserve(4);
 
 				for (int i = 0; i < 4; i++)
+				{
 					parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+					parameters.back()->domain = Domain::Integer;
+				}
 
 				auto &parameterI = parameters[0];
 				auto &parameterJ = parameters[1];
@@ -201,6 +208,7 @@ struct ChooseValueInTermVisitor
 				ast::VariableDeclarationPointers parameters;
 				parameters.reserve(1);
 				parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+				parameters.back()->domain = Domain::Integer;
 
 				auto &parameterZPrime = parameters[0];
 
@@ -229,7 +237,10 @@ struct ChooseValueInTermVisitor
 		parameters.reserve(3);
 
 		for (int i = 0; i < 3; i++)
+		{
 			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+			parameters.back()->domain = Domain::Integer;
+		}
 
 		auto &parameterI = parameters[0];
 		auto &parameterJ = parameters[1];
@@ -274,6 +285,8 @@ struct ChooseValueInTermVisitor
 		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			auto parameter = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body);
+			parameter->domain = Domain::Noninteger;
+
 			astFunction.arguments.emplace_back(ast::Variable(parameter.get()));
 
 			parameters.emplace_back(std::move(parameter));

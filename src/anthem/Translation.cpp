@@ -38,102 +38,41 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const char *fileName, std::istream &stream, Context &context)
+const auto printFormula =
+	[](const auto &value, Context &context, output::PrintContext &printContext)
+	{
+		switch (context.outputFormat)
+		{
+			case OutputFormat::HumanReadable:
+				output::print<output::FormatterHumanReadable>(context.logger.outputStream(), value, printContext);
+				break;
+			case OutputFormat::TPTP:
+			{
+				const auto formulaName = std::string("formula") + std::to_string(printContext.currentFormulaID + 1);
+
+				context.logger.outputStream()
+					<< output::Keyword("tff")
+					<< "(" << output::Function(formulaName.c_str())
+					<< ", " << output::Keyword("axiom") << ", ";
+				output::print<output::FormatterTPTP>(context.logger.outputStream(), value, printContext);
+				context.logger.outputStream() << ").";
+
+				break;
+			}
+		}
+
+		printContext.currentFormulaID++;
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
-	context.logger.log(output::Priority::Info) << "reading " << fileName;
-
-	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
-
-	std::vector<ast::ScopedFormula> scopedFormulas;
-
-	const auto translateStatement =
-		[&scopedFormulas, &context](const Clingo::AST::Statement &statement)
-		{
-			statement.data.accept(StatementVisitor(), statement, scopedFormulas, context);
-		};
-
-	const auto logger =
-		[&context](const Clingo::WarningCode, const char *text)
-		{
-			context.logger.log(output::Priority::Error) << text;
-		};
-
-	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
+	assert(context.semantics == Semantics::ClassicalLogic);
 
 	output::PrintContext printContext(context);
 
-	switch (context.semantics)
-	{
-		case Semantics::ClassicalLogic:
-			context.logger.log(output::Priority::Info) << "output semantics: classical logic";
-			break;
-		case Semantics::LogicOfHereAndThere:
-			context.logger.log(output::Priority::Warning) << "output semantics: logic of here-and-there";
-			break;
-	}
-
-	const auto printFormula =
-		[&](const auto &value)
-		{
-			switch (context.outputFormat)
-			{
-				case OutputFormat::HumanReadable:
-					output::print<output::FormatterHumanReadable>(context.logger.outputStream(), value, printContext);
-					break;
-				case OutputFormat::TPTP:
-				{
-					const auto formulaName = std::string("formula") + std::to_string(printContext.currentFormulaID + 1);
-
-					context.logger.outputStream()
-						<< output::Keyword("tff")
-						<< "(" << output::Function(formulaName.c_str())
-						<< ", " << output::Keyword("axiom") << ", ";
-					output::print<output::FormatterTPTP>(context.logger.outputStream(), value, printContext);
-					context.logger.outputStream() << ").";
-
-					break;
-				}
-			}
-
-			printContext.currentFormulaID++;
-		};
-
-	if (context.performSimplification && context.semantics != Semantics::ClassicalLogic)
-		context.logger.log(output::Priority::Warning) << "simplifications not yet supported with logic of here-and-there";
-
 	const auto performSimplification = (context.performSimplification && context.semantics == Semantics::ClassicalLogic);
-
-	if (context.translationMode == TranslationMode::HereAndThere)
-	{
-		std::vector<ast::Formula> universallyClosedFormulas;
-		universallyClosedFormulas.reserve(scopedFormulas.size());
-
-		// Build the universal closure
-		for (auto &scopedFormula : scopedFormulas)
-		{
-			auto universallyClosedFormula = (scopedFormula.freeVariables.empty())
-				? std::move(scopedFormula.formula)
-				: ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
-
-			universallyClosedFormulas.emplace_back(std::move(universallyClosedFormula));
-		}
-
-		// Detect integer variables
-		if (context.performIntegerDetection)
-			detectIntegerVariables(universallyClosedFormulas);
-
-		// Simplify output if specified
-		for (auto &universallyClosedFormula : universallyClosedFormulas)
-		{
-			if (performSimplification)
-				simplify(universallyClosedFormula);
-
-			printFormula(universallyClosedFormula);
-			context.logger.outputStream() << std::endl;
-		}
-
-		return;
-	}
 
 	if (!context.performCompletion)
 	{
@@ -150,7 +89,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 		for (const auto &scopedFormula : scopedFormulas)
 		{
-			printFormula(scopedFormula.formula);
+			printFormula(scopedFormula.formula, context, printContext);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -197,7 +136,7 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	for (const auto &completedFormula : completedFormulas)
 	{
-		printFormula(completedFormula);
+		printFormula(completedFormula, context, printContext);
 		context.logger.outputStream() << std::endl;
 	}
 
@@ -235,6 +174,83 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		}
 	else
 		context.logger.log(output::Priority::Warning) << "type annotations for integer parameters not yet supported with TPTP";
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+{
+	output::PrintContext printContext(context);
+
+	switch (context.semantics)
+	{
+		case Semantics::ClassicalLogic:
+			context.logger.log(output::Priority::Info) << "output semantics: classical logic";
+			break;
+		case Semantics::LogicOfHereAndThere:
+			context.logger.log(output::Priority::Warning) << "output semantics: logic of here-and-there";
+			break;
+	}
+
+	std::vector<ast::Formula> universallyClosedFormulas;
+	universallyClosedFormulas.reserve(scopedFormulas.size());
+
+	// Build the universal closure
+	for (auto &scopedFormula : scopedFormulas)
+	{
+		const auto makeUniversallyClosedFormula =
+			[&]() -> ast::Formula
+			{
+				if (scopedFormula.freeVariables.empty())
+					return std::move(scopedFormula.formula);
+
+				return ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
+			};
+
+		universallyClosedFormulas.emplace_back(std::move(makeUniversallyClosedFormula()));
+	}
+
+	// Print translated formulas
+	for (auto &universallyClosedFormula : universallyClosedFormulas)
+	{
+		printFormula(universallyClosedFormula, context, printContext);
+		context.logger.outputStream() << std::endl;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translate(const char *fileName, std::istream &stream, Context &context)
+{
+	context.logger.log(output::Priority::Info) << "reading " << fileName;
+
+	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
+
+	std::vector<ast::ScopedFormula> scopedFormulas;
+
+	const auto translateStatement =
+		[&scopedFormulas, &context](const Clingo::AST::Statement &statement)
+		{
+			statement.data.accept(StatementVisitor(), statement, scopedFormulas, context);
+		};
+
+	const auto logger =
+		[&context](const Clingo::WarningCode, const char *text)
+		{
+			context.logger.log(output::Priority::Error) << text;
+		};
+
+	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
+
+	switch (context.translationMode)
+	{
+		case TranslationMode::Completion:
+			translateCompletion(scopedFormulas, context);
+			break;
+		case TranslationMode::HereAndThere:
+			translateHereAndThere(scopedFormulas, context);
+			break;
+	};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

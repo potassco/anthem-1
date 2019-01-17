@@ -41,27 +41,100 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 const auto printFormula =
 	[](const auto &value, Context &context, output::PrintContext &printContext)
 	{
+		auto &stream = context.logger.outputStream();
+
 		switch (context.outputFormat)
 		{
 			case OutputFormat::HumanReadable:
-				output::print<output::FormatterHumanReadable>(context.logger.outputStream(), value, printContext);
+				output::print<output::FormatterHumanReadable>(stream, value, printContext);
 				break;
 			case OutputFormat::TPTP:
 			{
 				const auto formulaName = std::string("formula") + std::to_string(printContext.currentFormulaID + 1);
 
-				context.logger.outputStream()
+				stream
 					<< output::Keyword("tff")
 					<< "(" << output::Function(formulaName.c_str())
 					<< ", " << output::Keyword("axiom") << ", ";
-				output::print<output::FormatterTPTP>(context.logger.outputStream(), value, printContext);
-				context.logger.outputStream() << ").";
+				output::print<output::FormatterTPTP>(stream, value, printContext);
+				stream << ").";
 
 				break;
 			}
 		}
 
 		printContext.currentFormulaID++;
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const auto printType =
+	[](const ast::PredicateDeclaration &predicateDeclaration, Context &context, output::PrintContext &printContext)
+	{
+		auto &stream = context.logger.outputStream();
+
+		switch (context.outputFormat)
+		{
+			case OutputFormat::HumanReadable:
+				for (size_t i = 0; i < predicateDeclaration.parameters.size(); i++)
+				{
+					const auto &parameter = predicateDeclaration.parameters[i];
+
+					if (parameter.domain != Domain::Integer)
+						continue;
+
+					stream
+						<< output::Keyword("int")
+						<< "(" << predicateDeclaration.name
+						<< "/" << output::Number(predicateDeclaration.arity())
+						<< "@" << output::Number(i + 1)
+						<< ")" << std::endl;
+				}
+				break;
+			case OutputFormat::TPTP:
+			{
+				const auto typeName = std::string("type") + std::to_string(printContext.currentTypeID + 1);
+
+				stream
+					<< output::Keyword("tff")
+					<< "(" << output::Function(typeName.c_str())
+					<< ", " << output::Keyword("type")
+					<< ", (" << predicateDeclaration.name << ": (";
+
+				for (size_t i = 0; i < predicateDeclaration.parameters.size(); i++)
+				{
+					const auto &parameter = predicateDeclaration.parameters[i];
+
+					if (i > 0)
+						stream << " * ";
+
+					// TODO: remove code duplication
+					const auto domain = (printContext.context.variableDomain == Domain::Unknown)
+						? parameter.domain
+						: printContext.context.variableDomain;
+
+					switch (domain)
+					{
+						case Domain::Symbolic:
+							stream << output::Keyword("$i");
+							break;
+						case Domain::Integer:
+							stream << output::Keyword("$int");
+							break;
+						default:
+							throw TranslationException("unexpected unknown variable domain, please report to bug tracker");
+					}
+				}
+
+				stream
+					<< ") > " << output::Keyword("$o")
+					<< "))." << std::endl;
+
+				break;
+			}
+		}
+
+		printContext.currentTypeID++;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -157,20 +230,7 @@ void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Contex
 			if (!isPredicateVisible)
 				continue;
 
-			for (size_t i = 0; i < predicateDeclaration->parameters.size(); i++)
-			{
-				auto &parameter = predicateDeclaration->parameters[i];
-
-				if (parameter.domain != Domain::Integer)
-					continue;
-
-				context.logger.outputStream()
-					<< output::Keyword("int")
-					<< "(" << predicateDeclaration->name
-					<< "/" << output::Number(predicateDeclaration->arity())
-					<< "@" << output::Number(i + 1)
-					<< ")" << std::endl;
-			}
+			printType(*predicateDeclaration, context, printContext);
 		}
 	else
 		context.logger.log(output::Priority::Warning) << "type annotations for integer parameters not yet supported with TPTP";
@@ -181,6 +241,10 @@ void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Contex
 void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	output::PrintContext printContext(context);
+
+	if (context.variableDomain == Domain::Unknown)
+		context.logger.log(output::Priority::Warning)
+			<< "automatic detection of variable domains is currently experimental, consider using “--default-domain=program” or “--default-domain=integer”";
 
 	switch (context.semantics)
 	{
@@ -209,6 +273,10 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Cont
 
 		universallyClosedFormulas.emplace_back(std::move(makeUniversallyClosedFormula()));
 	}
+
+	// Print type annotations
+	for (const auto &predicateDeclaration : context.predicateDeclarations)
+		printType(*predicateDeclaration, context, printContext);
 
 	// Print translated formulas
 	for (auto &universallyClosedFormula : universallyClosedFormulas)

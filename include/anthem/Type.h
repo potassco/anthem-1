@@ -32,8 +32,8 @@ struct TermTypeVisitor
 		if (leftType.setSize == SetSize::Empty || rightType.setSize == SetSize::Empty)
 			return {Domain::Unknown, SetSize::Empty};
 
-		// Binary operations on nonintegers return an empty set (also with division)
-		if (leftType.domain == Domain::Noninteger || rightType.domain == Domain::Noninteger)
+		// Binary operations on program variables return an empty set (also with division)
+		if (leftType.domain == Domain::Program || rightType.domain == Domain::Program)
 			return {Domain::Unknown, SetSize::Empty};
 
 		// Binary operations on unknown types return an unknown set
@@ -59,7 +59,7 @@ struct TermTypeVisitor
 	template <class... Arguments>
 	static Type visit(const ast::Boolean &, Arguments &&...)
 	{
-		return {Domain::Noninteger, SetSize::Unit};
+		return {Domain::Program, SetSize::Unit};
 	}
 
 	template <class... Arguments>
@@ -86,8 +86,8 @@ struct TermTypeVisitor
 		if (fromType.setSize == SetSize::Empty || toType.setSize == SetSize::Empty)
 			return {Domain::Unknown, SetSize::Empty};
 
-		// Intervals with nonintegers return an empty set
-		if (fromType.domain == Domain::Noninteger || toType.domain == Domain::Noninteger)
+		// Intervals with program variables return an empty set
+		if (fromType.domain == Domain::Program || toType.domain == Domain::Program)
 			return {Domain::Unknown, SetSize::Empty};
 
 		// Intervals with unknown types return an unknown set
@@ -102,13 +102,13 @@ struct TermTypeVisitor
 	template <class... Arguments>
 	static Type visit(const ast::SpecialInteger &, Arguments &&...)
 	{
-		return {Domain::Noninteger, SetSize::Unit};
+		return {Domain::Program, SetSize::Unit};
 	}
 
 	template <class... Arguments>
 	static Type visit(const ast::String &, Arguments &&...)
 	{
-		return {Domain::Noninteger, SetSize::Unit};
+		return {Domain::Program, SetSize::Unit};
 	}
 
 	template <class... Arguments>
@@ -123,8 +123,8 @@ struct TermTypeVisitor
 		if (argumentType.setSize == SetSize::Empty)
 			return {Domain::Unknown, SetSize::Empty};
 
-		// Absolute/negative value of nonintegers returns an empty set
-		if (argumentType.domain == Domain::Noninteger)
+		// Absolute/negative value of program variables returns an empty set
+		if (argumentType.domain == Domain::Program)
 			return {Domain::Unknown, SetSize::Empty};
 
 		// Absolute/negative value of integers returns the same type

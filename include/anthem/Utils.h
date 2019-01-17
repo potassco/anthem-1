@@ -46,7 +46,7 @@ enum class EvaluationResult
 
 enum class Domain
 {
-	Noninteger,
+	Program,
 	Integer,
 	Unknown,
 };

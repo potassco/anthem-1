@@ -9,6 +9,7 @@
 #include <anthem/Completion.h>
 #include <anthem/Context.h>
 #include <anthem/IntegerVariableDetection.h>
+#include <anthem/MapDomains.h>
 #include <anthem/Simplification.h>
 #include <anthem/StatementVisitor.h>
 #include <anthem/output/FormatterHumanReadable.h>
@@ -50,7 +51,7 @@ const auto printFormula =
 				break;
 			case OutputFormat::TPTP:
 			{
-				const auto formulaName = std::string("axiom") + std::to_string(printContext.currentFormulaID + 1);
+				const auto formulaName = std::string("axiom_") + std::to_string(printContext.currentFormulaID + 1);
 
 				stream
 					<< output::Keyword("tff")
@@ -80,11 +81,7 @@ const auto printTypeAnnotation =
 				{
 					const auto &parameter = predicateDeclaration.parameters[i];
 
-					// TODO: remove code duplication
-					const auto domain = (printContext.context.variableDomain == Domain::Unknown)
-						? parameter.domain
-						: printContext.context.variableDomain;
-					if (domain != Domain::Integer)
+					if (parameter.domain != Domain::Integer)
 						continue;
 
 					stream
@@ -97,7 +94,7 @@ const auto printTypeAnnotation =
 				break;
 			case OutputFormat::TPTP:
 			{
-				const auto typeName = std::string("type") + std::to_string(printContext.currentTypeID + 1);
+				const auto typeName = std::string("type_") + std::to_string(printContext.currentTypeID + 1);
 
 				stream
 					<< output::Keyword("tff")
@@ -107,27 +104,13 @@ const auto printTypeAnnotation =
 
 				for (size_t i = 0; i < predicateDeclaration.parameters.size(); i++)
 				{
-					const auto &parameter = predicateDeclaration.parameters[i];
-
 					if (i > 0)
 						stream << " * ";
 
-					// TODO: remove code duplication
-					const auto domain = (printContext.context.variableDomain == Domain::Unknown)
-						? parameter.domain
-						: printContext.context.variableDomain;
-
-					switch (domain)
-					{
-						case Domain::Symbolic:
-							stream << output::Keyword("$i");
-							break;
-						case Domain::Integer:
-							stream << output::Keyword("$int");
-							break;
-						default:
-							throw TranslationException("unexpected unknown variable domain, please report to bug tracker");
-					}
+					// For TPTP, all program variable values are mapped to odd integer numbers, while integer
+					// values n are mapped to 2 * n. This trick is necessary to translate variables that can take
+					// values of both program and integer variables
+					stream << output::Keyword("$int");
 				}
 
 				stream
@@ -242,10 +225,7 @@ void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Contex
 void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	output::PrintContext printContext(context);
-
-	if (context.variableDomain == Domain::Unknown)
-		context.logger.log(output::Priority::Warning)
-			<< "automatic detection of variable domains is currently experimental, consider using “--default-domain=program” or “--default-domain=integer”";
+	auto &stream = context.logger.outputStream();
 
 	switch (context.semantics)
 	{
@@ -275,12 +255,38 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Cont
 		universallyClosedFormulas.emplace_back(std::move(makeUniversallyClosedFormula()));
 	}
 
-	// Print type annotations
-	if (context.variableDomain == Domain::Unknown)
-		context.logger.log(output::Priority::Warning) << "type annotations not yet supported with automatic detection of variable domains";
-	else
-		for (const auto &predicateDeclaration : context.predicateDeclarations)
-			printTypeAnnotation(*predicateDeclaration, context, printContext);
+	// In case of TPTP output, map both program and integer variables to integers
+	if (context.outputFormat == OutputFormat::TPTP)
+		for (auto &universallyClosedFormula : universallyClosedFormulas)
+			mapDomains(universallyClosedFormula, context);
+
+	for (const auto &predicateDeclaration : context.predicateDeclarations)
+		printTypeAnnotation(*predicateDeclaration, context, printContext);
+
+	// Print auxiliary definitions for mapping program and integer variables to even and odd integers
+	if (context.outputFormat == OutputFormat::TPTP)
+		stream
+			<< std::endl
+
+			<< output::Keyword("tff")
+			<< "(" << output::Function("is_even")
+			<< ", " << output::Keyword("axiom")
+			<< ", (" << output::Operator("!") << "["
+			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
+			<< output::Reserved(AuxiliaryPredicateNameEven) << "(" << output::Variable("X") << ") <=> ("
+			<< output::Keyword("$remainder_e") << "("
+			<< output::Variable("X") << ", " << output::Number<int>(2) << ") = "
+			<< output::Number<int>(0) << "))))." << std::endl
+
+			<< output::Keyword("tff")
+			<< "(" << output::Function("is_odd")
+			<< ", " << output::Keyword("axiom")
+			<< ", (" << output::Operator("!") << "["
+			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
+			<< output::Reserved(AuxiliaryPredicateNameOdd) << "(" << output::Variable("X") << ") <=> ("
+			<< output::Keyword("$remainder_e") << "("
+			<< output::Variable("X") << ", " << output::Number<int>(2) << ") = "
+			<< output::Number<int>(1) << "))))." << std::endl;
 
 	// Print translated formulas
 	for (auto &universallyClosedFormula : universallyClosedFormulas)

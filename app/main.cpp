@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 		context.outputFormat = anthem::OutputFormat::TPTP;
 	else
 	{
-		context.logger.log(anthem::output::Priority::Error) << "unknown output format “" << translationModeString << "”";
+		context.logger.log(anthem::output::Priority::Error) << "unknown output format “" << outputFormatString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

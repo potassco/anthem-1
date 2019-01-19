@@ -244,23 +244,15 @@ struct FormatterTPTP
 				return (stream << output::Variable(variableName.c_str()));
 			};
 
-		// TODO: remove code duplication
-		const auto domain = (printContext.context.variableDomain == Domain::Unknown)
-			? variableDeclaration.domain
-			: printContext.context.variableDomain;
-
-		if (domain == Domain::Integer)
-			return printVariableDeclaration(IntegerVariablePrefix, printContext.integerVariableIDs);
+		if (variableDeclaration.domain != Domain::Integer)
+			throw TranslationException("expected all variables to have integer domain after domain mapping, please report to bug tracker");
 
 		switch (variableDeclaration.type)
 		{
 			case ast::VariableDeclaration::Type::UserDefined:
 				printVariableDeclaration(UserVariablePrefix, printContext.userVariableIDs);
 				break;
-			case ast::VariableDeclaration::Type::Head:
-				printVariableDeclaration(HeadVariablePrefix, printContext.headVariableIDs);
-				break;
-			case ast::VariableDeclaration::Type::Body:
+			default:
 				printVariableDeclaration(BodyVariablePrefix, printContext.bodyVariableIDs);
 				break;
 		}
@@ -314,22 +306,7 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-
-			const auto domain = (printContext.context.variableDomain == Domain::Unknown)
-				? variableDeclaration.domain
-				: printContext.context.variableDomain;
-
-			switch (domain)
-			{
-				case Domain::Integer:
-					stream << ": " << output::Keyword("$int");
-					break;
-				case Domain::Program:
-					stream << ": " << output::Keyword("$i");
-					break;
-				default:
-					break;
-			}
+			stream << ": " << output::Keyword("$int");
 		}
 
 		stream << "]: ";
@@ -351,22 +328,7 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-
-			const auto domain = (printContext.context.variableDomain == Domain::Unknown)
-				? variableDeclaration.domain
-				: printContext.context.variableDomain;
-
-			switch (domain)
-			{
-				case Domain::Program:
-					stream << ": " << output::Keyword("$i");
-					break;
-				case Domain::Integer:
-					stream << ": " << output::Keyword("$int");
-					break;
-				default:
-					break;
-			}
+			stream << ": " << output::Keyword("$int");
 		}
 
 		stream << "]: ";

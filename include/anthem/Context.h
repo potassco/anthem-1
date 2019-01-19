@@ -77,7 +77,6 @@ struct Context
 	bool performIntegerDetection{false};
 
 	Semantics semantics{Semantics::ClassicalLogic};
-	Domain variableDomain{Domain::Unknown};
 
 	std::vector<std::unique_ptr<ast::PredicateDeclaration>> predicateDeclarations;
 	ast::PredicateDeclaration::Visibility defaultPredicateVisibility{ast::PredicateDeclaration::Visibility::Visible};

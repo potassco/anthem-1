@@ -269,19 +269,20 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Cont
 			<< ", (" << output::Operator("!") << "["
 			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
 			<< output::Reserved(AuxiliaryPredicateNameEven) << "(" << output::Variable("X") << ") <=> ("
-			<< output::Keyword("$remainder_e") << "("
-			<< output::Variable("X") << ", " << output::Number<int>(2) << ") = "
-			<< output::Number<int>(0) << "))))." << std::endl
+			<< output::Operator("?") << "["
+			<< output::Variable("Y") << ": " << output::Keyword("$int") << "]: ("
+			<< output::Variable("X") << " = " << output::Keyword("$product") << "("
+			<< output::Number<int>(2) << ", " << output::Variable("Y") << "))"
+			<< "))))." << std::endl
 
 			<< output::Keyword("tff")
 			<< "(" << output::Function("is_odd")
 			<< ", " << output::Keyword("axiom")
 			<< ", (" << output::Operator("!") << "["
 			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-			<< output::Reserved(AuxiliaryPredicateNameOdd) << "(" << output::Variable("X") << ") <=> ("
-			<< output::Keyword("$remainder_e") << "("
-			<< output::Variable("X") << ", " << output::Number<int>(2) << ") = "
-			<< output::Number<int>(1) << "))))." << std::endl;
+			<< output::Reserved(AuxiliaryPredicateNameOdd) << "(" << output::Variable("X") << ") <=> "
+			<< output::Operator("~") << output::Reserved(AuxiliaryPredicateNameEven) << "(" << output::Variable("X")
+			<< "))))." << std::endl;
 
 	// Print translated formulas
 	for (auto &universallyClosedFormula : universallyClosedFormulas)

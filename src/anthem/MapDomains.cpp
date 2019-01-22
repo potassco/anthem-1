@@ -50,8 +50,9 @@ struct FormulaMapDomainsVisitor
 		if (exists.variables.empty())
 			return;
 
+		// TODO: omit unnecessary conjunction if only one argument is present
 		ast::And and_;
-		and_.arguments.reserve(exists.variables.size() + 1);
+		and_.arguments.reserve(exists.variables.size());
 
 		const auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
 		const auto auxiliaryPredicateDeclarationOdd = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameOdd, 1);
@@ -79,8 +80,8 @@ struct FormulaMapDomainsVisitor
 					throw TranslationException("unexpected unknown parameter domain, please report to bug tracker");
 			}
 
-		and_.arguments.emplace_back(std::move(exists.argument));
-		exists.argument = std::move(and_);
+		ast::Implies implies(std::move(and_), std::move(exists.argument));
+		exists.argument = std::move(implies);
 	}
 
 	void visit(ForAll &forAll, Context &context)
@@ -90,8 +91,9 @@ struct FormulaMapDomainsVisitor
 		if (forAll.variables.empty())
 			return;
 
+		// TODO: omit unnecessary conjunction if only one argument is present
 		ast::And and_;
-		and_.arguments.reserve(forAll.variables.size() + 1);
+		and_.arguments.reserve(forAll.variables.size());
 
 		auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
 		auto auxiliaryPredicateDeclarationOdd = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameOdd, 1);
@@ -119,8 +121,8 @@ struct FormulaMapDomainsVisitor
 					throw TranslationException("unexpected unknown parameter domain, please report to bug tracker");
 			}
 
-		and_.arguments.emplace_back(std::move(forAll.argument));
-		forAll.argument = std::move(and_);
+		ast::Implies implies(std::move(and_), std::move(forAll.argument));
+		forAll.argument = std::move(implies);
 	}
 
 	void visit(Implies &implies, Context &context)

@@ -159,7 +159,7 @@ struct FormulaMapDomainsVisitor
 
 struct TermMapDomainsVisitor
 {
-	void visit(BinaryOperation &binaryOperation, Context &context)
+	void visit(BinaryOperation &binaryOperation, Term &term, Context &context)
 	{
 		mapDomains(binaryOperation.left, context);
 		mapDomains(binaryOperation.right, context);
@@ -168,12 +168,19 @@ struct TermMapDomainsVisitor
 		// all integers are already multiplied by 2
 		switch (binaryOperation.operator_)
 		{
+			// Addition and subtraction are not affected by the domain mapping
 			case BinaryOperation::Operator::Plus:
 			case BinaryOperation::Operator::Minus:
 				break;
-			// TODO: implement
 			case BinaryOperation::Operator::Multiplication:
-				throw TranslationException("multiplication not yet supported in domain mapping");
+			{
+				auto left = BinaryOperation(BinaryOperation::Operator::Division, std::move(binaryOperation.left), Integer(2));
+				auto right = BinaryOperation(BinaryOperation::Operator::Division, std::move(binaryOperation.right), Integer(2));
+				auto multiply = BinaryOperation(BinaryOperation::Operator::Multiplication, std::move(left), std::move(right));
+				term = BinaryOperation(BinaryOperation::Operator::Multiplication, std::move(multiply), Integer(2));
+				return;
+			}
+			// TODO: implement
 			case BinaryOperation::Operator::Division:
 				throw TranslationException("division not yet supported in domain mapping");
 			case BinaryOperation::Operator::Modulo:
@@ -183,11 +190,11 @@ struct TermMapDomainsVisitor
 		}
 	}
 
-	void visit(Boolean &, Context &)
+	void visit(Boolean &, Term &, Context &)
 	{
 	}
 
-	void visit(Function &function, Context &context)
+	void visit(Function &function, Term &, Context &context)
 	{
 		// TODO: implement
 		throw TranslationException("mapping symbolic functions to odd integers not yet implemented");
@@ -196,35 +203,35 @@ struct TermMapDomainsVisitor
 			mapDomains(argument, context);
 	}
 
-	void visit(Integer &integer, Context &)
+	void visit(Integer &integer, Term &, Context &)
 	{
 		// Integers n are mapped to 2 * n
 		integer.value *= 2;
 	}
 
-	void visit(Interval &interval, Context &context)
+	void visit(Interval &interval, Term &, Context &context)
 	{
 		mapDomains(interval.from, context);
 		mapDomains(interval.to, context);
 	}
 
-	void visit(SpecialInteger &, Context &)
+	void visit(SpecialInteger &, Term &, Context &)
 	{
 		throw TranslationException("special integers not yet supported in domain mapping");
 	}
 
-	void visit(String &, Context &)
+	void visit(String &, Term &, Context &)
 	{
 		throw TranslationException("strings not yet supported in domain mapping");
 	}
 
-	void visit(UnaryOperation &unaryOperation, Context &context)
+	void visit(UnaryOperation &unaryOperation, Term &, Context &context)
 	{
 		// TODO: check
 		mapDomains(unaryOperation.argument, context);
 	}
 
-	void visit(Variable &variable, Context &)
+	void visit(Variable &variable, Term &, Context &)
 	{
 		// As a result of the domain mapping, all variables are integer
 		variable.declaration->domain = Domain::Integer;
@@ -242,7 +249,7 @@ void mapDomains(ast::Formula &formula, Context &context)
 
 void mapDomains(ast::Term &term, Context &context)
 {
-	term.accept(TermMapDomainsVisitor(), context);
+	term.accept(TermMapDomainsVisitor(), term, context);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

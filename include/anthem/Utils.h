@@ -17,10 +17,7 @@ constexpr const auto IntegerVariablePrefix = "N";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr const auto TPTPFunctionNamePrefix = "f__";
-constexpr const auto TPTPFunctionNameSuffix = "__";
 constexpr const auto AuxiliaryPredicateNameEven = "p__is_even__";
-constexpr const auto AuxiliaryPredicateNameOdd = "p__is_odd__";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -50,40 +50,41 @@ struct FormulaMapDomainsVisitor
 		if (exists.variables.empty())
 			return;
 
-		// TODO: omit unnecessary conjunction if only one argument is present
 		ast::And and_;
-		and_.arguments.reserve(exists.variables.size());
 
 		const auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
-		const auto auxiliaryPredicateDeclarationOdd = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameOdd, 1);
 
-		for (const auto &variableDeclaration : exists.variables)
-			switch (variableDeclaration->domain)
+		for (auto &variableDeclaration : exists.variables)
+		{
+			if (variableDeclaration->domain == Domain::Unknown)
+				throw TranslationException("unexpected unknown parameter domain, please report to bug tracker");
+
+			if (variableDeclaration->domain == Domain::Integer)
 			{
-				case Domain::Symbolic:
-				{
-					auto predicate = ast::Predicate(auxiliaryPredicateDeclarationOdd);
-					predicate.arguments.reserve(1);
-					predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
-					and_.arguments.emplace_back(std::move(predicate));
-					break;
-				}
-				case Domain::Integer:
-				{
-					auto predicate = ast::Predicate(auxiliaryPredicateDeclarationEven);
-					predicate.arguments.reserve(1);
-					predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
-					and_.arguments.emplace_back(std::move(predicate));
-					break;
-				}
-				default:
-					throw TranslationException("unexpected unknown parameter domain, please report to bug tracker");
+				auto predicate = ast::Predicate(auxiliaryPredicateDeclarationEven);
+				predicate.arguments.reserve(1);
+				predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
+				and_.arguments.emplace_back(std::move(predicate));
 			}
+
+			variableDeclaration->domain = Domain::Integer;
+		}
+
+		if (and_.arguments.empty())
+			return;
+
+		if (and_.arguments.size() == 1)
+		{
+			ast::Implies implies(std::move(and_.arguments.front()), std::move(exists.argument));
+			exists.argument = std::move(implies);
+			return;
+		}
 
 		ast::Implies implies(std::move(and_), std::move(exists.argument));
 		exists.argument = std::move(implies);
 	}
 
+	// TODO: avoid code duplication
 	void visit(ForAll &forAll, Context &context)
 	{
 		mapDomains(forAll.argument, context);
@@ -91,35 +92,35 @@ struct FormulaMapDomainsVisitor
 		if (forAll.variables.empty())
 			return;
 
-		// TODO: omit unnecessary conjunction if only one argument is present
 		ast::And and_;
-		and_.arguments.reserve(forAll.variables.size());
 
-		auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
-		auto auxiliaryPredicateDeclarationOdd = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameOdd, 1);
+		const auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
 
-		for (const auto &variableDeclaration : forAll.variables)
-			switch (variableDeclaration->domain)
+		for (auto &variableDeclaration : forAll.variables)
+		{
+			if (variableDeclaration->domain == Domain::Unknown)
+				throw TranslationException("unexpected unknown parameter domain, please report to bug tracker");
+
+			if (variableDeclaration->domain == Domain::Integer)
 			{
-				case Domain::Symbolic:
-				{
-					auto predicate = ast::Predicate(auxiliaryPredicateDeclarationOdd);
-					predicate.arguments.reserve(1);
-					predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
-					and_.arguments.emplace_back(std::move(predicate));
-					break;
-				}
-				case Domain::Integer:
-				{
-					auto predicate = ast::Predicate(auxiliaryPredicateDeclarationEven);
-					predicate.arguments.reserve(1);
-					predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
-					and_.arguments.emplace_back(std::move(predicate));
-					break;
-				}
-				default:
-					throw TranslationException("unexpected unknown parameter domain, please report to bug tracker");
+				auto predicate = ast::Predicate(auxiliaryPredicateDeclarationEven);
+				predicate.arguments.reserve(1);
+				predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
+				and_.arguments.emplace_back(std::move(predicate));
 			}
+
+			variableDeclaration->domain = Domain::Integer;
+		}
+
+		if (and_.arguments.empty())
+			return;
+
+		if (and_.arguments.size() == 1)
+		{
+			ast::Implies implies(std::move(and_.arguments.front()), std::move(forAll.argument));
+			forAll.argument = std::move(implies);
+			return;
+		}
 
 		ast::Implies implies(std::move(and_), std::move(forAll.argument));
 		forAll.argument = std::move(implies);
@@ -231,10 +232,8 @@ struct TermMapDomainsVisitor
 		mapDomains(unaryOperation.argument, context);
 	}
 
-	void visit(Variable &variable, Term &, Context &)
+	void visit(Variable &, Term &, Context &)
 	{
-		// As a result of the domain mapping, all variables are integer
-		variable.declaration->domain = Domain::Integer;
 	}
 };
 

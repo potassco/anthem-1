@@ -314,15 +314,6 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 			<< output::Variable("Y") << ": " << output::Keyword("$int") << "]: ("
 			<< output::Variable("X") << " = " << output::Keyword("$product") << "("
 			<< output::Number<int>(2) << ", " << output::Variable("Y") << "))"
-			<< "))))." << std::endl
-
-			<< output::Keyword("tff")
-			<< "(" << output::Function("is_odd")
-			<< ", " << output::Keyword("axiom")
-			<< ", (" << output::Operator("!") << "["
-			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-			<< output::Reserved(AuxiliaryPredicateNameOdd) << "(" << output::Variable("X") << ") <=> "
-			<< output::Operator("~") << output::Reserved(AuxiliaryPredicateNameEven) << "(" << output::Variable("X")
 			<< "))))." << std::endl;
 
 	if (scopedFormulasB)

@@ -24,23 +24,16 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const std::vector<std::string> &fileNames, Context &context)
+enum class FormulaType
 {
-	for (const auto &fileName : fileNames)
-	{
-		std::ifstream file(fileName, std::ios::in);
-
-		if (!file.is_open())
-			throw LogicException("could not read file “" + fileName + "”");
-
-		translate(fileName.c_str(), file, context);
-	}
-}
+	Axiom,
+	Conjecture,
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const auto printFormula =
-	[](const auto &value, Context &context, output::PrintContext &printContext)
+	[](const auto &value, FormulaType formulaType, Context &context, output::PrintContext &printContext)
 	{
 		auto &stream = context.logger.outputStream();
 
@@ -56,7 +49,19 @@ const auto printFormula =
 				stream
 					<< output::Keyword("tff")
 					<< "(" << output::Function(formulaName.c_str())
-					<< ", " << output::Keyword("axiom") << ", ";
+					<< ", ";
+
+				switch (formulaType)
+				{
+					case FormulaType::Axiom:
+						stream << output::Keyword("axiom");
+						break;
+					case FormulaType::Conjecture:
+						stream << output::Keyword("conjecture");
+						break;
+				}
+
+				stream << ", ";
 				output::print<output::FormatterTPTP>(stream, value, printContext);
 				stream << ").";
 
@@ -126,7 +131,7 @@ const auto printTypeAnnotation =
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+void translateCompletion(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context)
 {
 	assert(context.semantics == Semantics::ClassicalLogic);
 
@@ -149,7 +154,7 @@ void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Contex
 
 		for (const auto &scopedFormula : scopedFormulas)
 		{
-			printFormula(scopedFormula.formula, context, printContext);
+			printFormula(scopedFormula.formula, FormulaType::Axiom, context, printContext);
 			context.logger.outputStream() << std::endl;
 		}
 
@@ -215,14 +220,15 @@ void translateCompletion(std::vector<ast::ScopedFormula> &scopedFormulas, Contex
 
 	for (const auto &completedFormula : completedFormulas)
 	{
-		printFormula(completedFormula, context, printContext);
+		printFormula(completedFormula, FormulaType::Axiom, context, printContext);
 		context.logger.outputStream() << std::endl;
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
+	std::optional<std::vector<ast::ScopedFormula>> &&scopedFormulasB, Context &context)
 {
 	output::PrintContext printContext(context);
 	auto &stream = context.logger.outputStream();
@@ -237,28 +243,58 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Cont
 			break;
 	}
 
-	std::vector<ast::Formula> universallyClosedFormulas;
-	universallyClosedFormulas.reserve(scopedFormulas.size());
+	const auto buildUniversallyClosedFormulas =
+		[](std::vector<ast::ScopedFormula> &&scopedFormulas)
+		{
+			std::vector<ast::Formula> universallyClosedFormulas;
+			universallyClosedFormulas.reserve(scopedFormulas.size());
 
-	// Build the universal closure
-	for (auto &scopedFormula : scopedFormulas)
-	{
-		const auto makeUniversallyClosedFormula =
-			[&]() -> ast::Formula
+			// Build the universal closure
+			for (auto &scopedFormula : scopedFormulas)
 			{
-				if (scopedFormula.freeVariables.empty())
-					return std::move(scopedFormula.formula);
+				const auto makeUniversallyClosedFormula =
+					[&]() -> ast::Formula
+					{
+						if (scopedFormula.freeVariables.empty())
+							return std::move(scopedFormula.formula);
+					
+						return ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
+					};
 
-				return ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
-			};
+				universallyClosedFormulas.emplace_back(makeUniversallyClosedFormula());
+			}
 
-		universallyClosedFormulas.emplace_back(std::move(makeUniversallyClosedFormula()));
-	}
+			return universallyClosedFormulas;
+		};
+
+	const auto buildFinalFormulas =
+		[&]()
+		{
+			// If we’re just given one program, translate it to individual axioms
+			if (!scopedFormulasB)
+				return buildUniversallyClosedFormulas(std::move(scopedFormulasA));
+
+			// If we’re given two programs A and B, translate them to a conjecture of the form “A <=> B”
+			auto universallyClosedFormulasA = buildUniversallyClosedFormulas(std::move(scopedFormulasA));
+			auto universallyClosedFormulasB = buildUniversallyClosedFormulas(std::move(scopedFormulasB.value()));
+
+			// Build the conjunctions of all formulas resulting from each program respectively
+			ast::And conjunctionA(std::move(universallyClosedFormulasA));
+			ast::And conjunctionB(std::move(universallyClosedFormulasB));
+
+			std::vector<ast::Formula> finalFormulas;
+			finalFormulas.reserve(1);
+			finalFormulas.emplace_back(ast::Biconditional(std::move(conjunctionA), std::move(conjunctionB)));
+
+			return finalFormulas;
+		};
+
+	auto finalFormulas = buildFinalFormulas();
 
 	// In case of TPTP output, map both program and integer variables to integers
 	if (context.outputFormat == OutputFormat::TPTP)
-		for (auto &universallyClosedFormula : universallyClosedFormulas)
-			mapDomains(universallyClosedFormula, context);
+		for (auto &finalFormula : finalFormulas)
+			mapDomains(finalFormula, context);
 
 	for (const auto &predicateDeclaration : context.predicateDeclarations)
 		printTypeAnnotation(*predicateDeclaration, context, printContext);
@@ -289,17 +325,29 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &scopedFormulas, Cont
 			<< output::Operator("~") << output::Reserved(AuxiliaryPredicateNameEven) << "(" << output::Variable("X")
 			<< "))))." << std::endl;
 
+	if (scopedFormulasB)
+		assert(finalFormulas.size() == 1);
+
+	const auto formulaType =
+		[&scopedFormulasB]()
+		{
+			if (scopedFormulasB)
+				return FormulaType::Conjecture;
+
+			return FormulaType::Axiom;
+		};
+
 	// Print translated formulas
-	for (auto &universallyClosedFormula : universallyClosedFormulas)
+	for (auto &finalFormula : finalFormulas)
 	{
-		printFormula(universallyClosedFormula, context, printContext);
+		printFormula(finalFormula, formulaType(), context, printContext);
 		context.logger.outputStream() << std::endl;
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const char *fileName, std::istream &stream, Context &context)
+std::vector<ast::ScopedFormula> translateSingleStream(const char *fileName, std::istream &stream, Context &context)
 {
 	context.logger.log(output::Priority::Info) << "reading " << fileName;
 
@@ -321,14 +369,73 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 
 	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
 
+	return scopedFormulas;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translate(const std::vector<std::string> &fileNames, Context &context)
+{
+	if (fileNames.empty())
+		throw TranslationException("no input files specified");
+
+	const auto translateSingleFile =
+		[&](const auto &fileName)
+		{
+			std::ifstream file(fileName, std::ios::in);
+
+			if (!file.is_open())
+				throw LogicException("could not read file “" + fileName + "”");
+
+			return translateSingleStream(fileName.c_str(), file, context);
+		};
+
 	switch (context.translationMode)
 	{
 		case TranslationMode::Completion:
-			translateCompletion(scopedFormulas, context);
+		{
+			if (fileNames.size() > 1)
+				throw TranslationException("only one file may me translated at a time in completion mode");
+
+			auto scopedFormulas = translateSingleFile(fileNames.front());
+
+			translateCompletion(std::move(scopedFormulas), context);
 			break;
+		}
 		case TranslationMode::HereAndThere:
-			translateHereAndThere(scopedFormulas, context);
+		{
+			if (fileNames.size() > 2)
+				throw TranslationException("only one or two files may me translated at a time in here-and-there mode");
+
+			auto scopedFormulasA = translateSingleFile(fileNames.front());
+			auto scopedFormulasB = (fileNames.size() > 1)
+				? std::optional<std::vector<ast::ScopedFormula>>(translateSingleFile(fileNames[1]))
+				: std::nullopt;
+
+			translateHereAndThere(std::move(scopedFormulasA), std::move(scopedFormulasB), context);
 			break;
+		}
+	};
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translate(const char *fileName, std::istream &stream, Context &context)
+{
+	auto scopedFormulas = translateSingleStream(fileName, stream, context);
+
+	switch (context.translationMode)
+	{
+		case TranslationMode::Completion:
+		{
+			translateCompletion(std::move(scopedFormulas), context);
+			break;
+		}
+		case TranslationMode::HereAndThere:
+		{
+			translateHereAndThere(std::move(scopedFormulas), std::nullopt, context);
+			break;
+		}
 	};
 }
 

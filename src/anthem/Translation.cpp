@@ -84,7 +84,8 @@ struct PrintReturnTypeTrait
 template<>
 struct PrintReturnTypeTrait<ast::PredicateDeclaration>
 {
-	static output::ColorStream &print(output::ColorStream &stream, ast::PredicateDeclaration &)
+	static output::ColorStream &print(output::ColorStream &stream,
+		const ast::PredicateDeclaration &)
 	{
 		return (stream << output::Keyword("$o"));
 	}
@@ -96,7 +97,7 @@ template<>
 struct PrintReturnTypeTrait<ast::FunctionDeclaration>
 {
 	static output::ColorStream &print(output::ColorStream &stream,
-		ast::FunctionDeclaration &functionDeclaration)
+		const ast::FunctionDeclaration &functionDeclaration)
 	{
 		switch (functionDeclaration.domain)
 		{
@@ -154,9 +155,11 @@ const auto printTypeAnnotation =
 					stream << output::Keyword("$int");
 				}
 
-				stream
-					<< ") > " << output::Keyword("$o")
-					<< "))." << std::endl;
+				stream << ") > ";
+				using PrintReturnTypeTrait = PrintReturnTypeTrait<typename std::remove_cv<
+					typename std::remove_reference<decltype(symbolDeclaration)>::type>::type>;
+				PrintReturnTypeTrait::print(stream, symbolDeclaration);
+				stream << "))." << std::endl;
 
 				break;
 			}
@@ -336,8 +339,13 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 	for (const auto &predicateDeclaration : context.predicateDeclarations)
 		printTypeAnnotation(*predicateDeclaration, context, printContext);
 
+	// Print type annotations for function signatures
+	for (const auto &functionDeclaration : context.functionDeclarations)
+		printTypeAnnotation(*functionDeclaration, context, printContext);
+
 	// Print auxiliary definitions for mapping program and integer variables to even and odd integers
 	if (context.outputFormat == OutputFormat::TPTP)
+	{
 		stream
 			<< std::endl
 
@@ -351,10 +359,31 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 			<< output::Variable("Y") << ": " << output::Keyword("$int") << "]: ("
 			<< output::Variable("X") << " = " << output::Keyword("$product") << "("
 			<< output::Number<int>(2) << ", " << output::Variable("Y") << "))"
-			<< "))))." << std::endl;
+			<< "))))." << std::endl
 
-	// Print type annotations for function signatures
+			<< output::Keyword("tff")
+			<< "(" << output::Function("map_integer")
+			<< ", " << output::Keyword("axiom")
+			<< ", (" << output::Operator("!") << "["
+			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
+			<< output::Reserved(AuxiliaryFunctionNameMapInteger) << "(" << output::Variable("X") << ")"
+			<< " = " << output::Keyword("$product") << "("
+			<< output::Number<int>(2) << ", " << output::Variable("X") << ")"
+			<< ")))." << std::endl
 
+			<< output::Keyword("tff")
+			<< "(" << output::Function("unmap_integer")
+			<< ", " << output::Keyword("axiom")
+			<< ", (" << output::Operator("!") << "["
+			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
+			<< output::Keyword("$product") << "("
+			<< output::Reserved(AuxiliaryFunctionNameUnmapInteger) << "(" << output::Variable("X") << ")"
+			<< ", " << output::Number<int>(2) << ")"
+			<< " = " << output::Variable("X") << ")"
+			<< "))." << std::endl
+
+			<< std::endl;
+	}
 
 	if (scopedFormulasB)
 		assert(finalFormulas.size() == 1);

@@ -18,6 +18,8 @@ constexpr const auto IntegerVariablePrefix = "N";
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 constexpr const auto AuxiliaryPredicateNameEven = "p__is_even__";
+constexpr const auto AuxiliaryFunctionNameMapInteger = "f__map_integer__";
+constexpr const auto AuxiliaryFunctionNameUnmapInteger = "f__unmap_integer__";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

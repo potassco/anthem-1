@@ -74,8 +74,44 @@ const auto printFormula =
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<class SymbolDeclaration>
+struct PrintReturnTypeTrait
+{
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<>
+struct PrintReturnTypeTrait<ast::PredicateDeclaration>
+{
+	static output::ColorStream &print(output::ColorStream &stream, ast::PredicateDeclaration &)
+	{
+		return (stream << output::Keyword("$o"));
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<>
+struct PrintReturnTypeTrait<ast::FunctionDeclaration>
+{
+	static output::ColorStream &print(output::ColorStream &stream,
+		ast::FunctionDeclaration &functionDeclaration)
+	{
+		switch (functionDeclaration.domain)
+		{
+			case Domain::Integer:
+				return (stream << output::Keyword("$int"));
+			default:
+				throw TranslationException("only functions with integer return type supported with TPTP currently");
+		}
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const auto printTypeAnnotation =
-	[](const ast::PredicateDeclaration &predicateDeclaration, Context &context, output::PrintContext &printContext)
+	[](const auto &symbolDeclaration, Context &context, output::PrintContext &printContext)
 	{
 		auto &stream = context.logger.outputStream();
 
@@ -291,6 +327,7 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 		for (auto &finalFormula : finalFormulas)
 			mapDomains(finalFormula, context);
 
+	// Print type annotations for predicate signatures
 	for (const auto &predicateDeclaration : context.predicateDeclarations)
 		printTypeAnnotation(*predicateDeclaration, context, printContext);
 
@@ -310,6 +347,9 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 			<< output::Variable("X") << " = " << output::Keyword("$product") << "("
 			<< output::Number<int>(2) << ", " << output::Variable("Y") << "))"
 			<< "))))." << std::endl;
+
+	// Print type annotations for function signatures
+
 
 	if (scopedFormulasB)
 		assert(finalFormulas.size() == 1);

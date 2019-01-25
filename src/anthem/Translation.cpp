@@ -44,7 +44,20 @@ const auto printFormula =
 				break;
 			case OutputFormat::TPTP:
 			{
-				const auto formulaName = std::string("axiom_") + std::to_string(printContext.currentFormulaID + 1);
+				const char *ruleType = "";
+				std::string formulaName;
+
+				switch (formulaType)
+				{
+					case FormulaType::Axiom:
+						ruleType = "axiom";
+						formulaName = std::string(ruleType) + "_" + std::to_string(printContext.currentFormulaID + 1);
+						break;
+					case FormulaType::Conjecture:
+						ruleType = "conjecture";
+						formulaName = std::string(ruleType);
+						break;
+				}
 
 				stream
 					<< output::Keyword("tff")
@@ -54,10 +67,10 @@ const auto printFormula =
 				switch (formulaType)
 				{
 					case FormulaType::Axiom:
-						stream << output::Keyword("axiom");
+						stream << output::Keyword(ruleType);
 						break;
 					case FormulaType::Conjecture:
-						stream << output::Keyword("conjecture");
+						stream << output::Keyword(ruleType);
 						break;
 				}
 

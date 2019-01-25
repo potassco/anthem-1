@@ -50,7 +50,7 @@ struct Context
 		const auto matchesExistingFunctionDeclaration =
 			[&](const auto &functionDeclarations)
 			{
-				return (functionDeclarations->arity == arity
+				return (functionDeclarations->arity() == arity
 					&& strcmp(functionDeclarations->name.c_str(), name) == 0);
 			};
 

@@ -130,6 +130,11 @@ struct Function
 
 struct FunctionDeclaration
 {
+	struct Parameter
+	{
+		Domain domain{Domain::Unknown};
+	};
+
 	explicit FunctionDeclaration(std::string &&name)
 	:	name{std::move(name)}
 	{
@@ -137,7 +142,7 @@ struct FunctionDeclaration
 
 	explicit FunctionDeclaration(std::string &&name, size_t arity)
 	:	name{std::move(name)},
-		arity{arity}
+		parameters{std::vector<Parameter>(arity)}
 	{
 	}
 
@@ -146,8 +151,13 @@ struct FunctionDeclaration
 	FunctionDeclaration(FunctionDeclaration &&other) noexcept = default;
 	FunctionDeclaration &operator=(FunctionDeclaration &&other) noexcept = default;
 
+	size_t arity() const noexcept
+	{
+		return parameters.size();
+	}
+
 	std::string name;
-	size_t arity;
+	std::vector<Parameter> parameters;
 	Domain domain{Domain::Symbolic};
 };
 

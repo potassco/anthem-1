@@ -65,8 +65,6 @@ struct TermTypeVisitor
 	template <class... Arguments>
 	static Type visit(const ast::Function &function, Arguments &&...)
 	{
-		// TODO: check that functions cannot return sets
-
 		return {function.declaration->domain, SetSize::Unit};
 	}
 

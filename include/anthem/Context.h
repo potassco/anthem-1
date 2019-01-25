@@ -28,7 +28,7 @@ struct Context
 	{
 	}
 
-	ast::PredicateDeclaration *findOrCreatePredicateDeclaration(const char *name, size_t arity)
+	std::optional<ast::PredicateDeclaration *> findPredicateDeclaration(const char *name, size_t arity)
 	{
 		const auto matchesExistingPredicateDeclaration =
 			[&](const auto &predicateDeclaration)
@@ -43,12 +43,22 @@ struct Context
 		if (matchingPredicateDeclaration != predicateDeclarations.end())
 			return matchingPredicateDeclaration->get();
 
+		return std::nullopt;
+	}
+
+	ast::PredicateDeclaration *findOrCreatePredicateDeclaration(const char *name, size_t arity)
+	{
+		auto predicateDeclaration = findPredicateDeclaration(name, arity);
+
+		if (predicateDeclaration)
+			return predicateDeclaration.value();
+
 		predicateDeclarations.emplace_back(std::make_unique<ast::PredicateDeclaration>(name, arity));
 
 		return predicateDeclarations.back().get();
 	}
 
-	ast::FunctionDeclaration *findOrCreateFunctionDeclaration(const char *name, size_t arity)
+	std::optional<ast::FunctionDeclaration *> findFunctionDeclaration(const char *name, size_t arity)
 	{
 		const auto matchesExistingFunctionDeclaration =
 			[&](const auto &functionDeclarations)
@@ -62,6 +72,16 @@ struct Context
 
 		if (matchingFunctionDeclaration != functionDeclarations.end())
 			return matchingFunctionDeclaration->get();
+
+		return std::nullopt;
+	}
+
+	ast::FunctionDeclaration *findOrCreateFunctionDeclaration(const char *name, size_t arity)
+	{
+		auto functionDeclaration = findFunctionDeclaration(name, arity);
+
+		if (functionDeclaration)
+			return functionDeclaration.value();
 
 		functionDeclarations.emplace_back(std::make_unique<ast::FunctionDeclaration>(name, arity));
 

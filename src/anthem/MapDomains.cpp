@@ -15,7 +15,20 @@ namespace ast
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mapDomains(ast::Term &term, Context &context);
+void mapDomains(Term &term, Context &context);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FunctionDeclaration *findOrCreateAuxiliaryIntegerFunctionDeclaration(const char *functionName,
+	size_t arity, Context &context)
+{
+	auto auxiliaryIntegerFunctionDeclaration
+		= context.findOrCreateFunctionDeclaration(functionName, arity);
+
+	auxiliaryIntegerFunctionDeclaration->domain = Domain::Integer;
+
+	return auxiliaryIntegerFunctionDeclaration;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -50,7 +63,7 @@ struct FormulaMapDomainsVisitor
 		if (exists.variables.empty())
 			return;
 
-		ast::And and_;
+		And and_;
 
 		const auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
 
@@ -61,9 +74,9 @@ struct FormulaMapDomainsVisitor
 
 			if (variableDeclaration->domain == Domain::Integer)
 			{
-				auto predicate = ast::Predicate(auxiliaryPredicateDeclarationEven);
+				auto predicate = Predicate(auxiliaryPredicateDeclarationEven);
 				predicate.arguments.reserve(1);
-				predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
+				predicate.arguments.emplace_back(Variable(variableDeclaration.get()));
 				and_.arguments.emplace_back(std::move(predicate));
 			}
 
@@ -75,12 +88,12 @@ struct FormulaMapDomainsVisitor
 
 		if (and_.arguments.size() == 1)
 		{
-			ast::Implies implies(std::move(and_.arguments.front()), std::move(exists.argument));
+			Implies implies(std::move(and_.arguments.front()), std::move(exists.argument));
 			exists.argument = std::move(implies);
 			return;
 		}
 
-		ast::Implies implies(std::move(and_), std::move(exists.argument));
+		Implies implies(std::move(and_), std::move(exists.argument));
 		exists.argument = std::move(implies);
 	}
 
@@ -92,7 +105,7 @@ struct FormulaMapDomainsVisitor
 		if (forAll.variables.empty())
 			return;
 
-		ast::And and_;
+		And and_;
 
 		const auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
 
@@ -103,9 +116,9 @@ struct FormulaMapDomainsVisitor
 
 			if (variableDeclaration->domain == Domain::Integer)
 			{
-				auto predicate = ast::Predicate(auxiliaryPredicateDeclarationEven);
+				auto predicate = Predicate(auxiliaryPredicateDeclarationEven);
 				predicate.arguments.reserve(1);
-				predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
+				predicate.arguments.emplace_back(Variable(variableDeclaration.get()));
 				and_.arguments.emplace_back(std::move(predicate));
 			}
 
@@ -117,12 +130,12 @@ struct FormulaMapDomainsVisitor
 
 		if (and_.arguments.size() == 1)
 		{
-			ast::Implies implies(std::move(and_.arguments.front()), std::move(forAll.argument));
+			Implies implies(std::move(and_.arguments.front()), std::move(forAll.argument));
 			forAll.argument = std::move(implies);
 			return;
 		}
 
-		ast::Implies implies(std::move(and_), std::move(forAll.argument));
+		Implies implies(std::move(and_), std::move(forAll.argument));
 		forAll.argument = std::move(implies);
 	}
 
@@ -175,10 +188,29 @@ struct TermMapDomainsVisitor
 				break;
 			case BinaryOperation::Operator::Multiplication:
 			{
-				auto left = BinaryOperation(BinaryOperation::Operator::Division, std::move(binaryOperation.left), Integer(2));
-				auto right = BinaryOperation(BinaryOperation::Operator::Division, std::move(binaryOperation.right), Integer(2));
+				auto auxiliaryMapIntegerFunctionDeclaration
+					= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameMapInteger, 1, context);
+				auto auxiliaryUnmapIntegerFunctionDeclaration
+					= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameUnmapInteger, 1, context);
+
+				std::vector<Term> leftArguments;
+				leftArguments.reserve(1);
+				leftArguments.emplace_back(std::move(binaryOperation.left));
+
+				std::vector<Term> rightArguments;
+				rightArguments.reserve(1);
+				rightArguments.emplace_back(std::move(binaryOperation.right));
+
+				auto left = Function(auxiliaryUnmapIntegerFunctionDeclaration, std::move(leftArguments));
+				auto right = Function(auxiliaryUnmapIntegerFunctionDeclaration, std::move(rightArguments));
+
 				auto multiply = BinaryOperation(BinaryOperation::Operator::Multiplication, std::move(left), std::move(right));
-				term = BinaryOperation(BinaryOperation::Operator::Multiplication, std::move(multiply), Integer(2));
+
+				std::vector<Term> arguments;
+				arguments.reserve(1);
+				arguments.emplace_back(std::move(multiply));
+
+				term = Function(auxiliaryMapIntegerFunctionDeclaration, std::move(arguments));
 				return;
 			}
 			// TODO: implement
@@ -204,10 +236,16 @@ struct TermMapDomainsVisitor
 			mapDomains(argument, context);
 	}
 
-	void visit(Integer &integer, Term &, Context &)
+	void visit(Integer &integer, Term &term, Context &context)
 	{
-		// Integers n are mapped to 2 * n
-		integer.value *= 2;
+		std::vector<Term> arguments;
+		arguments.reserve(1);
+		arguments.emplace_back(std::move(integer));
+
+		auto auxiliaryMapIntegerFunctionDeclaration
+			= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameMapInteger, 1, context);
+
+		term = Function(auxiliaryMapIntegerFunctionDeclaration, std::move(arguments));
 	}
 
 	void visit(Interval &interval, Term &, Context &context)
@@ -239,14 +277,14 @@ struct TermMapDomainsVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mapDomains(ast::Formula &formula, Context &context)
+void mapDomains(Formula &formula, Context &context)
 {
 	formula.accept(FormulaMapDomainsVisitor(), context);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mapDomains(ast::Term &term, Context &context)
+void mapDomains(Term &term, Context &context)
 {
 	term.accept(TermMapDomainsVisitor(), term, context);
 }

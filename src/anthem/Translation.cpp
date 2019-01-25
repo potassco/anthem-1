@@ -372,30 +372,34 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 			<< output::Variable("Y") << ": " << output::Keyword("$int") << "]: ("
 			<< output::Variable("X") << " = " << output::Keyword("$product") << "("
 			<< output::Number<int>(2) << ", " << output::Variable("Y") << "))"
-			<< "))))." << std::endl
+			<< "))))." << std::endl;
 
-			<< output::Keyword("tff")
-			<< "(" << output::Function("map_integer")
-			<< ", " << output::Keyword("axiom")
-			<< ", (" << output::Operator("!") << "["
-			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-			<< output::Reserved(AuxiliaryFunctionNameMapInteger) << "(" << output::Variable("X") << ")"
-			<< " = " << output::Keyword("$product") << "("
-			<< output::Number<int>(2) << ", " << output::Variable("X") << ")"
-			<< ")))." << std::endl
+		if (context.findFunctionDeclaration(AuxiliaryFunctionNameMapInteger, 1))
+			stream
+				<< output::Keyword("tff")
+				<< "(" << output::Function("map_integer")
+				<< ", " << output::Keyword("axiom")
+				<< ", (" << output::Operator("!") << "["
+				<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
+				<< output::Reserved(AuxiliaryFunctionNameMapInteger) << "(" << output::Variable("X") << ")"
+				<< " = " << output::Keyword("$product") << "("
+				<< output::Number<int>(2) << ", " << output::Variable("X") << ")"
+				<< ")))." << std::endl;
 
-			<< output::Keyword("tff")
-			<< "(" << output::Function("unmap_integer")
-			<< ", " << output::Keyword("axiom")
-			<< ", (" << output::Operator("!") << "["
-			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-			<< output::Keyword("$product") << "("
-			<< output::Reserved(AuxiliaryFunctionNameUnmapInteger) << "(" << output::Variable("X") << ")"
-			<< ", " << output::Number<int>(2) << ")"
-			<< " = " << output::Variable("X") << ")"
-			<< "))." << std::endl
+		if (context.findFunctionDeclaration(AuxiliaryFunctionNameUnmapInteger, 1))
+			stream
+				<< output::Keyword("tff")
+				<< "(" << output::Function("unmap_integer")
+				<< ", " << output::Keyword("axiom")
+				<< ", (" << output::Operator("!") << "["
+				<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
+				<< output::Keyword("$product") << "("
+				<< output::Reserved(AuxiliaryFunctionNameUnmapInteger) << "(" << output::Variable("X") << ")"
+				<< ", " << output::Number<int>(2) << ")"
+				<< " = " << output::Variable("X") << ")"
+				<< "))." << std::endl;
 
-			<< std::endl;
+		stream << std::endl;
 	}
 
 	if (scopedFormulasB)

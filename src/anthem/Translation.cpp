@@ -388,9 +388,8 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 				<< ", " << output::Keyword("axiom")
 				<< ", (" << output::Operator("!") << "["
 				<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-				<< output::Keyword("$product") << "("
-				<< output::Reserved(AuxiliaryFunctionNameUnmapInteger) << "(" << output::Variable("X") << ")"
-				<< ", " << output::Number<int>(2) << ")"
+				<< output::Reserved(AuxiliaryFunctionNameUnmapInteger) << "("
+				<< output::Reserved(AuxiliaryFunctionNameMapInteger) << "(" << output::Variable("X") << "))"
 				<< " = " << output::Variable("X") << ")"
 				<< "))." << std::endl;
 

@@ -22,6 +22,7 @@ install -m 755 -d $output_directory/examples
 
 # copy files
 install -m 755 $build_directory/bin/anthem $output_directory/
+install -m 755 /home/patrick/Documents/ASP/vampire/vampire_rel_master_4013 $output_directory/vampire
 
 for f in $(git ls-files | grep 'examples/')
 do

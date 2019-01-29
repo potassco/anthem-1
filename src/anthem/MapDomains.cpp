@@ -188,29 +188,16 @@ struct TermMapDomainsVisitor
 				break;
 			case BinaryOperation::Operator::Multiplication:
 			{
-				auto auxiliaryMapIntegerFunctionDeclaration
-					= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameMapInteger, 1, context);
 				auto auxiliaryUnmapIntegerFunctionDeclaration
 					= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameUnmapInteger, 1, context);
 
-				std::vector<Term> leftArguments;
-				leftArguments.reserve(1);
-				leftArguments.emplace_back(std::move(binaryOperation.left));
-
-				std::vector<Term> rightArguments;
-				rightArguments.reserve(1);
-				rightArguments.emplace_back(std::move(binaryOperation.right));
-
-				auto left = Function(auxiliaryUnmapIntegerFunctionDeclaration, std::move(leftArguments));
-				auto right = Function(auxiliaryUnmapIntegerFunctionDeclaration, std::move(rightArguments));
-
-				auto multiply = BinaryOperation(BinaryOperation::Operator::Multiplication, std::move(left), std::move(right));
+				auto multiply = BinaryOperation(BinaryOperation::Operator::Multiplication, std::move(binaryOperation.left), std::move(binaryOperation.right));
 
 				std::vector<Term> arguments;
 				arguments.reserve(1);
 				arguments.emplace_back(std::move(multiply));
 
-				term = Function(auxiliaryMapIntegerFunctionDeclaration, std::move(arguments));
+				term = Function(auxiliaryUnmapIntegerFunctionDeclaration, std::move(arguments));
 				return;
 			}
 			// TODO: implement

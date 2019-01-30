@@ -56,7 +56,7 @@ struct ChooseValueInTermVisitor
 				if (!symbol.arguments().empty())
 					throw TranslationException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to the bug tracker");
 
-				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), symbol.arguments().size());
+				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), 0);
 				return chooseValueInPrimitive(ast::Function(constantDeclaration), variableDeclaration);
 			}
 		}

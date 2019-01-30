@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 		("i,input", "Input files (one file for plain translation, two files for proving equivalence)", cxxopts::value<std::vector<std::string>>())
 		("mode", "Translation mode (here-and-there, completion)", cxxopts::value<std::string>()->default_value("here-and-there"))
 		("output-format", "Output format (human-readable, tptp)", cxxopts::value<std::string>()->default_value("human-readable"))
+		("map-to-integers", "Map all variable sorts to integers (always, auto)", cxxopts::value<std::string>()->default_value("auto"))
 		("no-simplify", "Do not simplify the output (only with completion translation mode)")
 		("no-complete", "Do not perform completion (only with completion translation mode)")
 		("no-detect-integers", "Do not detect integer variables (only with completion translation mode)")
@@ -39,6 +40,7 @@ int main(int argc, char **argv)
 	std::vector<std::string> inputFiles;
 	std::string translationModeString;
 	std::string outputFormatString;
+	std::string mapToIntegersPolicyString;
 	std::string variableDomainString;
 	std::string colorPolicyString;
 	std::string parenthesisStyleString;
@@ -56,6 +58,7 @@ int main(int argc, char **argv)
 
 		translationModeString = parseResult["mode"].as<std::string>();
 		outputFormatString = parseResult["output-format"].as<std::string>();
+		mapToIntegersPolicyString = parseResult["map-to-integers"].as<std::string>();
 		context.performSimplification = (parseResult.count("no-simplify") == 0);
 		context.performCompletion = (parseResult.count("no-complete") == 0);
 		context.performIntegerDetection = (parseResult.count("no-detect-integers") == 0);
@@ -102,6 +105,18 @@ int main(int argc, char **argv)
 	else
 	{
 		context.logger.log(anthem::output::Priority::Error) << "unknown output format “" << outputFormatString << "”";
+		context.logger.errorStream() << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
+	}
+
+	if (mapToIntegersPolicyString == "auto")
+		context.mapToIntegersPolicy = anthem::MapToIntegersPolicy::Auto;
+	else if (mapToIntegersPolicyString == "always")
+		context.mapToIntegersPolicy = anthem::MapToIntegersPolicy::Always;
+	else
+	{
+		context.logger.log(anthem::output::Priority::Error) << "unknown map-to-integers policy “" << mapToIntegersPolicyString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

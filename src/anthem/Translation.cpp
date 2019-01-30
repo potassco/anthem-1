@@ -343,8 +343,20 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 
 	auto finalFormulas = buildFinalFormulas();
 
-	// In case of TPTP output, map both program and integer variables to integers
-	if (context.outputFormat == OutputFormat::TPTP)
+	const auto performDomainMapping =
+		[&]()
+		{
+			switch (context.mapToIntegersPolicy)
+			{
+				case MapToIntegersPolicy::Always:
+					return true;
+				case MapToIntegersPolicy::Auto:
+					return (context.outputFormat == OutputFormat::TPTP);
+			}
+		};
+
+	// If requested, map both program and integer variables to integers
+	if (performDomainMapping())
 		for (auto &finalFormula : finalFormulas)
 			mapDomains(finalFormula, context);
 

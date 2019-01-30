@@ -71,7 +71,7 @@ ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Con
 
 struct TermTranslateVisitor
 {
-	std::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
+	std::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &, Context &context, const ast::VariableStack &)
 	{
 		switch (symbol.type())
 		{
@@ -85,28 +85,20 @@ struct TermTranslateVisitor
 				return ast::Term::make<ast::String>(std::string(symbol.string()));
 			case Clingo::SymbolType::Function:
 			{
-				auto functionDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), symbol.arguments().size());
+				// Functions with arguments are represented as Clingo::AST::Function by the parser. At this
+				// point, we only have to handle (0-ary) constants
+				if (!symbol.arguments().empty())
+					throw TranslationException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to the bug tracker");
+
+				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), 0);
 
 				// TODO: remove workaround
 				// Currently, the integer detection doesn’t cover the return types of functions. Setting the
 				// return type to the symbolic domain lets us detect more integer variables. This workaround
 				// sets the symbolic domain by default until a proper return type detection is implemented
-				functionDeclaration->domain = Domain::Symbolic;
+				constantDeclaration->domain = Domain::Symbolic;
 
-				auto function = ast::Function(functionDeclaration);
-				function.arguments.reserve(symbol.arguments().size());
-
-				for (const auto &argument : symbol.arguments())
-				{
-					auto translatedArgument = visit(argument, term, ruleContext, context, variableStack);
-
-					if (!translatedArgument)
-						throw TranslationException(term.location, "could not translate argument");
-
-					function.arguments.emplace_back(std::move(translatedArgument.value()));
-				}
-
-				return std::move(function);
+				return ast::Function(constantDeclaration);
 			}
 		}
 
@@ -159,6 +151,11 @@ struct TermTranslateVisitor
 	{
 		if (function.external)
 			throw TranslationException(term.location, "external functions currently unsupported");
+
+		// Functions with arguments are represented as Clingo::AST::Function by the parser. At this point,
+		// we only have to handle functions with arguments
+		if (function.arguments.empty())
+			throw TranslationException(term.location, "unexpected 0-ary function, expected at least one argument, please report to the bug tracker");
 
 		std::vector<ast::Term> arguments;
 		arguments.reserve(function.arguments.size());

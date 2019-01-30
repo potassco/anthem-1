@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+### Bug Fixes
+
+* omits unnecessary parentheses around function and predicate arguments
+
 ## 0.1.9 (2018-05-04)
 
 ### Changes

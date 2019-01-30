@@ -163,7 +163,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		anthem::translate("input", input, context);
 
 		CHECK(output.str() ==
-			"forall V1, V2 (a(V1, V2) <-> b(c((V1 + V2)), d((1 + V2))))\n"
+			"forall V1, V2 (a(V1, V2) <-> b(c(V1 + V2), d(1 + V2)))\n"
 			"forall V3, V4 not b(V3, V4)\n");
 	}
 

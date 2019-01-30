@@ -182,7 +182,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Function &f
 		if (i != function.arguments.cbegin())
 			stream << ", ";
 
-		print(stream, *i, printContext);
+		print(stream, *i, printContext, true);
 	}
 
 	if (function.declaration->name.empty() && function.arguments.size() == 1)
@@ -250,7 +250,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Predicate &
 		if (i != predicate.arguments.cbegin())
 			stream << ", ";
 
-		print(stream, *i, printContext);
+		print(stream, *i, printContext, true);
 	}
 
 	stream << ")";

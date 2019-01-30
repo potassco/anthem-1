@@ -4,6 +4,7 @@
 #include <optional>
 
 #include <anthem/AST.h>
+#include <anthem/MapToIntegersPolicy.h>
 #include <anthem/Semantics.h>
 #include <anthem/TranslationMode.h>
 #include <anthem/OutputFormat.h>
@@ -92,10 +93,11 @@ struct Context
 
 	TranslationMode translationMode{TranslationMode::HereAndThere};
 	OutputFormat outputFormat{OutputFormat::HumanReadable};
+
 	bool performSimplification{false};
 	bool performCompletion{false};
 	bool performIntegerDetection{false};
-
+	MapToIntegersPolicy mapToIntegersPolicy{MapToIntegersPolicy::Auto};
 	Semantics semantics{Semantics::ClassicalLogic};
 
 	std::vector<std::unique_ptr<ast::PredicateDeclaration>> predicateDeclarations;

@@ -134,6 +134,83 @@ struct HeadLiteralTranslateToConsequentVisitor
 		return makeHeadFormula(function, false, context, ruleContext, variableStack);
 	}
 
+	ast::Formula visit(const Clingo::AST::TheoryAtom &theoryAtom, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &, ast::VariableStack &)
+	{
+		const auto throwInvalidFormat =
+			[&headLiteral]()
+			{
+				throw TranslationException(headLiteral.location, "invalid type declaration format");
+			};
+
+		if (theoryAtom.guard || !theoryAtom.term.data.is<Clingo::AST::Function>())
+			throwInvalidFormat();
+
+		auto &function = theoryAtom.term.data.get<Clingo::AST::Function>();
+
+		if (strcmp(function.name, "type") != 0 || !function.arguments.empty())
+			throwInvalidFormat();
+
+		for (const auto &element : theoryAtom.elements)
+		{
+			if (!element.condition.empty() || element.tuple.size() != 1)
+				throwInvalidFormat();
+
+			const auto &term = element.tuple.front();
+
+			if (!term.data.is<Clingo::AST::TheoryUnparsedTerm>())
+				throwInvalidFormat();
+
+			const auto &unparsedTerm = term.data.get<Clingo::AST::TheoryUnparsedTerm>();
+
+			if (unparsedTerm.elements.size() != 1)
+				throwInvalidFormat();
+
+			const auto &unparsedTermElement = unparsedTerm.elements.front();
+
+			if (!unparsedTermElement.operators.empty() || !unparsedTermElement.term.data.is<Clingo::AST::TheoryFunction>())
+				throwInvalidFormat();
+
+			const auto &theoryFunction = unparsedTermElement.term.data.get<Clingo::AST::TheoryFunction>();
+
+			const auto name = theoryFunction.name;
+			const auto arity = theoryFunction.arguments.size();
+
+			auto predicateDeclaration = context.findOrCreatePredicateDeclaration(name, arity);
+
+			for (int i = 0; i < static_cast<int>(theoryFunction.arguments.size()); i++)
+			{
+				const auto &argument = theoryFunction.arguments[i];
+
+				if (!argument.data.is<Clingo::AST::TheoryUnparsedTerm>())
+					throwInvalidFormat();
+
+				const auto &unparsedTerm = argument.data.get<Clingo::AST::TheoryUnparsedTerm>();
+
+				if (unparsedTerm.elements.size() != 1)
+					throwInvalidFormat();
+
+				const auto &unparsedTermElement = unparsedTerm.elements.front();
+
+				if (!unparsedTermElement.operators.empty() || !unparsedTermElement.term.data.is<Clingo::Symbol>())
+					throwInvalidFormat();
+
+				const auto &symbol = unparsedTermElement.term.data.get<Clingo::Symbol>();
+
+				if (symbol.type() != Clingo::SymbolType::Function || !symbol.arguments().empty())
+					throwInvalidFormat();
+
+				const auto type = symbol.name();
+
+				if (strcmp(type, "integer") == 0)
+					predicateDeclaration->parameters[i].domain = Domain::Integer;
+				else if (strcmp(type, "symbolic") == 0)
+					predicateDeclaration->parameters[i].domain = Domain::Symbolic;
+			}
+		}
+
+		return ast::Boolean(true);
+	}
+
 	template<class T>
 	ast::Formula visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &, RuleContext &, ast::VariableStack &)
 	{

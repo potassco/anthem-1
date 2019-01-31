@@ -58,7 +58,7 @@ struct BodyTermTranslateVisitor
 			if (literal.sign == Clingo::AST::Sign::None)
 				return ast::Predicate(predicateDeclaration);
 			else if (literal.sign == Clingo::AST::Sign::Negation)
-				return ast::Formula::make<ast::Not>(ast::Predicate(predicateDeclaration));
+				return ast::Not(ast::Predicate(predicateDeclaration));
 		}
 
 		// Create new body variable declarations
@@ -76,7 +76,7 @@ struct BodyTermTranslateVisitor
 		for (size_t i = 0; i < function.arguments.size(); i++)
 		{
 			auto &argument = function.arguments[i];
-			conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[i].get()), translate(argument, ruleContext, context, variableStack)));
+			conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[i].get()), translate(argument, ruleContext, context, variableStack)));
 		}
 
 		variableStack.pop();
@@ -90,9 +90,9 @@ struct BodyTermTranslateVisitor
 		if (literal.sign == Clingo::AST::Sign::None)
 			conjunction.arguments.emplace_back(std::move(predicate));
 		else if (literal.sign == Clingo::AST::Sign::Negation)
-			conjunction.arguments.emplace_back(ast::Formula::make<ast::Not>(std::move(predicate)));
+			conjunction.arguments.emplace_back(ast::Not(std::move(predicate)));
 
-		return ast::Formula::make<ast::Exists>(std::move(parameters), std::move(conjunction));
+		return ast::Exists(std::move(parameters), std::move(conjunction));
 	}
 
 	template<class T>
@@ -112,7 +112,7 @@ struct BodyLiteralTranslateVisitor
 {
 	std::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, RuleContext &, Context &, ast::VariableStack &)
 	{
-		return ast::Formula::make<ast::Boolean>(boolean.value);
+		return ast::Boolean(boolean.value);
 	}
 
 	std::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, RuleContext &ruleContext, Context &context, ast::VariableStack &variableStack)
@@ -136,11 +136,11 @@ struct BodyLiteralTranslateVisitor
 
 		ast::And conjunction;
 		conjunction.arguments.reserve(3);
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[0].get()), translate(comparison.left, ruleContext, context, variableStack)));
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::In>(ast::Variable(parameters[1].get()), translate(comparison.right, ruleContext, context, variableStack)));
-		conjunction.arguments.emplace_back(ast::Formula::make<ast::Comparison>(operator_, ast::Variable(parameters[0].get()), ast::Variable(parameters[1].get())));
+		conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[0].get()), translate(comparison.left, ruleContext, context, variableStack)));
+		conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[1].get()), translate(comparison.right, ruleContext, context, variableStack)));
+		conjunction.arguments.emplace_back(ast::Comparison(operator_, ast::Variable(parameters[0].get()), ast::Variable(parameters[1].get())));
 
-		return ast::Formula::make<ast::Exists>(std::move(parameters), std::move(conjunction));
+		return ast::Exists(std::move(parameters), std::move(conjunction));
 	}
 
 	template<class T>

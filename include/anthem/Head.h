@@ -149,7 +149,7 @@ struct LiteralTranslateVisitor
 {
 	std::optional<ast::Formula> visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &, RuleContext &, Context &, size_t &)
 	{
-		return ast::Formula::make<ast::Boolean>(boolean.value);
+		return ast::Boolean(boolean.value);
 	}
 
 	std::optional<ast::Formula> visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &, RuleContext &ruleContext, Context &context, size_t &headVariableIndex)
@@ -182,7 +182,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 		if (!translatedLiteral)
 			return std::nullopt;
 
-		return ast::Formula::make<ast::Not>(std::move(translatedLiteral.value()));
+		return ast::Not(std::move(translatedLiteral.value()));
 	}
 
 	std::optional<ast::Formula> visit(const Clingo::AST::Disjunction &disjunction, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, Context &context, size_t &headVariableIndex)
@@ -203,7 +203,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 			arguments.emplace_back(std::move(argument.value()));
 		}
 
-		return ast::Formula::make<ast::Or>(std::move(arguments));
+		return ast::Or(std::move(arguments));
 	}
 
 	std::optional<ast::Formula> visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, RuleContext &ruleContext, Context &context, size_t &headVariableIndex)
@@ -236,7 +236,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 			arguments.emplace_back(std::move(argument.value()));
 		}
 
-		return ast::Formula::make<ast::Or>(std::move(arguments));
+		return ast::Or(std::move(arguments));
 	}
 
 	template<class T>

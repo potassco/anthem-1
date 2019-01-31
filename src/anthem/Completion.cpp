@@ -20,7 +20,7 @@ namespace anthem
 // Builds the conjunction within the completed formula for a given predicate
 ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, const ast::VariableDeclarationPointers &parameters, std::vector<ast::ScopedFormula> &scopedFormulas)
 {
-	auto disjunction = ast::Formula::make<ast::Or>();
+	ast::Or or_;
 
 	assert(predicate.arguments.size() == parameters.size());
 
@@ -79,15 +79,15 @@ ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, c
 		}
 
 		if (freeVariables.empty())
-			disjunction.get<ast::Or>().arguments.emplace_back(std::move(implies.antecedent));
+			or_.arguments.emplace_back(std::move(implies.antecedent));
 		else
 		{
-			auto exists = ast::Formula::make<ast::Exists>(std::move(freeVariables), std::move(implies.antecedent));
-			disjunction.get<ast::Or>().arguments.emplace_back(std::move(exists));
+			ast::Exists exists(std::move(freeVariables), std::move(implies.antecedent));
+			or_.arguments.emplace_back(std::move(exists));
 		}
 	}
 
-	return disjunction;
+	return std::move(or_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +98,7 @@ ast::Formula buildCompletedFormulaQuantified(ast::Predicate &&predicate, ast::Fo
 	assert(innerFormula.is<ast::Or>());
 
 	if (innerFormula.get<ast::Or>().arguments.empty())
-		return ast::Formula::make<ast::Not>(std::move(predicate));
+		return ast::Not(std::move(predicate));
 
 	if (innerFormula.get<ast::Or>().arguments.size() == 1)
 		innerFormula = std::move(innerFormula.get<ast::Or>().arguments.front());
@@ -110,10 +110,10 @@ ast::Formula buildCompletedFormulaQuantified(ast::Predicate &&predicate, ast::Fo
 		if (boolean.value == true)
 			return std::move(predicate);
 		else
-			return ast::Formula::make<ast::Not>(std::move(predicate));
+			return ast::Not(std::move(predicate));
 	}
 
-	return ast::Formula::make<ast::Biconditional>(std::move(predicate), std::move(innerFormula));
+	return ast::Biconditional(std::move(predicate), std::move(innerFormula));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,7 +130,7 @@ ast::Formula completePredicate(ast::PredicateDeclaration &predicateDeclaration, 
 	for (size_t i = 0; i < predicateDeclaration.arity(); i++)
 	{
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
-		arguments.emplace_back(ast::Term::make<ast::Variable>(parameters.back().get()));
+		arguments.emplace_back(ast::Variable(parameters.back().get()));
 	}
 
 	ast::Predicate predicateCopy(&predicateDeclaration, std::move(arguments));
@@ -141,7 +141,7 @@ ast::Formula completePredicate(ast::PredicateDeclaration &predicateDeclaration, 
 	if (parameters.empty())
 		return completedFormulaQuantified;
 
-	return ast::Formula::make<ast::ForAll>(std::move(parameters), std::move(completedFormulaQuantified));
+	return ast::ForAll(std::move(parameters), std::move(completedFormulaQuantified));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,14 +153,14 @@ ast::Formula completeIntegrityConstraint(ast::ScopedFormula &scopedFormula)
 	assert(implies.consequent.is<ast::Boolean>());
 	assert(implies.consequent.get<ast::Boolean>().value == false);
 
-	auto argument = ast::Formula::make<ast::Not>(std::move(implies.antecedent));
+	auto argument = ast::Not(std::move(implies.antecedent));
 
 	auto &freeVariables = scopedFormula.freeVariables;
 
 	if (freeVariables.empty())
-		return argument;
+		return std::move(argument);
 
-	return ast::Formula::make<ast::ForAll>(std::move(freeVariables), std::move(argument));
+	return ast::ForAll(std::move(freeVariables), std::move(argument));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

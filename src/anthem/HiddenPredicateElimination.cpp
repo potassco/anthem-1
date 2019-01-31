@@ -133,7 +133,7 @@ PredicateReplacement findReplacement(const ast::PredicateDeclaration &predicateD
 	assert(predicate.declaration == &predicateDeclaration);
 
 	// Replace with “#true”
-	return {predicate, ast::Formula::make<ast::Boolean>(true)};
+	return {predicate, ast::Boolean(true)};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +148,7 @@ PredicateReplacement findReplacement(const ast::PredicateDeclaration &predicateD
 	assert(not_.argument.get<ast::Predicate>().declaration == &predicateDeclaration);
 
 	// Replace with “#false”
-	return {not_.argument.get<ast::Predicate>(), ast::Formula::make<ast::Boolean>(false)};
+	return {not_.argument.get<ast::Predicate>(), ast::Boolean(false)};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,7 +236,7 @@ void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Con
 				completedFormulas[j].accept(ReplacePredicateInFormulaVisitor(), completedFormulas[j], replacement);
 
 		// TODO: refactor
-		completedFormulas[i] = ast::Formula::make<ast::Boolean>(true);
+		completedFormulas[i] = ast::Boolean(true);
 	}
 
 	const auto canBeRemoved =

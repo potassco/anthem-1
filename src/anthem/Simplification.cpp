@@ -170,7 +170,7 @@ struct SimplificationRuleTrivialAssignmentInExists
 		if (matchingAssignment == exists.variables.cend())
 			return OperationResult::Unchanged;
 
-		formula = ast::Formula::make<ast::Boolean>(true);
+		formula = ast::Boolean(true);
 
 		return OperationResult::Changed;
 	}
@@ -260,7 +260,7 @@ struct SimplificationRuleEmptyConjunction
 		if (!and_.arguments.empty())
 			return OperationResult::Unchanged;
 
-		formula = ast::Formula::make<ast::Boolean>(true);
+		formula = ast::Boolean(true);
 
 		return OperationResult::Changed;
 	}
@@ -372,7 +372,7 @@ struct SimplificationRuleSubsumptionInBiconditionals
 
 		and_.arguments.erase(matchingPredicate);
 
-		formula = ast::Formula::make<ast::Implies>(std::move(predicateSide), std::move(andSide));
+		formula = ast::Implies(std::move(predicateSide), std::move(andSide));
 
 		return OperationResult::Changed;
 	}
@@ -421,9 +421,9 @@ struct SimplificationRuleDeMorganForConjunctions
 		auto &and_ = not_.argument.get<ast::And>();
 
 		for (auto &argument : and_.arguments)
-			argument = ast::Formula::make<ast::Not>(std::move(argument));
+			argument = ast::Not(std::move(argument));
 
-		formula = ast::Formula::make<ast::Or>(std::move(and_.arguments));
+		formula = ast::Or(std::move(and_.arguments));
 
 		return OperationResult::Changed;
 	}
@@ -459,7 +459,7 @@ struct SimplificationRuleImplicationFromDisjunction
 
 		auto &negativeSideArgument = negativeSide.get<ast::Not>().argument;
 
-		formula = ast::Formula::make<ast::Implies>(std::move(negativeSideArgument), std::move(positiveSide));
+		formula = ast::Implies(std::move(negativeSideArgument), std::move(positiveSide));
 
 		return OperationResult::Changed;
 	}
@@ -533,7 +533,7 @@ struct SimplificationRuleIntegerSetInclusion
 			return OperationResult::Unchanged;
 		}
 
-		formula = ast::Formula::make<ast::Comparison>(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
+		formula = ast::Comparison(ast::Comparison::Operator::Equal, std::move(in.element), std::move(in.set));
 
 		return OperationResult::Changed;
 	}

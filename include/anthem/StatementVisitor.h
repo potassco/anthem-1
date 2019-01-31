@@ -28,7 +28,7 @@ inline void reduce(ast::Implies &implies)
 
 	// Use “true” as the consequent in case it is empty
 	if (antecedent.arguments.empty())
-		implies.antecedent = ast::Formula::make<ast::Boolean>(true);
+		implies.antecedent = ast::Boolean(true);
 	else if (antecedent.arguments.size() == 1)
 		implies.antecedent = std::move(antecedent.arguments[0]);
 }
@@ -108,7 +108,7 @@ struct StatementVisitor
 
 		if (!ruleContext.isChoiceRule)
 		{
-			auto formula = ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent.value()));
+			auto formula = ast::Implies(std::move(antecedent), std::move(consequent.value()));
 			ast::ScopedFormula scopedFormula(std::move(formula), std::move(ruleContext.freeVariables));
 			scopedFormulas.emplace_back(std::move(scopedFormula));
 			reduce(scopedFormulas.back().formula.get<ast::Implies>());
@@ -122,14 +122,14 @@ struct StatementVisitor
 
 					if (!isLastOne)
 					{
-						auto formula = ast::Formula::make<ast::Implies>(ast::prepareCopy(antecedent), std::move(consequent));
+						auto formula = ast::Implies(ast::prepareCopy(antecedent), std::move(consequent));
 						ast::ScopedFormula scopedFormula(std::move(formula), {});
 						ast::fixDanglingVariables(scopedFormula);
 						scopedFormulas.emplace_back(std::move(scopedFormula));
 					}
 					else
 					{
-						auto formula = ast::Formula::make<ast::Implies>(std::move(antecedent), std::move(consequent));
+						auto formula = ast::Implies(std::move(antecedent), std::move(consequent));
 						ast::ScopedFormula scopedFormula(std::move(formula), std::move(ruleContext.freeVariables));
 						scopedFormulas.emplace_back(std::move(scopedFormula));
 					}

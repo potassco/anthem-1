@@ -76,13 +76,13 @@ struct TermTranslateVisitor
 		switch (symbol.type())
 		{
 			case Clingo::SymbolType::Number:
-				return ast::Term::make<ast::Integer>(symbol.number());
+				return ast::Integer(symbol.number());
 			case Clingo::SymbolType::Infimum:
-				return ast::Term::make<ast::SpecialInteger>(ast::SpecialInteger::Type::Infimum);
+				return ast::SpecialInteger(ast::SpecialInteger::Type::Infimum);
 			case Clingo::SymbolType::Supremum:
-				return ast::Term::make<ast::SpecialInteger>(ast::SpecialInteger::Type::Supremum);
+				return ast::SpecialInteger(ast::SpecialInteger::Type::Supremum);
 			case Clingo::SymbolType::String:
-				return ast::Term::make<ast::String>(std::string(symbol.string()));
+				return ast::String(std::string(symbol.string()));
 			case Clingo::SymbolType::Function:
 			{
 				// Functions with arguments are represented as Clingo::AST::Function by the parser. At this
@@ -113,13 +113,12 @@ struct TermTranslateVisitor
 		const auto isUndeclared = isAnonymousVariable || isUndeclaredUserVariable;
 
 		if (!isUndeclared)
-			return ast::Term::make<ast::Variable>(*matchingVariableDeclaration);
+			return ast::Variable(*matchingVariableDeclaration);
 
 		auto variableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
 		ruleContext.freeVariables.emplace_back(std::move(variableDeclaration));
 
-		// TODO: ast::Term::make is unnecessary and can be removed
-		return ast::Term::make<ast::Variable>(ruleContext.freeVariables.back().get());
+		return ast::Variable(ruleContext.freeVariables.back().get());
 	}
 
 	std::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
@@ -128,7 +127,7 @@ struct TermTranslateVisitor
 		auto left = translate(binaryOperation.left, ruleContext, context, variableStack);
 		auto right = translate(binaryOperation.right, ruleContext, context, variableStack);
 
-		return ast::Term::make<ast::BinaryOperation>(operator_, std::move(left), std::move(right));
+		return ast::BinaryOperation(operator_, std::move(left), std::move(right));
 	}
 
 	std::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
@@ -136,7 +135,7 @@ struct TermTranslateVisitor
 		const auto operator_ = translate(unaryOperation.unary_operator, term);
 		auto argument = translate(unaryOperation.argument, ruleContext, context, variableStack);
 
-		return ast::Term::make<ast::UnaryOperation>(operator_, std::move(argument));
+		return ast::UnaryOperation(operator_, std::move(argument));
 	}
 
 	std::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
@@ -144,7 +143,7 @@ struct TermTranslateVisitor
 		auto left = translate(interval.left, ruleContext, context, variableStack);
 		auto right = translate(interval.right, ruleContext, context, variableStack);
 
-		return ast::Term::make<ast::Interval>(std::move(left), std::move(right));
+		return ast::Interval(std::move(left), std::move(right));
 	}
 
 	std::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
@@ -171,7 +170,7 @@ struct TermTranslateVisitor
 		// sets the symbolic domain by default until a proper return type detection is implemented
 		functionDeclaration->domain = Domain::Symbolic;
 
-		return ast::Term::make<ast::Function>(functionDeclaration, std::move(arguments));
+		return ast::Function(functionDeclaration, std::move(arguments));
 	}
 
 	std::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, Context &, const ast::VariableStack &)

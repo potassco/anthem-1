@@ -353,6 +353,8 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 				case MapToIntegersPolicy::Auto:
 					return (context.outputFormat == OutputFormat::TPTP);
 			}
+
+			throw TranslationException("supposedly unreachable code, please report to the bug tracker");
 		};
 
 	// If requested, map both program and integer variables to integers

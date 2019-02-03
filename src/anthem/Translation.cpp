@@ -346,6 +346,9 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 	const auto performDomainMapping =
 		[&]()
 		{
+			if (context.typeStatementUsed)
+				return false;
+
 			switch (context.mapToIntegersPolicy)
 			{
 				case MapToIntegersPolicy::Always:

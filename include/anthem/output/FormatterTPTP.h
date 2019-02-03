@@ -244,9 +244,6 @@ struct FormatterTPTP
 				return (stream << output::Variable(variableName.c_str()));
 			};
 
-		if (variableDeclaration.domain != Domain::Integer)
-			throw TranslationException("expected all variables to have integer domain after domain mapping, please report to bug tracker");
-
 		switch (variableDeclaration.type)
 		{
 			case ast::VariableDeclaration::Type::UserDefined:
@@ -306,7 +303,17 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-			stream << ": " << output::Keyword("$int");
+			stream << ": ";
+
+			switch (variableDeclaration.domain)
+			{
+				case Domain::Integer:
+					output::Keyword("$int");
+				case Domain::Symbolic:
+					output::Keyword("$i");
+				default:
+					throw TranslationException("unspecified parameter domain");
+			}
 		}
 
 		stream << "]: ";
@@ -328,7 +335,17 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-			stream << ": " << output::Keyword("$int");
+			stream << ": ";
+
+			switch (variableDeclaration.domain)
+			{
+				case Domain::Integer:
+					output::Keyword("$int");
+				case Domain::Symbolic:
+					output::Keyword("$i");
+				default:
+					throw TranslationException("unspecified parameter domain");
+			}
 		}
 
 		stream << "]: ";

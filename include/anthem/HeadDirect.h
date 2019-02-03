@@ -205,6 +205,10 @@ struct HeadLiteralTranslateToConsequentVisitor
 					predicateDeclaration->parameters[i].domain = Domain::Integer;
 				else if (strcmp(type, "symbolic") == 0)
 					predicateDeclaration->parameters[i].domain = Domain::Symbolic;
+				else
+					throwInvalidFormat();
+
+				context.typeStatementUsed = true;
 			}
 		}
 

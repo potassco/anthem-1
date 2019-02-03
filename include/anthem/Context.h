@@ -107,6 +107,7 @@ struct Context
 
 	bool externalStatementsUsed{false};
 	bool showStatementsUsed{false};
+	bool typeStatementUsed{false};
 
 	output::ParenthesisStyle parenthesisStyle{output::ParenthesisStyle::Normal};
 };

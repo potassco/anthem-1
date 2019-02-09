@@ -38,15 +38,6 @@ ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoic
 		parameters.back()->domain = Domain::Symbolic;
 	}
 
-	ast::And and_;
-	and_.arguments.reserve(parameters.size());
-
-	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
-	{
-		auto &argument = function.arguments[i];
-		and_.arguments.emplace_back(chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
-	}
-
 	const auto makePredicate =
 		[&]()
 		{
@@ -71,6 +62,18 @@ ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoic
 
 			return std::move(or_);
 		};
+
+	if (parameters.empty())
+		return makeImplication();
+
+	ast::And and_;
+	and_.arguments.reserve(parameters.size());
+
+	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+	{
+		auto &argument = function.arguments[i];
+		and_.arguments.emplace_back(chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
+	}
 
 	ast::Implies implies(std::move(and_), makeImplication());
 

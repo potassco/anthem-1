@@ -73,6 +73,9 @@ struct BodyTermTranslateVisitor
 		auto predicateLiteral = makePredicateLiteral();
 		and_.arguments.emplace_back(std::move(predicateLiteral));
 
+		if (parameters.empty())
+			return std::move(and_.arguments.front());
+
 		return ast::Exists(std::move(parameters), std::move(and_));
 	}
 

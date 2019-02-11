@@ -199,13 +199,21 @@ struct TermMapDomainsVisitor
 	{
 	}
 
-	void visit(Function &function, Term &, Context &context)
+	void visit(Function &function, Term &term, Context &context)
 	{
-		// TODO: implement
-		throw TranslationException("mapping symbolic functions to odd integers not yet implemented");
+		if (!function.arguments.empty())
+			throw TranslationException("mapping symbolic functions to odd integers not yet implemented");
 
-		for (auto &argument : function.arguments)
-			mapDomains(argument, context);
+		function.declaration->domain = Domain::Symbolic;
+
+		std::vector<Term> arguments;
+		arguments.reserve(1);
+		arguments.emplace_back(std::move(function));
+
+		auto auxiliaryFunctionDeclarationSymbolic
+			= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameSymbolic, 1, context);
+
+		term = Function(auxiliaryFunctionDeclarationSymbolic, std::move(arguments));
 	}
 
 	void visit(Integer &integer, Term &term, Context &context)

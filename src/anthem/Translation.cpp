@@ -117,6 +117,8 @@ struct PrintReturnTypeTrait<ast::FunctionDeclaration>
 			case Domain::Integer:
 				// TODO: clean up
 				return (stream << output::Keyword("object"));
+			case Domain::Symbolic:
+				return (stream << output::Keyword("$i"));
 			default:
 				throw TranslationException("only functions with integer return type supported with TPTP currently");
 		}
@@ -132,7 +134,8 @@ const auto printTypeAnnotation =
 
 		// TODO: clean up
 		if (strcmp(symbolDeclaration.name.c_str(), AuxiliaryFunctionNameInteger) == 0
-		    || strcmp(symbolDeclaration.name.c_str(), AuxiliaryPredicateNameIsInteger) == 0)
+			|| strcmp(symbolDeclaration.name.c_str(), AuxiliaryFunctionNameSymbolic) == 0
+			|| strcmp(symbolDeclaration.name.c_str(), AuxiliaryPredicateNameIsInteger) == 0)
 		{
 			return;
 		}
@@ -163,7 +166,10 @@ const auto printTypeAnnotation =
 					<< output::Keyword("tff")
 					<< "(" << output::Function(typeName.c_str())
 					<< ", " << output::Keyword("type")
-					<< ", (" << symbolDeclaration.name << ": (";
+					<< ", (" << symbolDeclaration.name << ": ";
+
+				if (!symbolDeclaration.parameters.empty())
+					stream << "(";
 
 				for (size_t i = 0; i < symbolDeclaration.parameters.size(); i++)
 				{
@@ -176,7 +182,9 @@ const auto printTypeAnnotation =
 					stream << output::Keyword("object");
 				}
 
-				stream << ") > ";
+				if (!symbolDeclaration.parameters.empty())
+					stream << ") > ";
+
 				using PrintReturnTypeTrait = PrintReturnTypeTrait<typename std::remove_cv<
 					typename std::remove_reference<decltype(symbolDeclaration)>::type>::type>;
 				PrintReturnTypeTrait::print(stream, symbolDeclaration);

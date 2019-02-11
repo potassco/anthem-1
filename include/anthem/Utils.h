@@ -17,9 +17,16 @@ constexpr const auto IntegerVariablePrefix = "N";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr const auto AuxiliaryPredicateNameEven = "p__is_even__";
-constexpr const auto AuxiliaryFunctionNameMapInteger = "f__map_integer__";
-constexpr const auto AuxiliaryFunctionNameUnmapInteger = "f__unmap_integer__";
+constexpr const auto AuxiliaryPredicateNameIsInteger = "p__is_integer__";
+constexpr const auto AuxiliaryPredicateNameLessEqual = "p__less_equal__";
+constexpr const auto AuxiliaryPredicateNameLess = "p__less__";
+constexpr const auto AuxiliaryPredicateNameGreaterEqual = "p__greater_equal__";
+constexpr const auto AuxiliaryPredicateNameGreater = "p__greater__";
+constexpr const auto AuxiliaryFunctionNameInteger = "f__integer__";
+constexpr const auto AuxiliaryFunctionNameSum = "f__sum__";
+constexpr const auto AuxiliaryFunctionNameDifference = "f__difference__";
+constexpr const auto AuxiliaryFunctionNameUnaryMinus = "f__unary_minus__";
+constexpr const auto AuxiliaryFunctionNameProduct = "f__product__";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -65,7 +65,7 @@ struct FormulaMapDomainsVisitor
 
 		And and_;
 
-		const auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
+		const auto auxiliaryPredicateDeclarationIsInteger = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameIsInteger, 1);
 
 		for (auto &variableDeclaration : exists.variables)
 		{
@@ -74,7 +74,7 @@ struct FormulaMapDomainsVisitor
 
 			if (variableDeclaration->domain == Domain::Integer)
 			{
-				auto predicate = Predicate(auxiliaryPredicateDeclarationEven);
+				auto predicate = Predicate(auxiliaryPredicateDeclarationIsInteger);
 				predicate.arguments.reserve(1);
 				predicate.arguments.emplace_back(Variable(variableDeclaration.get()));
 				and_.arguments.emplace_back(std::move(predicate));
@@ -83,21 +83,20 @@ struct FormulaMapDomainsVisitor
 			variableDeclaration->domain = Domain::Integer;
 		}
 
+		and_.arguments.emplace_back(std::move(exists.argument));
+
 		if (and_.arguments.empty())
 			return;
 
 		if (and_.arguments.size() == 1)
 		{
-			Implies implies(std::move(and_.arguments.front()), std::move(exists.argument));
-			exists.argument = std::move(implies);
+			exists.argument = std::move(and_.arguments.front());
 			return;
 		}
 
-		Implies implies(std::move(and_), std::move(exists.argument));
-		exists.argument = std::move(implies);
+		exists.argument = std::move(and_);
 	}
 
-	// TODO: avoid code duplication
 	void visit(ForAll &forAll, Context &context)
 	{
 		mapDomains(forAll.argument, context);
@@ -107,7 +106,7 @@ struct FormulaMapDomainsVisitor
 
 		And and_;
 
-		const auto auxiliaryPredicateDeclarationEven = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameEven, 1);
+		const auto auxiliaryPredicateDeclarationIsInteger = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameIsInteger, 1);
 
 		for (auto &variableDeclaration : forAll.variables)
 		{
@@ -116,7 +115,7 @@ struct FormulaMapDomainsVisitor
 
 			if (variableDeclaration->domain == Domain::Integer)
 			{
-				auto predicate = Predicate(auxiliaryPredicateDeclarationEven);
+				auto predicate = Predicate(auxiliaryPredicateDeclarationIsInteger);
 				predicate.arguments.reserve(1);
 				predicate.arguments.emplace_back(Variable(variableDeclaration.get()));
 				and_.arguments.emplace_back(std::move(predicate));
@@ -173,7 +172,7 @@ struct FormulaMapDomainsVisitor
 
 struct TermMapDomainsVisitor
 {
-	void visit(BinaryOperation &binaryOperation, Term &term, Context &context)
+	void visit(BinaryOperation &binaryOperation, Term &, Context &context)
 	{
 		mapDomains(binaryOperation.left, context);
 		mapDomains(binaryOperation.right, context);
@@ -182,24 +181,10 @@ struct TermMapDomainsVisitor
 		// all integers are already multiplied by 2
 		switch (binaryOperation.operator_)
 		{
-			// Addition and subtraction are not affected by the domain mapping
 			case BinaryOperation::Operator::Plus:
 			case BinaryOperation::Operator::Minus:
-				break;
 			case BinaryOperation::Operator::Multiplication:
-			{
-				auto auxiliaryUnmapIntegerFunctionDeclaration
-					= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameUnmapInteger, 1, context);
-
-				auto multiply = BinaryOperation(BinaryOperation::Operator::Multiplication, std::move(binaryOperation.left), std::move(binaryOperation.right));
-
-				std::vector<Term> arguments;
-				arguments.reserve(1);
-				arguments.emplace_back(std::move(multiply));
-
-				term = Function(auxiliaryUnmapIntegerFunctionDeclaration, std::move(arguments));
-				return;
-			}
+				break;
 			// TODO: implement
 			case BinaryOperation::Operator::Division:
 				throw TranslationException("division not yet supported in domain mapping");
@@ -229,10 +214,10 @@ struct TermMapDomainsVisitor
 		arguments.reserve(1);
 		arguments.emplace_back(std::move(integer));
 
-		auto auxiliaryMapIntegerFunctionDeclaration
-			= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameMapInteger, 1, context);
+		auto auxiliaryFunctionDeclarationInteger
+			= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameInteger, 1, context);
 
-		term = Function(auxiliaryMapIntegerFunctionDeclaration, std::move(arguments));
+		term = Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
 	}
 
 	void visit(Interval &interval, Term &, Context &context)

@@ -115,7 +115,8 @@ struct PrintReturnTypeTrait<ast::FunctionDeclaration>
 		switch (functionDeclaration.domain)
 		{
 			case Domain::Integer:
-				return (stream << output::Keyword("$int"));
+				// TODO: clean up
+				return (stream << output::Keyword("object"));
 			default:
 				throw TranslationException("only functions with integer return type supported with TPTP currently");
 		}
@@ -128,6 +129,13 @@ const auto printTypeAnnotation =
 	[](const auto &symbolDeclaration, Context &context, output::PrintContext &printContext)
 	{
 		auto &stream = context.logger.outputStream();
+
+		// TODO: clean up
+		if (strcmp(symbolDeclaration.name.c_str(), AuxiliaryFunctionNameInteger) == 0
+		    || strcmp(symbolDeclaration.name.c_str(), AuxiliaryPredicateNameIsInteger) == 0)
+		{
+			return;
+		}
 
 		switch (context.outputFormat)
 		{
@@ -165,7 +173,7 @@ const auto printTypeAnnotation =
 					// For TPTP, all program variable values are mapped to odd integer numbers, while integer
 					// values n are mapped to 2 * n. This trick is necessary to translate variables that can take
 					// values of both program and integer variables
-					stream << output::Keyword("$int");
+					stream << output::Keyword("object");
 				}
 
 				stream << ") > ";
@@ -309,7 +317,7 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 					{
 						if (scopedFormula.freeVariables.empty())
 							return std::move(scopedFormula.formula);
-					
+
 						return ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
 					};
 
@@ -362,6 +370,17 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 		for (auto &finalFormula : finalFormulas)
 			mapDomains(finalFormula, context);
 
+	// Print auxiliary definitions for mapping program and integer variables to even and odd integers
+	if (context.outputFormat == OutputFormat::TPTP)
+	{
+		stream
+			<< R"(%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  types
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+tff(types, type, object: $tType).
+)";
+	}
+
 	// Print type annotations for predicate signatures
 	for (const auto &predicateDeclaration : context.predicateDeclarations)
 		printTypeAnnotation(*predicateDeclaration, context, printContext);
@@ -370,49 +389,58 @@ void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 	for (const auto &functionDeclaration : context.functionDeclarations)
 		printTypeAnnotation(*functionDeclaration, context, printContext);
 
-	// Print auxiliary definitions for mapping program and integer variables to even and odd integers
 	if (context.outputFormat == OutputFormat::TPTP)
 	{
 		stream
-			<< std::endl
+			<< R"(
+tff(types, type, (f__integer__: ($int) > object)).
+tff(types, type, (f__symbolic__: ($i) > object)).
 
-			<< output::Keyword("tff")
-			<< "(" << output::Function("is_even")
-			<< ", " << output::Keyword("axiom")
-			<< ", (" << output::Operator("!") << "["
-			<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-			<< output::Reserved(AuxiliaryPredicateNameEven) << "(" << output::Variable("X") << ") <=> ("
-			<< output::Operator("?") << "["
-			<< output::Variable("Y") << ": " << output::Keyword("$int") << "]: ("
-			<< output::Variable("X") << " = " << output::Keyword("$product") << "("
-			<< output::Number<int>(2) << ", " << output::Variable("Y") << "))"
-			<< "))))." << std::endl;
+tff(types, type, (f__sum__: (object * object) > object)).
+tff(types, type, (f__unary_minus__: (object) > object)).
+tff(types, type, (f__difference__: (object * object) > object)).
+tff(types, type, (f__product__: (object * object) > object)).
 
-		if (context.findFunctionDeclaration(AuxiliaryFunctionNameMapInteger, 1))
-			stream
-				<< output::Keyword("tff")
-				<< "(" << output::Function("map_integer")
-				<< ", " << output::Keyword("axiom")
-				<< ", (" << output::Operator("!") << "["
-				<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-				<< output::Reserved(AuxiliaryFunctionNameMapInteger) << "(" << output::Variable("X") << ")"
-				<< " = " << output::Keyword("$product") << "("
-				<< output::Number<int>(2) << ", " << output::Variable("X") << ")"
-				<< ")))." << std::endl;
+tff(types, type, (p__is_integer__: (object) > $o)).
+tff(types, type, (p__less_equal__: (object * object) > $o)).
+tff(types, type, (p__less__: (object * object) > $o)).
+tff(types, type, (p__greater_equal__: (object * object) > $o)).
+tff(types, type, (p__greater__: (object * object) > $o)).
 
-		if (context.findFunctionDeclaration(AuxiliaryFunctionNameUnmapInteger, 1))
-			stream
-				<< output::Keyword("tff")
-				<< "(" << output::Function("unmap_integer")
-				<< ", " << output::Keyword("axiom")
-				<< ", (" << output::Operator("!") << "["
-				<< output::Variable("X") << ": " << output::Keyword("$int") << "]: ("
-				<< output::Reserved(AuxiliaryFunctionNameUnmapInteger) << "("
-				<< output::Reserved(AuxiliaryFunctionNameMapInteger) << "(" << output::Variable("X") << "))"
-				<< " = " << output::Variable("X") << ")"
-				<< "))." << std::endl;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  objects: integers vs. symbolics
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+tff(type_check, axiom, (![X: object]: (p__is_integer__(X) <=> (?[Y: $int]: (X = f__integer__(Y)))))).
+tff(type_check, axiom, (![X: object]: ((?[Y: $int]: X = f__integer__(Y)) | (?[Y: $i]: X = f__symbolic__(Y))))).
 
-		stream << std::endl;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  integer operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+tff(operations, axiom, (![X1: $int, X2: $int]: (f__sum__(f__integer__(X1), f__integer__(X2)) = f__integer__($sum(X1, X2))))).
+tff(operations, axiom, (![X: $int]: (f__unary_minus__(f__integer__(X)) = f__integer__($uminus(X))))).
+tff(operations, axiom, (![X1: $int, X2: $int]: (f__difference__(f__integer__(X1), f__integer__(X2)) = f__integer__($difference(X1, X2))))).
+tff(operations, axiom, (![X1: $int, X2: $int]: (f__product__(f__integer__(X1), f__integer__(X2)) = f__integer__($product(X1, X2))))).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  object comparisons
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+tff(less_equal, axiom, (![X1: $int, X2: $int]: (p__less_equal__(f__integer__(X1), f__integer__(X2)) <=> $lesseq(X1, X2)))).
+tff(less_equal, axiom, (![X1: $i, X2: $int]: ~p__less_equal__(f__symbolic__(X1), f__integer__(X2)))).
+tff(less_equal, axiom, (![X1: $int, X2: $i]: p__less_equal__(f__integer__(X1), f__symbolic__(X2)))).
+
+tff(less, axiom, (![X1: $int, X2: $int]: (p__less__(f__integer__(X1), f__integer__(X2)) <=> $less(X1, X2)))).
+tff(less, axiom, (![X1: $i, X2: $int]: ~p__less__(f__symbolic__(X1), f__integer__(X2)))).
+tff(less, axiom, (![X1: $int, X2: $i]: p__less__(f__integer__(X1), f__symbolic__(X2)))).
+
+tff(greater_equal, axiom, (![X1: $int, X2: $int]: (p__greater_equal__(f__integer__(X1), f__integer__(X2)) <=> $greatereq(X1, X2)))).
+tff(greater_equal, axiom, (![X1: $i, X2: $int]: p__greater_equal__(f__symbolic__(X1), f__integer__(X2)))).
+tff(greater_equal, axiom, (![X1: $int, X2: $i]: ~p__greater_equal__(f__integer__(X1), f__symbolic__(X2)))).
+
+tff(greater, axiom, (![X1: $int, X2: $int]: (p__greater__(f__integer__(X1), f__integer__(X2)) <=> $greater(X1, X2)))).
+tff(greater, axiom, (![X1: $i, X2: $int]: p__greater__(f__symbolic__(X1), f__integer__(X2)))).
+tff(greater, axiom, (![X1: $int, X2: $i]: ~p__greater__(f__integer__(X1), f__symbolic__(X2)))).
+)"
+			<< std::endl;
 	}
 
 	if (scopedFormulasB)

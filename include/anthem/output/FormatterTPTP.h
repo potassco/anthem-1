@@ -32,15 +32,15 @@ struct FormatterTPTP
 		switch (operator_)
 		{
 			case ast::BinaryOperation::Operator::Plus:
-				return (stream << output::Keyword("$sum"));
+				return (stream << output::Keyword(AuxiliaryFunctionNameSum));
 			case ast::BinaryOperation::Operator::Minus:
-				return (stream << output::Keyword("$difference"));
+				return (stream << output::Keyword(AuxiliaryFunctionNameDifference));
 			case ast::BinaryOperation::Operator::Multiplication:
-				return (stream << output::Keyword("$product"));
+				return (stream << output::Keyword(AuxiliaryFunctionNameProduct));
 			case ast::BinaryOperation::Operator::Division:
-				return (stream << output::Keyword("$quotient_e"));
+				throw TranslationException("division operator not implemented with TPTP");
 			case ast::BinaryOperation::Operator::Modulo:
-				return (stream << output::Keyword("$remainder_e"));
+				throw TranslationException("modulo operator not implemented with TPTP");
 			case ast::BinaryOperation::Operator::Power:
 				throw TranslationException("power operator not implemented with TPTP");
 		}
@@ -88,17 +88,18 @@ struct FormatterTPTP
 
 		switch (comparison.operator_)
 		{
+			// TODO: rename and reorder for consistency
 			case ast::Comparison::Operator::GreaterThan:
-				stream << output::Keyword("$greater");
+				stream << output::Keyword(AuxiliaryPredicateNameGreater);
 				break;
 			case ast::Comparison::Operator::LessThan:
-				stream << output::Keyword("$less");
+				stream << output::Keyword(AuxiliaryPredicateNameLess);
 				break;
 			case ast::Comparison::Operator::LessEqual:
-				stream << output::Keyword("$lesseq");
+				stream << output::Keyword(AuxiliaryPredicateNameLessEqual);
 				break;
 			case ast::Comparison::Operator::GreaterEqual:
-				stream << output::Keyword("$greatereq");
+				stream << output::Keyword(AuxiliaryPredicateNameGreaterEqual);
 				break;
 			default:
 				throw TranslationException("equality operators require infix notation, please report this to the bug tracker");
@@ -306,7 +307,7 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-			stream << ": " << output::Keyword("$int");
+			stream << ": " << output::Keyword("object");
 		}
 
 		stream << "]: ";
@@ -328,7 +329,7 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-			stream << ": " << output::Keyword("$int");
+			stream << ": " << output::Keyword("object");
 		}
 
 		stream << "]: ";

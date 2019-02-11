@@ -23,6 +23,7 @@ constexpr const auto AuxiliaryPredicateNameLess = "p__less__";
 constexpr const auto AuxiliaryPredicateNameGreaterEqual = "p__greater_equal__";
 constexpr const auto AuxiliaryPredicateNameGreater = "p__greater__";
 constexpr const auto AuxiliaryFunctionNameInteger = "f__integer__";
+constexpr const auto AuxiliaryFunctionNameSymbolic = "f__symbolic__";
 constexpr const auto AuxiliaryFunctionNameSum = "f__sum__";
 constexpr const auto AuxiliaryFunctionNameDifference = "f__difference__";
 constexpr const auto AuxiliaryFunctionNameUnaryMinus = "f__unary_minus__";

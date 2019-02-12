@@ -421,6 +421,8 @@ tff(types, type, (p__greater__: (object * object) > $o)).
 tff(type_check, axiom, (![X: object]: (p__is_integer__(X) <=> (?[Y: $int]: (X = f__integer__(Y)))))).
 tff(type_check, axiom, (![X: object]: ((?[Y: $int]: X = f__integer__(Y)) | (?[Y: $i]: X = f__symbolic__(Y))))).
 tff(type_check, axiom, (![X: object]: ~((?[Y: $int]: X = f__integer__(Y)) & (?[Y: $i]: X = f__symbolic__(Y))))).
+tff(type_check, axiom, (![X: $int, Y: $int]: (X != Y => (f__integer__(X) != f__integer__(Y))))).
+tff(type_check, axiom, (![X: $i, Y: $i]: (X != Y => (f__symbolic__(X) != f__symbolic__(Y))))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  integer operations

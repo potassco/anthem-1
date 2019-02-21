@@ -410,6 +410,7 @@ tff(types, type, (f__difference__: (object * object) > object)).
 tff(types, type, (f__product__: (object * object) > object)).
 
 tff(types, type, (p__is_integer__: (object) > $o)).
+tff(types, type, (p__is_symbolic__: (object) > $o)).
 tff(types, type, (p__less_equal__: (object * object) > $o)).
 tff(types, type, (p__less__: (object * object) > $o)).
 tff(types, type, (p__greater_equal__: (object * object) > $o)).
@@ -419,7 +420,8 @@ tff(types, type, (p__greater__: (object * object) > $o)).
 %  objects: integers vs. symbolics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tff(type_check, axiom, (![X: object]: (p__is_integer__(X) <=> (?[Y: $int]: (X = f__integer__(Y)))))).
-tff(type_check, axiom, (![X: object]: ((?[Y: $int]: X = f__integer__(Y)) | (?[Y: $i]: X = f__symbolic__(Y))))).
+tff(type_check, axiom, (![X: object]: (p__is_symbolic__(X) <=> (?[Y: $i]: (X = f__symbolic__(Y)))))).
+tff(type_check, axiom, (![X: object]: (p__is_integer__(X) <~> p__is_symbolic__(X)))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  integer operations

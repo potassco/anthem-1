@@ -201,7 +201,7 @@ struct FormatterTPTP
 			case ast::UnaryOperation::Operator::Absolute:
 				throw TranslationException("absolute value not implemented with TPTP");
 			case ast::UnaryOperation::Operator::Minus:
-				stream << output::Keyword("$uminus") << "(";
+				stream << output::Keyword(AuxiliaryFunctionNameUnaryMinus) << "(";
 				break;
 		}
 

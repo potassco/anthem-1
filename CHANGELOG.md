@@ -1,6 +1,18 @@
 # Change Log
 
-## (unreleased)
+## 0.2.0 RC 4 (2019-02-12)
+
+### Changes
+
+* new translation mode for proving strong equivalence via logic of here-and-there (`--mode=here-and-there`, enabled by default)
+* former completion-oriented translation scheme now available with `--mode=completion`
+
+### Features
+
+* new TPTP output format for usage with theorem provers (`--output-format=tptp`, while `--output-format=human-readable` is the default)
+* full support for both integer and symbolic values with additional transformation for TPTP output
+* new option to enforce this transformation in the human-readable output format as well (`--map-to-integers=always`, while the default, `--map-to-integers=auto`, only applies the mapping for TPTP output)
+* information note if the input program is definite or not
 
 ### Bug Fixes
 

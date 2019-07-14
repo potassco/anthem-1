@@ -13,5 +13,5 @@ fi
 git submodule update --init --recursive
 mkdir -p build/debug
 cd build/debug
-cmake ../.. -GNinja -DANTHEM_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${cxx} -DCMAKE_C_COMPILER=${cc}
+cmake ../.. -GNinja -DCMAKE_BUILD_TYPE=Debug -DANTHEM_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${cxx} -DCMAKE_C_COMPILER=${cc}
 ninja anthem-app && ninja run-tests

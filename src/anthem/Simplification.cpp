@@ -6,7 +6,6 @@
 #include <anthem/Equality.h>
 #include <anthem/SimplificationVisitors.h>
 #include <anthem/Type.h>
-#include <anthem/output/AST.h>
 
 namespace anthem
 {

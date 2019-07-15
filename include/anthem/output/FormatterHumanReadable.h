@@ -7,7 +7,6 @@
 #include <anthem/Utils.h>
 #include <anthem/output/ColorStream.h>
 #include <anthem/output/Formatter.h>
-#include <anthem/output/Formatting.h>
 
 namespace anthem
 {

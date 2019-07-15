@@ -1,6 +1,5 @@
 #include <anthem/output/Logger.h>
 
-#include <anthem/output/Formatting.h>
 #include <anthem/output/NullStream.h>
 
 namespace anthem

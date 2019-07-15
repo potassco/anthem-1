@@ -43,7 +43,7 @@ template<class Formatter, typename Type>
 output::ColorStream &print(output::ColorStream &stream, const Type &value, PrintContext &printContext, bool omitParentheses = false)
 {
 	return Formatter::print(stream, value, printContext, omitParentheses);
-};
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include <anthem/AST.h>
+#include <anthem/Exception.h>
 
 namespace anthem
 {
@@ -32,7 +33,7 @@ ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOp
 			return ast::Comparison::Operator::Equal;
 	}
 
-	return ast::Comparison::Operator::NotEqual;
+	throw TranslationException("unknown comparison operator, please report to bug tracker");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

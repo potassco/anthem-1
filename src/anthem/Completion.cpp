@@ -87,6 +87,7 @@ ast::Formula buildCompletedFormulaDisjunction(const ast::Predicate &predicate, c
 		}
 	}
 
+	// This std::move is not actually necessary but a workaround for a bug in gcc 7
 	return std::move(or_);
 }
 
@@ -158,6 +159,7 @@ ast::Formula completeIntegrityConstraint(ast::ScopedFormula &scopedFormula)
 	auto &freeVariables = scopedFormula.freeVariables;
 
 	if (freeVariables.empty())
+		// This std::move is not actually necessary but a workaround for a bug in gcc 7
 		return std::move(argument);
 
 	return ast::ForAll(std::move(freeVariables), std::move(argument));

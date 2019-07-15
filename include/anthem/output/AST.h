@@ -42,7 +42,7 @@ struct PrintContext
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-output::ColorStream &print(output::ColorStream &stream, const BinaryOperation::Operator operator_, PrintContext &printContext, bool omitParentheses = false);
+output::ColorStream &print(output::ColorStream &stream, BinaryOperation::Operator operator_, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const Boolean &boolean, PrintContext &printContext, bool omitParentheses = false);
 output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext, bool omitParentheses = false);

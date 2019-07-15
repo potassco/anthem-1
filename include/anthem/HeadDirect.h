@@ -60,6 +60,7 @@ ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoic
 			or_.arguments.emplace_back(makePredicate());
 			or_.arguments.emplace_back(ast::Not(makePredicate()));
 
+			// This std::move is not actually necessary but a workaround for a bug in gcc 7
 			return std::move(or_);
 		};
 

@@ -22,7 +22,7 @@ class ColorStream
 		{
 			Never,
 			Auto,
-			Always
+			Always,
 		};
 
 	private:

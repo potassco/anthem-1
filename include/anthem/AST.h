@@ -34,7 +34,7 @@ struct BinaryOperation
 		Multiplication,
 		Division,
 		Modulo,
-		Power
+		Power,
 	};
 
 	explicit BinaryOperation(Operator operator_, Term &&left, Term &&right)
@@ -82,7 +82,7 @@ struct Comparison
 		LessEqual,
 		GreaterEqual,
 		NotEqual,
-		Equal
+		Equal,
 	};
 
 	explicit Comparison(Operator operator_, Term &&left, Term &&right)
@@ -251,7 +251,7 @@ struct PredicateDeclaration
 	{
 		Default,
 		Visible,
-		Hidden
+		Hidden,
 	};
 
 	struct Parameter
@@ -289,7 +289,7 @@ struct SpecialInteger
 	enum class Type
 	{
 		Infimum,
-		Supremum
+		Supremum,
 	};
 
 	explicit SpecialInteger(Type type)
@@ -329,7 +329,7 @@ struct UnaryOperation
 	enum class Operator
 	{
 		Absolute,
-		Minus
+		Minus,
 	};
 
 	explicit UnaryOperation(Operator operator_, Term &&argument)
@@ -372,7 +372,7 @@ struct VariableDeclaration
 	{
 		UserDefined,
 		Head,
-		Body
+		Body,
 	};
 
 	explicit VariableDeclaration(Type type)

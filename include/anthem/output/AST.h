@@ -99,7 +99,7 @@ inline output::ColorStream &print(output::ColorStream &stream, BinaryOperation::
 
 inline output::ColorStream &print(output::ColorStream &stream, const BinaryOperation &binaryOperation, PrintContext &printContext, bool omitParentheses)
 {
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	print(stream, binaryOperation.left, printContext);
@@ -108,7 +108,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const BinaryOpera
 	stream << " ";
 	print(stream, binaryOperation.right, printContext);
 
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -151,7 +151,7 @@ inline output::ColorStream &print(output::ColorStream &stream, Comparison::Opera
 
 inline output::ColorStream &print(output::ColorStream &stream, const Comparison &comparison, PrintContext &printContext, bool)
 {
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	print(stream, comparison.left, printContext);
@@ -160,7 +160,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Comparison 
 	stream << " ";
 	print(stream, comparison.right, printContext);
 
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -197,14 +197,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const Function &f
 
 inline output::ColorStream &print(output::ColorStream &stream, const In &in, PrintContext &printContext, bool)
 {
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	print(stream, in.element, printContext);
 	stream << " " << output::Keyword("in") << " ";
 	print(stream, in.set, printContext);
 
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -221,14 +221,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const Integer &in
 
 inline output::ColorStream &print(output::ColorStream &stream, const Interval &interval, PrintContext &printContext, bool omitParentheses)
 {
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	print(stream, interval.from, printContext);
 	stream << "..";
 	print(stream, interval.to, printContext);
 
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -367,7 +367,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const VariableDec
 
 inline output::ColorStream &print(output::ColorStream &stream, const And &and_, PrintContext &printContext, bool omitParentheses)
 {
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	for (auto i = and_.arguments.cbegin(); i != and_.arguments.cend(); i++)
@@ -378,7 +378,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const And &and_, 
 		print(stream, *i, printContext);
 	}
 
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -388,14 +388,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const And &and_, 
 
 inline output::ColorStream &print(output::ColorStream &stream, const Biconditional &biconditional, PrintContext &printContext, bool omitParentheses)
 {
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	print(stream, biconditional.left, printContext);
 	stream << " <-> ";
 	print(stream, biconditional.right, printContext);
 
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -405,7 +405,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Bicondition
 
 inline output::ColorStream &print(output::ColorStream &stream, const Exists &exists, PrintContext &printContext, bool)
 {
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	stream << output::Keyword("exists") << " ";
@@ -421,7 +421,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Exists &exi
 	stream << " ";
 	print(stream, exists.argument, printContext);
 
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -431,7 +431,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Exists &exi
 
 inline output::ColorStream &print(output::ColorStream &stream, const ForAll &forAll, PrintContext &printContext, bool)
 {
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	stream << output::Keyword("forall") << " ";
@@ -447,7 +447,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const ForAll &for
 	stream << " ";
 	print(stream, forAll.argument, printContext);
 
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -457,14 +457,14 @@ inline output::ColorStream &print(output::ColorStream &stream, const ForAll &for
 
 inline output::ColorStream &print(output::ColorStream &stream, const Implies &implies, PrintContext &printContext, bool omitParentheses)
 {
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	print(stream, implies.antecedent, printContext);
 	stream << " -> ";
 	print(stream, implies.consequent, printContext);
 
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -474,13 +474,13 @@ inline output::ColorStream &print(output::ColorStream &stream, const Implies &im
 
 inline output::ColorStream &print(output::ColorStream &stream, const Not &not_, PrintContext &printContext, bool)
 {
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	stream << output::Keyword("not") << " ";
 	print(stream, not_.argument, printContext);
 
-	if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;
@@ -490,7 +490,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Not &not_, 
 
 inline output::ColorStream &print(output::ColorStream &stream, const Or &or_, PrintContext &printContext, bool omitParentheses)
 {
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << "(";
 
 	for (auto i = or_.arguments.cbegin(); i != or_.arguments.cend(); i++)
@@ -501,7 +501,7 @@ inline output::ColorStream &print(output::ColorStream &stream, const Or &or_, Pr
 		print(stream, *i, printContext);
 	}
 
-	if (!omitParentheses || printContext.context.parenthesisStyle == ParenthesisStyle::Full)
+	if (!omitParentheses || printContext.context.parenthesisStyle == output::ParenthesisStyle::Full)
 		stream << ")";
 
 	return stream;

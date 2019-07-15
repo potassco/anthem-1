@@ -89,7 +89,7 @@ struct Function
 	Function(const char *name)
 	:	name{name}
 	{
-	};
+	}
 
 	const char *name;
 };
@@ -108,7 +108,7 @@ struct Keyword
 	Keyword(const char *name)
 	:	name{name}
 	{
-	};
+	}
 
 	const char *name;
 };
@@ -130,7 +130,7 @@ struct Operator
 	Operator(const char *name)
 	:	name{name}
 	{
-	};
+	}
 
 	const char *name;
 };
@@ -150,7 +150,7 @@ struct Number
 	Number(T value)
 	:	value{value}
 	{
-	};
+	}
 
 	T value;
 };
@@ -173,7 +173,7 @@ struct Variable
 	Variable(const char *name)
 	:	name{name}
 	{
-	};
+	}
 
 	const char *name;
 };
@@ -195,7 +195,7 @@ struct String
 	String(const char *content)
 	:	content{content}
 	{
-	};
+	}
 
 	const char *content;
 };
@@ -217,7 +217,7 @@ struct Boolean
 	Boolean(const char *value)
 	:	value{value}
 	{
-	};
+	}
 
 	const char *value;
 };
@@ -239,7 +239,7 @@ struct Reserved
 	Reserved(const char *name)
 	:	name{name}
 	{
-	};
+	}
 
 	const char *name;
 };
@@ -261,7 +261,7 @@ struct Heading1
 	Heading1(const char *content)
 	:	content{content}
 	{
-	};
+	}
 
 	const char *content;
 };
@@ -286,7 +286,7 @@ struct Heading2
 	Heading2(const char *content)
 	:	content{content}
 	{
-	};
+	}
 
 	const char *content;
 };

@@ -15,8 +15,8 @@ int main(int argc, char **argv)
 	options.add_options()
 		("h,help", "Display this help message")
 		("v,version", "Display version information")
-		("i,input", "Input files (one file for plain translation, two files for proving equivalence)", cxxopts::value<std::vector<std::string>>())
-		("target", "Translation target (prove-strong-equivalence, examine-semantics)", cxxopts::value<std::string>()->default_value("prove-strong-equivalence"))
+		("i,input", "Input files (one file for plain translation, two files for verifying strong equivalence)", cxxopts::value<std::vector<std::string>>())
+		("target", "Translation target (verify-strong-equivalence, examine-semantics)", cxxopts::value<std::string>()->default_value("verify-strong-equivalence"))
 		("output-format", "Output format (human-readable, tptp)", cxxopts::value<std::string>()->default_value("human-readable"))
 		("map-to-integers", "Map all variable sorts to integers (always, auto)", cxxopts::value<std::string>()->default_value("auto"))
 		("no-simplify", "Do not simplify the output (only for examine-semantics translation target)")
@@ -86,8 +86,8 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	if (translationTargetString == "prove-strong-equivalence")
-		context.translationTarget = anthem::TranslationTarget::ProveStrongEquivalence;
+	if (translationTargetString == "verify-strong-equivalence")
+		context.translationTarget = anthem::TranslationTarget::VerifyStrongEquivalence;
 	else if (translationTargetString == "examine-semantics")
 		context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	else

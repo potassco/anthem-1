@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__PROVE_STRONG_EQUIVALENCE__BODY_H
-#define __ANTHEM__PROVE_STRONG_EQUIVALENCE__BODY_H
+#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__BODY_H
+#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__BODY_H
 
 #include <algorithm>
 
@@ -7,11 +7,11 @@
 #include <anthem/ComparisonOperator.h>
 #include <anthem/Term.h>
 #include <anthem/Utils.h>
-#include <anthem/prove-strong-equivalence/ChooseValueInTerm.h>
+#include <anthem/verify-strong-equivalence/ChooseValueInTerm.h>
 
 namespace anthem
 {
-namespace proveStrongEquivalence
+namespace verifyStrongEquivalence
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

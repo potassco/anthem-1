@@ -91,7 +91,7 @@ struct Context
 
 	output::Logger logger;
 
-	TranslationTarget translationTarget{TranslationTarget::ProveStrongEquivalence};
+	TranslationTarget translationTarget{TranslationTarget::VerifyStrongEquivalence};
 	OutputFormat outputFormat{OutputFormat::HumanReadable};
 
 	bool performSimplification{false};

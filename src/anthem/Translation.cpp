@@ -295,7 +295,7 @@ void translateForExaminingSemantics(std::vector<ast::ScopedFormula> &&scopedForm
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateForProvingStrongEquivalence(std::vector<ast::ScopedFormula> &&scopedFormulasA,
+void translateForVerifyingStrongEquivalence(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 	std::optional<std::vector<ast::ScopedFormula>> &&scopedFormulasB, Context &context)
 {
 	output::PrintContext printContext(context);
@@ -531,17 +531,17 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 			translateForExaminingSemantics(std::move(scopedFormulas), context);
 			break;
 		}
-		case TranslationTarget::ProveStrongEquivalence:
+		case TranslationTarget::VerifyStrongEquivalence:
 		{
 			if (fileNames.size() > 2)
-				throw TranslationException("only one or two files may me translated at a time when proving strong equivalence");
+				throw TranslationException("only one or two files may me translated at a time when verifying strong equivalence");
 
 			auto scopedFormulasA = translateSingleFile(fileNames.front());
 			auto scopedFormulasB = (fileNames.size() > 1)
 				? std::optional<std::vector<ast::ScopedFormula>>(translateSingleFile(fileNames[1]))
 				: std::nullopt;
 
-			translateForProvingStrongEquivalence(std::move(scopedFormulasA), std::move(scopedFormulasB), context);
+			translateForVerifyingStrongEquivalence(std::move(scopedFormulasA), std::move(scopedFormulasB), context);
 			break;
 		}
 	};
@@ -560,9 +560,9 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 			translateForExaminingSemantics(std::move(scopedFormulas), context);
 			break;
 		}
-		case TranslationTarget::ProveStrongEquivalence:
+		case TranslationTarget::VerifyStrongEquivalence:
 		{
-			translateForProvingStrongEquivalence(std::move(scopedFormulas), std::nullopt, context);
+			translateForVerifyingStrongEquivalence(std::move(scopedFormulas), std::nullopt, context);
 			break;
 		}
 	};

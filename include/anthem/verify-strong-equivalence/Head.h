@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__PROVE_STRONG_EQUIVALENCE__HEAD_H
-#define __ANTHEM__PROVE_STRONG_EQUIVALENCE__HEAD_H
+#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__HEAD_H
+#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__HEAD_H
 
 #include <algorithm>
 #include <optional>
@@ -9,11 +9,11 @@
 #include <anthem/Exception.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Utils.h>
-#include <anthem/prove-strong-equivalence/ChooseValueInTerm.h>
+#include <anthem/verify-strong-equivalence/ChooseValueInTerm.h>
 
 namespace anthem
 {
-namespace proveStrongEquivalence
+namespace verifyStrongEquivalence
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -12,8 +12,8 @@ namespace anthem
 
 enum class TranslationTarget
 {
-	ProveStrongEquivalence,
 	ExamineSemantics,
+	VerifyStrongEquivalence,
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -8,8 +8,8 @@
 #include <anthem/Utils.h>
 #include <anthem/examine-semantics/Body.h>
 #include <anthem/examine-semantics/Head.h>
-#include <anthem/prove-strong-equivalence/Body.h>
-#include <anthem/prove-strong-equivalence/Head.h>
+#include <anthem/verify-strong-equivalence/Body.h>
+#include <anthem/verify-strong-equivalence/Head.h>
 
 namespace anthem
 {
@@ -37,14 +37,14 @@ inline void reduce(ast::Implies &implies)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateRuleForProvingStrongEquivalence(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+void translateRuleForVerifyingStrongEquivalence(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	RuleContext ruleContext;
 	ast::VariableStack variableStack;
 	variableStack.push(&ruleContext.freeVariables);
 
 	// Translate the head
-	auto consequent = rule.head.data.accept(proveStrongEquivalence::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
+	auto consequent = rule.head.data.accept(verifyStrongEquivalence::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
 
 	ast::And antecedent;
 
@@ -53,7 +53,7 @@ void translateRuleForProvingStrongEquivalence(const Clingo::AST::Rule &rule, con
 	{
 		const auto &bodyLiteral = *i;
 
-		auto argument = bodyLiteral.data.accept(proveStrongEquivalence::BodyBodyLiteralTranslateVisitor(), bodyLiteral, context, ruleContext, variableStack);
+		auto argument = bodyLiteral.data.accept(verifyStrongEquivalence::BodyBodyLiteralTranslateVisitor(), bodyLiteral, context, ruleContext, variableStack);
 		antecedent.arguments.emplace_back(std::move(argument));
 	}
 
@@ -192,8 +192,8 @@ struct StatementVisitor
 
 		switch (context.translationTarget)
 		{
-			case TranslationTarget::ProveStrongEquivalence:
-				translateRuleForProvingStrongEquivalence(rule, statement, scopedFormulas, context);
+			case TranslationTarget::VerifyStrongEquivalence:
+				translateRuleForVerifyingStrongEquivalence(rule, statement, scopedFormulas, context);
 				break;
 			case TranslationTarget::ExamineSemantics:
 				translateRuleForExaminingSemantics(rule, statement, scopedFormulas, context);

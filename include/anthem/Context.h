@@ -5,9 +5,9 @@
 
 #include <anthem/AST.h>
 #include <anthem/MapToIntegersPolicy.h>
+#include <anthem/OutputFormat.h>
 #include <anthem/Semantics.h>
 #include <anthem/TranslationMode.h>
-#include <anthem/OutputFormat.h>
 #include <anthem/output/Logger.h>
 #include <anthem/output/ParenthesisStyle.h>
 

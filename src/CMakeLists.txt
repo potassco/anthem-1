@@ -9,6 +9,9 @@ file(GLOB examine_semantics_headers "../include/anthem/examine-semantics/*.h")
 file(GLOB output_sources "anthem/output/*.cpp")
 file(GLOB output_headers "../include/anthem/output/*.h")
 
+file(GLOB translation_common_sources "anthem/translation-common/*.cpp")
+file(GLOB translation_common_headers "../include/anthem/translation-common/*.h")
+
 file(GLOB verify_strong_equivalence_sources "anthem/verify-strong-equivalence/*.cpp")
 file(GLOB verify_strong_equivalence_headers "../include/anthem/verify-strong-equivalence/*.h")
 

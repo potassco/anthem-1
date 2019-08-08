@@ -4,7 +4,7 @@
 #include <algorithm>
 
 #include <anthem/AST.h>
-#include <anthem/Rule.h>
+#include <anthem/translation-common/Rule.h>
 
 namespace anthem
 {
@@ -40,7 +40,7 @@ void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, st
 	ast::Implies formula(std::move(antecedent), std::move(consequent));
 	ast::ScopedFormula scopedFormula(std::move(formula), std::move(ruleContext.freeVariables));
 	scopedFormulas.emplace_back(std::move(scopedFormula));
-	normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());
+	translationCommon::normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

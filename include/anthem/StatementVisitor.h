@@ -3,7 +3,6 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTCopy.h>
-#include <anthem/Rule.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Term.h>
 #include <anthem/Utils.h>

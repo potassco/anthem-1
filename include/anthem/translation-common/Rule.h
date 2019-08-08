@@ -1,9 +1,11 @@
-#ifndef __ANTHEM__RULE_H
-#define __ANTHEM__RULE_H
+#ifndef __ANTHEM__TRANSLATION_COMMON__RULE_H
+#define __ANTHEM__TRANSLATION_COMMON__RULE_H
 
 #include <anthem/AST.h>
 
 namespace anthem
+{
+namespace translationCommon
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,6 +31,7 @@ inline void normalizeAntecedent(ast::Implies &implies)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

@@ -3,13 +3,13 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTCopy.h>
-#include <anthem/BodyDirect.h>
-#include <anthem/HeadDirect.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Term.h>
 #include <anthem/Utils.h>
 #include <anthem/examine-semantics/Body.h>
 #include <anthem/examine-semantics/Head.h>
+#include <anthem/prove-strong-equivalence/Body.h>
+#include <anthem/prove-strong-equivalence/Head.h>
 
 namespace anthem
 {
@@ -44,7 +44,7 @@ void translateRuleForProvingStrongEquivalence(const Clingo::AST::Rule &rule, con
 	variableStack.push(&ruleContext.freeVariables);
 
 	// Translate the head
-	auto consequent = rule.head.data.accept(direct::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
+	auto consequent = rule.head.data.accept(proveStrongEquivalence::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
 
 	ast::And antecedent;
 
@@ -53,7 +53,7 @@ void translateRuleForProvingStrongEquivalence(const Clingo::AST::Rule &rule, con
 	{
 		const auto &bodyLiteral = *i;
 
-		auto argument = bodyLiteral.data.accept(direct::BodyBodyLiteralTranslateVisitor(), bodyLiteral, context, ruleContext, variableStack);
+		auto argument = bodyLiteral.data.accept(proveStrongEquivalence::BodyBodyLiteralTranslateVisitor(), bodyLiteral, context, ruleContext, variableStack);
 		antecedent.arguments.emplace_back(std::move(argument));
 	}
 

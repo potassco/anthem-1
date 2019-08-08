@@ -1,20 +1,19 @@
-#ifndef __ANTHEM__HEAD_DIRECT_H
-#define __ANTHEM__HEAD_DIRECT_H
+#ifndef __ANTHEM__PROVE_STRONG_EQUIVALENCE__HEAD_H
+#define __ANTHEM__PROVE_STRONG_EQUIVALENCE__HEAD_H
 
 #include <algorithm>
 #include <optional>
 
 #include <anthem/AST.h>
-#include <anthem/ChooseValueInTerm.h>
 #include <anthem/ComparisonOperator.h>
 #include <anthem/Exception.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Utils.h>
-#include <anthem/output/Formatting.h>
+#include <anthem/prove-strong-equivalence/ChooseValueInTerm.h>
 
 namespace anthem
 {
-namespace direct
+namespace proveStrongEquivalence
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,24 +1,22 @@
-#ifndef __ANTHEM__BODY_DIRECT_H
-#define __ANTHEM__BODY_DIRECT_H
+#ifndef __ANTHEM__PROVE_STRONG_EQUIVALENCE__BODY_H
+#define __ANTHEM__PROVE_STRONG_EQUIVALENCE__BODY_H
 
 #include <algorithm>
 
 #include <anthem/AST.h>
-#include <anthem/ChooseValueInTerm.h>
 #include <anthem/ComparisonOperator.h>
 #include <anthem/Term.h>
 #include <anthem/Utils.h>
-// TODO: check necessity
-#include <anthem/output/Formatting.h>
+#include <anthem/prove-strong-equivalence/ChooseValueInTerm.h>
 
 namespace anthem
 {
-namespace direct
+namespace proveStrongEquivalence
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// BodyDirect
+// Body
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

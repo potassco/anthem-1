@@ -5,7 +5,6 @@
 #include <optional>
 
 #include <anthem/AST.h>
-#include <anthem/ComparisonOperator.h>
 #include <anthem/Exception.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Utils.h>

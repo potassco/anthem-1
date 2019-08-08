@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__COMPARISON_OPERATOR_H
-#define __ANTHEM__COMPARISON_OPERATOR_H
+#ifndef __ANTHEM__TRANSLATION_COMMON__COMPARISON_OPERATOR_H
+#define __ANTHEM__TRANSLATION_COMMON__COMPARISON_OPERATOR_H
 
 #include <algorithm>
 
@@ -7,6 +7,8 @@
 #include <anthem/Exception.h>
 
 namespace anthem
+{
+namespace translationCommon
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,6 +40,7 @@ ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOp
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

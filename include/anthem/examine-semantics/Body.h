@@ -4,8 +4,8 @@
 #include <algorithm>
 
 #include <anthem/AST.h>
-#include <anthem/ComparisonOperator.h>
 #include <anthem/Utils.h>
+#include <anthem/translation-common/ComparisonOperator.h>
 #include <anthem/translation-common/Term.h>
 
 namespace anthem
@@ -106,7 +106,7 @@ struct BodyLiteralTranslateVisitor
 		if (literal.sign != Clingo::AST::Sign::None)
 			throw TranslationException(literal.location, "negated comparisons currently unsupported");
 
-		const auto operator_ = translate(comparison.comparison);
+		const auto operator_ = translationCommon::translate(comparison.comparison);
 
 		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(2);

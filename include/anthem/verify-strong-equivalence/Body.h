@@ -4,8 +4,8 @@
 #include <algorithm>
 
 #include <anthem/AST.h>
-#include <anthem/ComparisonOperator.h>
 #include <anthem/Utils.h>
+#include <anthem/translation-common/ComparisonOperator.h>
 #include <anthem/translation-common/Term.h>
 #include <anthem/verify-strong-equivalence/ChooseValueInTerm.h>
 
@@ -131,7 +131,7 @@ struct BodyLiteralTranslateVisitor
 		auto chooseZ2InT2 = chooseValueInTerm(comparison.right, *parameterZ2, context, ruleContext, variableStack);
 		and_.arguments.emplace_back(std::move(chooseZ2InT2));
 
-		const auto operator_ = translate(comparison.comparison);
+		const auto operator_ = translationCommon::translate(comparison.comparison);
 		auto compareZ1AndZ2 = ast::Comparison(operator_, ast::Variable(parameterZ1.get()), ast::Variable(parameterZ2.get()));
 		and_.arguments.emplace_back(std::move(compareZ1AndZ2));
 

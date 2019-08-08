@@ -1,18 +1,27 @@
-#ifndef __ANTHEM__EVALUATION_H
-#define __ANTHEM__EVALUATION_H
+#ifndef __ANTHEM__EXAMINE_SEMANTICS__EVALUATION_H
+#define __ANTHEM__EXAMINE_SEMANTICS__EVALUATION_H
 
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/Exception.h>
 #include <anthem/Utils.h>
+#include <anthem/examine-semantics/Type.h>
+#include <anthem/examine-semantics/Utils.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Evaluation
 //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template <class VariableDomainAccessor, class... Arguments>
+EvaluationResult evaluate(const ast::Formula &, Arguments &&...);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class VariableDomainAccessor = DefaultVariableDomainAccessor>
@@ -26,7 +35,7 @@ struct EvaluateFormulaVisitor
 
 		for (const auto &argument : and_.arguments)
 		{
-			const auto result = evaluate(argument, std::forward<Arguments>(arguments)...);
+			const auto result = evaluate<VariableDomainAccessor>(argument, std::forward<Arguments>(arguments)...);
 
 			switch (result)
 			{
@@ -55,8 +64,8 @@ struct EvaluateFormulaVisitor
 	template <class... Arguments>
 	static EvaluationResult visit(const ast::Biconditional &biconditional, Arguments &&... arguments)
 	{
-		const auto leftResult = evaluate(biconditional.left, std::forward<Arguments>(arguments)...);
-		const auto rightResult = evaluate(biconditional.right, std::forward<Arguments>(arguments)...);
+		const auto leftResult = evaluate<VariableDomainAccessor>(biconditional.left, std::forward<Arguments>(arguments)...);
+		const auto rightResult = evaluate<VariableDomainAccessor>(biconditional.right, std::forward<Arguments>(arguments)...);
 
 		if (leftResult == EvaluationResult::Error || rightResult == EvaluationResult::Error)
 			return EvaluationResult::Error;
@@ -76,8 +85,8 @@ struct EvaluateFormulaVisitor
 	template <class... Arguments>
 	static EvaluationResult visit(const ast::Comparison &comparison, Arguments &&... arguments)
 	{
-		const auto leftType = type(comparison.left, std::forward<Arguments>(arguments)...);
-		const auto rightType = type(comparison.right, std::forward<Arguments>(arguments)...);
+		const auto leftType = type<VariableDomainAccessor>(comparison.left, std::forward<Arguments>(arguments)...);
+		const auto rightType = type<VariableDomainAccessor>(comparison.right, std::forward<Arguments>(arguments)...);
 
 		// Comparisons with empty sets always return false
 		if (leftType.setSize == SetSize::Empty || rightType.setSize == SetSize::Empty)
@@ -115,20 +124,20 @@ struct EvaluateFormulaVisitor
 	template <class... Arguments>
 	static EvaluationResult visit(const ast::Exists &exists, Arguments &&... arguments)
 	{
-		return evaluate(exists.argument, std::forward<Arguments>(arguments)...);
+		return evaluate<VariableDomainAccessor>(exists.argument, std::forward<Arguments>(arguments)...);
 	}
 
 	template <class... Arguments>
 	static EvaluationResult visit(const ast::ForAll &forAll, Arguments &&... arguments)
 	{
-		return evaluate(forAll.argument, std::forward<Arguments>(arguments)...);
+		return evaluate<VariableDomainAccessor>(forAll.argument, std::forward<Arguments>(arguments)...);
 	}
 
 	template <class... Arguments>
 	static EvaluationResult visit(const ast::Implies &implies, Arguments &&... arguments)
 	{
-		const auto antecedentResult = evaluate(implies.antecedent, std::forward<Arguments>(arguments)...);
-		const auto consequentResult = evaluate(implies.consequent, std::forward<Arguments>(arguments)...);
+		const auto antecedentResult = evaluate<VariableDomainAccessor>(implies.antecedent, std::forward<Arguments>(arguments)...);
+		const auto consequentResult = evaluate<VariableDomainAccessor>(implies.consequent, std::forward<Arguments>(arguments)...);
 
 		if (antecedentResult == EvaluationResult::Error || consequentResult == EvaluationResult::Error)
 			return EvaluationResult::Error;
@@ -148,8 +157,8 @@ struct EvaluateFormulaVisitor
 	template <class... Arguments>
 	static EvaluationResult visit(const ast::In &in, Arguments &&... arguments)
 	{
-		const auto elementType = type(in.element, std::forward<Arguments>(arguments)...);
-		const auto setType = type(in.set, std::forward<Arguments>(arguments)...);
+		const auto elementType = type<VariableDomainAccessor>(in.element, std::forward<Arguments>(arguments)...);
+		const auto setType = type<VariableDomainAccessor>(in.set, std::forward<Arguments>(arguments)...);
 
 		// The element to test shouldn’t be empty or a proper set by itself
 		assert(elementType.setSize != SetSize::Empty && elementType.setSize != SetSize::Multi);
@@ -173,7 +182,7 @@ struct EvaluateFormulaVisitor
 	template <class... Arguments>
 	static EvaluationResult visit(const ast::Not &not_, Arguments &&... arguments)
 	{
-		const auto result = evaluate(not_.argument, std::forward<Arguments>(arguments)...);
+		const auto result = evaluate<VariableDomainAccessor>(not_.argument, std::forward<Arguments>(arguments)...);
 
 		if (result == EvaluationResult::Error || result == EvaluationResult::Unknown)
 			return result;
@@ -189,7 +198,7 @@ struct EvaluateFormulaVisitor
 
 		for (const auto &argument : or_.arguments)
 		{
-			const auto result = evaluate(argument, std::forward<Arguments>(arguments)...);
+			const auto result = evaluate<VariableDomainAccessor>(argument, std::forward<Arguments>(arguments)...);
 
 			switch (result)
 			{
@@ -228,7 +237,7 @@ struct EvaluateFormulaVisitor
 			if (parameter.domain != Domain::Integer)
 				continue;
 
-			const auto argumentType = type(argument, std::forward<Arguments>(arguments)...);
+			const auto argumentType = type<VariableDomainAccessor>(argument, std::forward<Arguments>(arguments)...);
 
 			if (argumentType.domain == Domain::Symbolic || argumentType.setSize == SetSize::Empty)
 				return EvaluationResult::Error;
@@ -248,6 +257,7 @@ EvaluationResult evaluate(const ast::Formula &formula, Arguments &&... arguments
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

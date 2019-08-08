@@ -1,13 +1,15 @@
-#include <anthem/Simplification.h>
+#include <anthem/examine-semantics/Simplification.h>
 
 #include <optional>
 
 #include <anthem/ASTCopy.h>
 #include <anthem/Equality.h>
-#include <anthem/SimplificationVisitors.h>
-#include <anthem/Type.h>
+#include <anthem/examine-semantics/SimplificationVisitors.h>
+#include <anthem/examine-semantics/Type.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -561,7 +563,7 @@ const auto simplifyWithDefaultRules =
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Performs the different simplification techniques
-struct SimplifyFormulaVisitor : public ast::FormulaSimplificationVisitor<SimplifyFormulaVisitor>
+struct SimplifyFormulaVisitor : public FormulaSimplificationVisitor<SimplifyFormulaVisitor>
 {
 	// Do nothing for all other types of expressions
 	static OperationResult accept(ast::Formula &formula)
@@ -579,4 +581,5 @@ void simplify(ast::Formula &formula)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }

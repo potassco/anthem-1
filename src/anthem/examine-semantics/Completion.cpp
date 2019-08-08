@@ -1,14 +1,16 @@
-#include <anthem/Completion.h>
+#include <anthem/examine-semantics/Completion.h>
 
 #include <anthem/AST.h>
 #include <anthem/ASTCopy.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
 #include <anthem/Exception.h>
-#include <anthem/HiddenPredicateElimination.h>
 #include <anthem/Utils.h>
+#include <anthem/examine-semantics/HiddenPredicateElimination.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,4 +230,5 @@ std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormu
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }

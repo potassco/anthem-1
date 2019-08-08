@@ -1,11 +1,14 @@
-#ifndef __ANTHEM__TYPE_H
-#define __ANTHEM__TYPE_H
+#ifndef __ANTHEM__EXAMINE_SEMANTICS__TYPE_H
+#define __ANTHEM__EXAMINE_SEMANTICS__TYPE_H
 
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/Utils.h>
+#include <anthem/examine-semantics/Utils.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15,7 +18,7 @@ namespace anthem
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class VariableDomainAccessor = DefaultVariableDomainAccessor, class... Arguments>
-Type type(const ast::Term &term, Arguments &&... arguments);
+Type type(const ast::Term &, Arguments &&...);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -137,13 +140,13 @@ struct TermTypeVisitor
 	{
 		const auto domain = VariableDomainAccessor()(variable, std::forward<Arguments>(arguments)...);
 
-		return {domain, SetSize::Unit};
+		return Type{domain, SetSize::Unit};
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <class VariableDomainAccessor, class... Arguments>
+template <class VariableDomainAccessor = DefaultVariableDomainAccessor, class... Arguments>
 Type type(const ast::Term &term, Arguments &&... arguments)
 {
 	return term.accept(TermTypeVisitor<VariableDomainAccessor>(), std::forward<Arguments>(arguments)...);
@@ -151,6 +154,7 @@ Type type(const ast::Term &term, Arguments &&... arguments)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

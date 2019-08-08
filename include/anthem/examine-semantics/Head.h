@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__HEAD_H
-#define __ANTHEM__HEAD_H
+#ifndef __ANTHEM__EXAMINE_SEMANTICS__HEAD_H
+#define __ANTHEM__EXAMINE_SEMANTICS__HEAD_H
 
 #include <algorithm>
 #include <optional>
@@ -10,6 +10,8 @@
 #include <anthem/Utils.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,6 +250,7 @@ struct HeadLiteralTranslateToConsequentVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

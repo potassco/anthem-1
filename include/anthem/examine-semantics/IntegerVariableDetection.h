@@ -1,22 +1,25 @@
-#ifndef __ANTHEM__HIDDEN_PREDICATE_ELIMINATION_H
-#define __ANTHEM__HIDDEN_PREDICATE_ELIMINATION_H
+#ifndef __ANTHEM__EXAMINE_SEMANTICS__INTEGER_VARIABLE_DETECTION_H
+#define __ANTHEM__EXAMINE_SEMANTICS__INTEGER_VARIABLE_DETECTION_H
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>
 
 namespace anthem
 {
+namespace examineSemantics
+{
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// HiddenPredicateElimination
+// IntegerVariableDetection
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Context &context);
+void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

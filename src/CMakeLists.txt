@@ -3,12 +3,18 @@ set(target anthem)
 file(GLOB core_sources "anthem/*.cpp")
 file(GLOB core_headers "../include/anthem/*.h")
 
+file(GLOB examine_semantics_sources "anthem/examine-semantics/*.cpp")
+file(GLOB examine_semantics_headers "../include/anthem/examine-semantics/*.h")
+
 file(GLOB output_sources "anthem/output/*.cpp")
 file(GLOB output_headers "../include/anthem/output/*.h")
 
 set(sources
 	${core_sources}
 	${core_headers}
+
+	${examine_semantics_sources}
+	${examine_semantics_headers}
 
 	${output_sources}
 	${output_headers}

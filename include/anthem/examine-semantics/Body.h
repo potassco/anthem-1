@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__BODY_H
-#define __ANTHEM__BODY_H
+#ifndef __ANTHEM__EXAMINE_SEMANTICS__BODY_H
+#define __ANTHEM__EXAMINE_SEMANTICS__BODY_H
 
 #include <algorithm>
 
@@ -9,6 +9,8 @@
 #include <anthem/Utils.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,6 +152,7 @@ struct BodyBodyLiteralTranslateVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

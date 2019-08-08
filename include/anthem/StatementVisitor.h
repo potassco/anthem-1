@@ -3,13 +3,13 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTCopy.h>
-#include <anthem/Body.h>
 #include <anthem/BodyDirect.h>
-#include <anthem/Head.h>
 #include <anthem/HeadDirect.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Term.h>
 #include <anthem/Utils.h>
+#include <anthem/examine-semantics/Body.h>
+#include <anthem/examine-semantics/Head.h>
 
 namespace anthem
 {
@@ -75,7 +75,7 @@ void translateRuleForExaminingSemantics(const Clingo::AST::Rule &rule, const Cli
 	std::optional<ast::Formula> consequent;
 
 	// Collect all head terms
-	rule.head.data.accept(HeadLiteralCollectFunctionTermsVisitor(), rule.head, ruleContext);
+	rule.head.data.accept(examineSemantics::HeadLiteralCollectFunctionTermsVisitor(), rule.head, ruleContext);
 
 	// Create new variable declarations for the head terms
 	ruleContext.headVariablesStartIndex = ruleContext.freeVariables.size();
@@ -89,7 +89,7 @@ void translateRuleForExaminingSemantics(const Clingo::AST::Rule &rule, const Cli
 
 	// Compute consequent
 	auto headVariableIndex = ruleContext.headVariablesStartIndex;
-	consequent = rule.head.data.accept(HeadLiteralTranslateToConsequentVisitor(), rule.head, ruleContext, context, headVariableIndex);
+	consequent = rule.head.data.accept(examineSemantics::HeadLiteralTranslateToConsequentVisitor(), rule.head, ruleContext, context, headVariableIndex);
 
 	assert(ruleContext.headTerms.size() == headVariableIndex - ruleContext.headVariablesStartIndex);
 
@@ -114,7 +114,7 @@ void translateRuleForExaminingSemantics(const Clingo::AST::Rule &rule, const Cli
 	{
 		const auto &bodyLiteral = *i;
 
-		auto argument = bodyLiteral.data.accept(BodyBodyLiteralTranslateVisitor(), bodyLiteral, ruleContext, context, variableStack);
+		auto argument = bodyLiteral.data.accept(examineSemantics::BodyBodyLiteralTranslateVisitor(), bodyLiteral, ruleContext, context, variableStack);
 
 		if (!argument)
 			throw TranslationException(bodyLiteral.location, "could not translate body literal");

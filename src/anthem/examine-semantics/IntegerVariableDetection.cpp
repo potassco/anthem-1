@@ -1,17 +1,19 @@
-#include <anthem/IntegerVariableDetection.h>
+#include <anthem/examine-semantics/IntegerVariableDetection.h>
 
 #include <map>
 
 #include <anthem/ASTCopy.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
-#include <anthem/Evaluation.h>
 #include <anthem/Exception.h>
-#include <anthem/Simplification.h>
-#include <anthem/Type.h>
 #include <anthem/Utils.h>
+#include <anthem/examine-semantics/Evaluation.h>
+#include <anthem/examine-semantics/Simplification.h>
+#include <anthem/examine-semantics/Type.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,7 +68,7 @@ Type type(const ast::Term &term, VariableDomainMap &variableDomainMap)
 
 EvaluationResult evaluate(const ast::Formula &formula, VariableDomainMap &variableDomainMap)
 {
-	return evaluate<VariableDomainMap>(formula, variableDomainMap);
+	return evaluate<VariableDomainMapAccessor>(formula, variableDomainMap);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -330,4 +332,5 @@ void detectIntegerVariables(std::vector<ast::Formula> &completedFormulas)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }

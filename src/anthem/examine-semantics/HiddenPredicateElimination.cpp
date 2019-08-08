@@ -1,12 +1,14 @@
-#include <anthem/HiddenPredicateElimination.h>
+#include <anthem/examine-semantics/HiddenPredicateElimination.h>
 
 #include <anthem/ASTCopy.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/ASTVisitors.h>
 #include <anthem/Exception.h>
-#include <anthem/Simplification.h>
+#include <anthem/examine-semantics/Simplification.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,4 +255,5 @@ void eliminateHiddenPredicates(std::vector<ast::Formula> &completedFormulas, Con
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }

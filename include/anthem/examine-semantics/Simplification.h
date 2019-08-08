@@ -1,22 +1,24 @@
-#ifndef __ANTHEM__COMPLETION_H
-#define __ANTHEM__COMPLETION_H
+#ifndef __ANTHEM__EXAMINE_SEMANTICS__SIMPLIFICATION_H
+#define __ANTHEM__EXAMINE_SEMANTICS__SIMPLIFICATION_H
 
 #include <anthem/AST.h>
-#include <anthem/Context.h>
 
 namespace anthem
+{
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Completion
+// Simplification
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ast::Formula> complete(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context);
+void simplify(ast::Formula &formula);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

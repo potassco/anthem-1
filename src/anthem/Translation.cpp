@@ -6,12 +6,12 @@
 
 #include <clingo.hh>
 
-#include <anthem/Completion.h>
 #include <anthem/Context.h>
-#include <anthem/IntegerVariableDetection.h>
 #include <anthem/MapDomains.h>
-#include <anthem/Simplification.h>
 #include <anthem/StatementVisitor.h>
+#include <anthem/examine-semantics/Completion.h>
+#include <anthem/examine-semantics/Simplification.h>
+#include <anthem/examine-semantics/IntegerVariableDetection.h>
 #include <anthem/output/FormatterHumanReadable.h>
 #include <anthem/output/FormatterTPTP.h>
 
@@ -212,7 +212,7 @@ void translateForExaminingSemantics(std::vector<ast::ScopedFormula> &&scopedForm
 		// Simplify output if specified
 		if (performSimplification)
 			for (auto &scopedFormula : scopedFormulas)
-				simplify(scopedFormula.formula);
+				examineSemantics::simplify(scopedFormula.formula);
 
 		if (context.showStatementsUsed)
 			context.logger.log(output::Priority::Warning) << "#show statements are ignored because completion is not enabled";
@@ -230,7 +230,7 @@ void translateForExaminingSemantics(std::vector<ast::ScopedFormula> &&scopedForm
 	}
 
 	// Perform completion
-	auto completedFormulas = complete(std::move(scopedFormulas), context);
+	auto completedFormulas = examineSemantics::complete(std::move(scopedFormulas), context);
 
 	for (const auto &predicateDeclaration : context.predicateDeclarations)
 	{
@@ -258,12 +258,12 @@ void translateForExaminingSemantics(std::vector<ast::ScopedFormula> &&scopedForm
 
 	// Detect integer variables
 	if (context.performIntegerDetection)
-		detectIntegerVariables(completedFormulas);
+		examineSemantics::detectIntegerVariables(completedFormulas);
 
 	// Simplify output if specified
 	if (performSimplification)
 		for (auto &completedFormula : completedFormulas)
-			simplify(completedFormula);
+			examineSemantics::simplify(completedFormula);
 
 	// Print specifiers for integer predicate parameters
 	for (auto &predicateDeclaration : context.predicateDeclarations)

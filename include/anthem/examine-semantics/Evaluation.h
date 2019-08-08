@@ -19,7 +19,7 @@ namespace examineSemantics
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <class VariableDomainAccessor, class... Arguments>
+template <class VariableDomainAccessor = DefaultVariableDomainAccessor, class... Arguments>
 EvaluationResult evaluate(const ast::Formula &, Arguments &&...);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,7 +249,7 @@ struct EvaluateFormulaVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <class VariableDomainAccessor = DefaultVariableDomainAccessor, class... Arguments>
+template <class VariableDomainAccessor, class... Arguments>
 EvaluationResult evaluate(const ast::Formula &formula, Arguments &&... arguments)
 {
 	return formula.accept(EvaluateFormulaVisitor<VariableDomainAccessor>(), std::forward<Arguments>(arguments)...);

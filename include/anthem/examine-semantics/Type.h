@@ -146,7 +146,7 @@ struct TermTypeVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <class VariableDomainAccessor = DefaultVariableDomainAccessor, class... Arguments>
+template <class VariableDomainAccessor, class... Arguments>
 Type type(const ast::Term &term, Arguments &&... arguments)
 {
 	return term.accept(TermTypeVisitor<VariableDomainAccessor>(), std::forward<Arguments>(arguments)...);

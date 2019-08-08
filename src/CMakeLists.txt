@@ -9,6 +9,9 @@ file(GLOB examine_semantics_headers "../include/anthem/examine-semantics/*.h")
 file(GLOB output_sources "anthem/output/*.cpp")
 file(GLOB output_headers "../include/anthem/output/*.h")
 
+file(GLOB verify_strong_equivalence_sources "anthem/verify-strong-equivalence/*.cpp")
+file(GLOB verify_strong_equivalence_headers "../include/anthem/verify-strong-equivalence/*.h")
+
 set(sources
 	${core_sources}
 	${core_headers}
@@ -18,6 +21,9 @@ set(sources
 
 	${output_sources}
 	${output_headers}
+
+	${verify_strong_equivalence_sources}
+	${verify_strong_equivalence_headers}
 )
 
 set(includes

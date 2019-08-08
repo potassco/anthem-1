@@ -37,14 +37,13 @@ inline void reduce(ast::Implies &implies)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Translating the head directly doesn’t allow for later completion but leads to a simpler result
-void translateRuleDirectly(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+void translateRuleForProvingStrongEquivalence(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	RuleContext ruleContext;
 	ast::VariableStack variableStack;
 	variableStack.push(&ruleContext.freeVariables);
 
-	// Directly translate the head
+	// Translate the head
 	auto consequent = rule.head.data.accept(direct::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
 
 	ast::And antecedent;
@@ -66,7 +65,7 @@ void translateRuleDirectly(const Clingo::AST::Rule &rule, const Clingo::AST::Sta
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateRuleForCompletion(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+void translateRuleForExaminingSemantics(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	RuleContext ruleContext;
 	ast::VariableStack variableStack;
@@ -191,13 +190,13 @@ struct StatementVisitor
 	{
 		context.logger.log(output::Priority::Debug, statement.location) << "reading rule";
 
-		switch (context.translationMode)
+		switch (context.translationTarget)
 		{
-			case TranslationMode::HereAndThere:
-				translateRuleDirectly(rule, statement, scopedFormulas, context);
+			case TranslationTarget::ProveStrongEquivalence:
+				translateRuleForProvingStrongEquivalence(rule, statement, scopedFormulas, context);
 				break;
-			case TranslationMode::Completion:
-				translateRuleForCompletion(rule, statement, scopedFormulas, context);
+			case TranslationTarget::ExamineSemantics:
+				translateRuleForExaminingSemantics(rule, statement, scopedFormulas, context);
 				break;
 		}
 	}

@@ -16,12 +16,12 @@ int main(int argc, char **argv)
 		("h,help", "Display this help message")
 		("v,version", "Display version information")
 		("i,input", "Input files (one file for plain translation, two files for proving equivalence)", cxxopts::value<std::vector<std::string>>())
-		("mode", "Translation mode (here-and-there, completion)", cxxopts::value<std::string>()->default_value("here-and-there"))
+		("target", "Translation target (prove-strong-equivalence, examine-semantics)", cxxopts::value<std::string>()->default_value("prove-strong-equivalence"))
 		("output-format", "Output format (human-readable, tptp)", cxxopts::value<std::string>()->default_value("human-readable"))
 		("map-to-integers", "Map all variable sorts to integers (always, auto)", cxxopts::value<std::string>()->default_value("auto"))
-		("no-simplify", "Do not simplify the output (only with completion translation mode)")
-		("no-complete", "Do not perform completion (only with completion translation mode)")
-		("no-detect-integers", "Do not detect integer variables (only with completion translation mode)")
+		("no-simplify", "Do not simplify the output (only for examine-semantics translation target)")
+		("no-complete", "Do not perform completion (only for examine-semantics translation target)")
+		("no-detect-integers", "Do not detect integer variables (only for examine-semantics translation target)")
 		("color", "Colorize output (always, never, auto)", cxxopts::value<std::string>()->default_value("auto"))
 		("parentheses", "Parenthesis style (normal, full) (only with human-readable output format)", cxxopts::value<std::string>()->default_value("normal"))
 		("p,log-priority", "Log messages starting from this priority (debug, info, warning, error)", cxxopts::value<std::string>()->default_value("info"));
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	bool help;
 	bool version;
 	std::vector<std::string> inputFiles;
-	std::string translationModeString;
+	std::string translationTargetString;
 	std::string outputFormatString;
 	std::string mapToIntegersPolicyString;
 	std::string variableDomainString;
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 		if (parseResult.count("input") > 0)
 			inputFiles = parseResult["input"].as<std::vector<std::string>>();
 
-		translationModeString = parseResult["mode"].as<std::string>();
+		translationTargetString = parseResult["target"].as<std::string>();
 		outputFormatString = parseResult["output-format"].as<std::string>();
 		mapToIntegersPolicyString = parseResult["map-to-integers"].as<std::string>();
 		context.performSimplification = (parseResult.count("no-simplify") == 0);
@@ -86,13 +86,13 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	if (translationModeString == "here-and-there")
-		context.translationMode = anthem::TranslationMode::HereAndThere;
-	else if (translationModeString == "completion")
-		context.translationMode = anthem::TranslationMode::Completion;
+	if (translationTargetString == "prove-strong-equivalence")
+		context.translationTarget = anthem::TranslationTarget::ProveStrongEquivalence;
+	else if (translationTargetString == "examine-semantics")
+		context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	else
 	{
-		context.logger.log(anthem::output::Priority::Error) << "unknown head mode “" << translationModeString << "”";
+		context.logger.log(anthem::output::Priority::Error) << "unknown translation target “" << translationTargetString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

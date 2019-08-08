@@ -16,7 +16,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.translationMode = anthem::TranslationMode::Completion;
+	context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	context.performSimplification = true;
 	context.performCompletion = true;
 	context.performIntegerDetection = true;

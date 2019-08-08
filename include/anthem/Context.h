@@ -7,7 +7,7 @@
 #include <anthem/MapToIntegersPolicy.h>
 #include <anthem/OutputFormat.h>
 #include <anthem/Semantics.h>
-#include <anthem/TranslationMode.h>
+#include <anthem/TranslationTarget.h>
 #include <anthem/output/Logger.h>
 #include <anthem/output/ParenthesisStyle.h>
 
@@ -91,7 +91,7 @@ struct Context
 
 	output::Logger logger;
 
-	TranslationMode translationMode{TranslationMode::HereAndThere};
+	TranslationTarget translationTarget{TranslationTarget::ProveStrongEquivalence};
 	OutputFormat outputFormat{OutputFormat::HumanReadable};
 
 	bool performSimplification{false};

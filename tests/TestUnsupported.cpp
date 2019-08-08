@@ -16,7 +16,7 @@ TEST_CASE("[unsupported] Errors are correctly issued when using unsupported feat
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.translationMode = anthem::TranslationMode::Completion;
+	context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 
 	SECTION("rules with disjunctive head are unsupported")
 	{

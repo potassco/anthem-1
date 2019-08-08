@@ -199,7 +199,7 @@ const auto printTypeAnnotation =
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateCompletion(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context)
+void translateForExaminingSemantics(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context)
 {
 	assert(context.semantics == Semantics::ClassicalLogic);
 
@@ -295,7 +295,7 @@ void translateCompletion(std::vector<ast::ScopedFormula> &&scopedFormulas, Conte
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translateHereAndThere(std::vector<ast::ScopedFormula> &&scopedFormulasA,
+void translateForProvingStrongEquivalence(std::vector<ast::ScopedFormula> &&scopedFormulasA,
 	std::optional<std::vector<ast::ScopedFormula>> &&scopedFormulasB, Context &context)
 {
 	output::PrintContext printContext(context);
@@ -519,29 +519,29 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 			return translateSingleStream(fileName.c_str(), file, context);
 		};
 
-	switch (context.translationMode)
+	switch (context.translationTarget)
 	{
-		case TranslationMode::Completion:
+		case TranslationTarget::ExamineSemantics:
 		{
 			if (fileNames.size() > 1)
-				throw TranslationException("only one file may me translated at a time in completion mode");
+				throw TranslationException("only one file may me translated at a time when examining semantics");
 
 			auto scopedFormulas = translateSingleFile(fileNames.front());
 
-			translateCompletion(std::move(scopedFormulas), context);
+			translateForExaminingSemantics(std::move(scopedFormulas), context);
 			break;
 		}
-		case TranslationMode::HereAndThere:
+		case TranslationTarget::ProveStrongEquivalence:
 		{
 			if (fileNames.size() > 2)
-				throw TranslationException("only one or two files may me translated at a time in here-and-there mode");
+				throw TranslationException("only one or two files may me translated at a time when proving strong equivalence");
 
 			auto scopedFormulasA = translateSingleFile(fileNames.front());
 			auto scopedFormulasB = (fileNames.size() > 1)
 				? std::optional<std::vector<ast::ScopedFormula>>(translateSingleFile(fileNames[1]))
 				: std::nullopt;
 
-			translateHereAndThere(std::move(scopedFormulasA), std::move(scopedFormulasB), context);
+			translateForProvingStrongEquivalence(std::move(scopedFormulasA), std::move(scopedFormulasB), context);
 			break;
 		}
 	};
@@ -553,16 +553,16 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 {
 	auto scopedFormulas = translateSingleStream(fileName, stream, context);
 
-	switch (context.translationMode)
+	switch (context.translationTarget)
 	{
-		case TranslationMode::Completion:
+		case TranslationTarget::ExamineSemantics:
 		{
-			translateCompletion(std::move(scopedFormulas), context);
+			translateForExaminingSemantics(std::move(scopedFormulas), context);
 			break;
 		}
-		case TranslationMode::HereAndThere:
+		case TranslationTarget::ProveStrongEquivalence:
 		{
-			translateHereAndThere(std::move(scopedFormulas), std::nullopt, context);
+			translateForProvingStrongEquivalence(std::move(scopedFormulas), std::nullopt, context);
 			break;
 		}
 	};

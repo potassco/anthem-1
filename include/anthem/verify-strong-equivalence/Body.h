@@ -5,8 +5,8 @@
 
 #include <anthem/AST.h>
 #include <anthem/ComparisonOperator.h>
-#include <anthem/Term.h>
 #include <anthem/Utils.h>
+#include <anthem/translation-common/Term.h>
 #include <anthem/verify-strong-equivalence/ChooseValueInTerm.h>
 
 namespace anthem

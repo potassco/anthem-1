@@ -4,7 +4,6 @@
 #include <anthem/AST.h>
 #include <anthem/ASTCopy.h>
 #include <anthem/RuleContext.h>
-#include <anthem/Term.h>
 #include <anthem/Utils.h>
 #include <anthem/examine-semantics/Body.h>
 #include <anthem/examine-semantics/Head.h>

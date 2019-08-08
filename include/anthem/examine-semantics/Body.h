@@ -5,8 +5,8 @@
 
 #include <anthem/AST.h>
 #include <anthem/ComparisonOperator.h>
-#include <anthem/Term.h>
 #include <anthem/Utils.h>
+#include <anthem/translation-common/Term.h>
 
 namespace anthem
 {
@@ -55,7 +55,7 @@ struct BodyTermTranslateVisitor
 		for (size_t i = 0; i < function.arguments.size(); i++)
 		{
 			auto &argument = function.arguments[i];
-			conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[i].get()), translate(argument, ruleContext, context, variableStack)));
+			conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[i].get()), translationCommon::translate(argument, ruleContext, context, variableStack)));
 		}
 
 		variableStack.pop();
@@ -115,8 +115,8 @@ struct BodyLiteralTranslateVisitor
 
 		ast::And conjunction;
 		conjunction.arguments.reserve(3);
-		conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[0].get()), translate(comparison.left, ruleContext, context, variableStack)));
-		conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[1].get()), translate(comparison.right, ruleContext, context, variableStack)));
+		conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[0].get()), translationCommon::translate(comparison.left, ruleContext, context, variableStack)));
+		conjunction.arguments.emplace_back(ast::In(ast::Variable(parameters[1].get()), translationCommon::translate(comparison.right, ruleContext, context, variableStack)));
 		conjunction.arguments.emplace_back(ast::Comparison(operator_, ast::Variable(parameters[0].get()), ast::Variable(parameters[1].get())));
 
 		return ast::Exists(std::move(parameters), std::move(conjunction));

@@ -7,8 +7,8 @@
 #include <anthem/ASTUtils.h>
 #include <anthem/Exception.h>
 #include <anthem/RuleContext.h>
-#include <anthem/Term.h>
 #include <anthem/Utils.h>
+#include <anthem/translation-common/Term.h>
 
 namespace anthem
 {
@@ -84,7 +84,7 @@ struct ChooseValueInTermVisitor
 
 	ast::Formula visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 	{
-		const auto operator_ = translate(binaryOperation.binary_operator, term);
+		const auto operator_ = translationCommon::translate(binaryOperation.binary_operator, term);
 
 		const auto handlePlusMinusAndMultiplication =
 			[&]()

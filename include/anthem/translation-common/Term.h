@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__TERM_H
-#define __ANTHEM__TERM_H
+#ifndef __ANTHEM__TRANSLATION_COMMON__TERM_H
+#define __ANTHEM__TRANSLATION_COMMON__TERM_H
 
 #include <algorithm>
 
@@ -10,6 +10,8 @@
 #include <anthem/Utils.h>
 
 namespace anthem
+{
+namespace translationCommon
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,6 +210,7 @@ ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Con
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+}
 }
 
 #endif

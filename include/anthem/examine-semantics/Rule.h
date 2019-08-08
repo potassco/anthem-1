@@ -55,7 +55,7 @@ void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, st
 
 		const auto auxiliaryHeadVariableID = ruleContext.headVariablesStartIndex + i - ruleContext.headTerms.cbegin();
 		auto element = ast::Variable(ruleContext.freeVariables[auxiliaryHeadVariableID].get());
-		auto set = translate(headTerm, ruleContext, context, variableStack);
+		auto set = translationCommon::translate(headTerm, ruleContext, context, variableStack);
 		auto in = ast::In(std::move(element), std::move(set));
 
 		antecedent.arguments.emplace_back(std::move(in));

@@ -5,6 +5,8 @@
 
 #include <anthem/AST.h>
 #include <anthem/translation-common/Rule.h>
+#include <anthem/verify-strong-equivalence/Body.h>
+#include <anthem/verify-strong-equivalence/Head.h>
 
 namespace anthem
 {

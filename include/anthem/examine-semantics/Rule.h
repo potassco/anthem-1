@@ -1,9 +1,10 @@
 #ifndef __ANTHEM__EXAMINE_SEMANTICS__RULE_H
 #define __ANTHEM__EXAMINE_SEMANTICS__RULE_H
 
-#include <algorithm>
-
 #include <anthem/AST.h>
+#include <anthem/ASTUtils.h>
+#include <anthem/examine-semantics/Body.h>
+#include <anthem/examine-semantics/Head.h>
 #include <anthem/translation-common/Rule.h>
 
 namespace anthem

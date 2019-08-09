@@ -5,11 +5,7 @@
 #include <anthem/ASTCopy.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Utils.h>
-#include <anthem/examine-semantics/Body.h>
-#include <anthem/examine-semantics/Head.h>
 #include <anthem/examine-semantics/Rule.h>
-#include <anthem/verify-strong-equivalence/Body.h>
-#include <anthem/verify-strong-equivalence/Head.h>
 #include <anthem/verify-strong-equivalence/Rule.h>
 
 namespace anthem

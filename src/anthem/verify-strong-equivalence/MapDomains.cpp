@@ -6,7 +6,7 @@
 
 namespace anthem
 {
-namespace ast
+namespace verifyStrongEquivalence
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15,11 +15,11 @@ namespace ast
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mapDomains(Term &term, Context &context);
+void mapDomains(ast::Term &term, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-FunctionDeclaration *findOrCreateAuxiliaryIntegerFunctionDeclaration(const char *functionName,
+ast::FunctionDeclaration *findOrCreateAuxiliaryIntegerFunctionDeclaration(const char *functionName,
 	size_t arity, Context &context)
 {
 	auto auxiliaryIntegerFunctionDeclaration
@@ -34,36 +34,36 @@ FunctionDeclaration *findOrCreateAuxiliaryIntegerFunctionDeclaration(const char 
 
 struct FormulaMapDomainsVisitor
 {
-	void visit(And &and_, Context &context)
+	void visit(ast::And &and_, Context &context)
 	{
 		for (auto &argument : and_.arguments)
 			mapDomains(argument, context);
 	}
 
-	void visit(Biconditional &biconditional, Context &context)
+	void visit(ast::Biconditional &biconditional, Context &context)
 	{
 		mapDomains(biconditional.left, context);
 		mapDomains(biconditional.right, context);
 	}
 
-	void visit(Boolean &, Context &)
+	void visit(ast::Boolean &, Context &)
 	{
 	}
 
-	void visit(Comparison &comparison, Context &context)
+	void visit(ast::Comparison &comparison, Context &context)
 	{
 		mapDomains(comparison.left, context);
 		mapDomains(comparison.right, context);
 	}
 
-	void visit(Exists &exists, Context &context)
+	void visit(ast::Exists &exists, Context &context)
 	{
 		mapDomains(exists.argument, context);
 
 		if (exists.variables.empty())
 			return;
 
-		And and_;
+		ast::And and_;
 
 		const auto auxiliaryPredicateDeclarationIsInteger = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameIsInteger, 1);
 
@@ -74,9 +74,9 @@ struct FormulaMapDomainsVisitor
 
 			if (variableDeclaration->domain == Domain::Integer)
 			{
-				auto predicate = Predicate(auxiliaryPredicateDeclarationIsInteger);
+				auto predicate = ast::Predicate(auxiliaryPredicateDeclarationIsInteger);
 				predicate.arguments.reserve(1);
-				predicate.arguments.emplace_back(Variable(variableDeclaration.get()));
+				predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
 				and_.arguments.emplace_back(std::move(predicate));
 			}
 
@@ -97,14 +97,14 @@ struct FormulaMapDomainsVisitor
 		exists.argument = std::move(and_);
 	}
 
-	void visit(ForAll &forAll, Context &context)
+	void visit(ast::ForAll &forAll, Context &context)
 	{
 		mapDomains(forAll.argument, context);
 
 		if (forAll.variables.empty())
 			return;
 
-		And and_;
+		ast::And and_;
 
 		const auto auxiliaryPredicateDeclarationIsInteger = context.findOrCreatePredicateDeclaration(AuxiliaryPredicateNameIsInteger, 1);
 
@@ -115,9 +115,9 @@ struct FormulaMapDomainsVisitor
 
 			if (variableDeclaration->domain == Domain::Integer)
 			{
-				auto predicate = Predicate(auxiliaryPredicateDeclarationIsInteger);
+				auto predicate = ast::Predicate(auxiliaryPredicateDeclarationIsInteger);
 				predicate.arguments.reserve(1);
-				predicate.arguments.emplace_back(Variable(variableDeclaration.get()));
+				predicate.arguments.emplace_back(ast::Variable(variableDeclaration.get()));
 				and_.arguments.emplace_back(std::move(predicate));
 			}
 
@@ -129,39 +129,39 @@ struct FormulaMapDomainsVisitor
 
 		if (and_.arguments.size() == 1)
 		{
-			Implies implies(std::move(and_.arguments.front()), std::move(forAll.argument));
+			ast::Implies implies(std::move(and_.arguments.front()), std::move(forAll.argument));
 			forAll.argument = std::move(implies);
 			return;
 		}
 
-		Implies implies(std::move(and_), std::move(forAll.argument));
+		ast::Implies implies(std::move(and_), std::move(forAll.argument));
 		forAll.argument = std::move(implies);
 	}
 
-	void visit(Implies &implies, Context &context)
+	void visit(ast::Implies &implies, Context &context)
 	{
 		mapDomains(implies.antecedent, context);
 		mapDomains(implies.consequent, context);
 	}
 
-	void visit(In &in, Context &context)
+	void visit(ast::In &in, Context &context)
 	{
 		mapDomains(in.element, context);
 		mapDomains(in.set, context);
 	}
 
-	void visit(Not &not_, Context &context)
+	void visit(ast::Not &not_, Context &context)
 	{
 		mapDomains(not_.argument, context);
 	}
 
-	void visit(Or &or_, Context &context)
+	void visit(ast::Or &or_, Context &context)
 	{
 		for (auto &argument : or_.arguments)
 			mapDomains(argument, context);
 	}
 
-	void visit(Predicate &predicate, Context &context)
+	void visit(ast::Predicate &predicate, Context &context)
 	{
 		for (auto &argument : predicate.arguments)
 			mapDomains(argument, context);
@@ -172,7 +172,7 @@ struct FormulaMapDomainsVisitor
 
 struct TermMapDomainsVisitor
 {
-	void visit(BinaryOperation &binaryOperation, Term &, Context &context)
+	void visit(ast::BinaryOperation &binaryOperation, ast::Term &, Context &context)
 	{
 		mapDomains(binaryOperation.left, context);
 		mapDomains(binaryOperation.right, context);
@@ -181,90 +181,90 @@ struct TermMapDomainsVisitor
 		// all integers are already multiplied by 2
 		switch (binaryOperation.operator_)
 		{
-			case BinaryOperation::Operator::Plus:
-			case BinaryOperation::Operator::Minus:
-			case BinaryOperation::Operator::Multiplication:
+			case ast::BinaryOperation::Operator::Plus:
+			case ast::BinaryOperation::Operator::Minus:
+			case ast::BinaryOperation::Operator::Multiplication:
 				break;
 			// TODO: implement
-			case BinaryOperation::Operator::Division:
+			case ast::BinaryOperation::Operator::Division:
 				throw TranslationException("division not yet supported in domain mapping");
-			case BinaryOperation::Operator::Modulo:
+			case ast::BinaryOperation::Operator::Modulo:
 				throw TranslationException("modulo not yet supported in domain mapping");
-			case BinaryOperation::Operator::Power:
+			case ast::BinaryOperation::Operator::Power:
 				throw TranslationException("power operator not yet supported in domain mapping");
 		}
 	}
 
-	void visit(Boolean &, Term &, Context &)
+	void visit(ast::Boolean &, ast::Term &, Context &)
 	{
 	}
 
-	void visit(Function &function, Term &term, Context &context)
+	void visit(ast::Function &function, ast::Term &term, Context &context)
 	{
 		if (!function.arguments.empty())
 			throw TranslationException("mapping symbolic functions to odd integers not yet implemented");
 
 		function.declaration->domain = Domain::Symbolic;
 
-		std::vector<Term> arguments;
+		std::vector<ast::Term> arguments;
 		arguments.reserve(1);
 		arguments.emplace_back(std::move(function));
 
 		auto auxiliaryFunctionDeclarationSymbolic
 			= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameSymbolic, 1, context);
 
-		term = Function(auxiliaryFunctionDeclarationSymbolic, std::move(arguments));
+		term = ast::Function(auxiliaryFunctionDeclarationSymbolic, std::move(arguments));
 	}
 
-	void visit(Integer &integer, Term &term, Context &context)
+	void visit(ast::Integer &integer, ast::Term &term, Context &context)
 	{
-		std::vector<Term> arguments;
+		std::vector<ast::Term> arguments;
 		arguments.reserve(1);
 		arguments.emplace_back(std::move(integer));
 
 		auto auxiliaryFunctionDeclarationInteger
 			= findOrCreateAuxiliaryIntegerFunctionDeclaration(AuxiliaryFunctionNameInteger, 1, context);
 
-		term = Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		term = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
 	}
 
-	void visit(Interval &interval, Term &, Context &context)
+	void visit(ast::Interval &interval, ast::Term &, Context &context)
 	{
 		mapDomains(interval.from, context);
 		mapDomains(interval.to, context);
 	}
 
-	void visit(SpecialInteger &, Term &, Context &)
+	void visit(ast::SpecialInteger &, ast::Term &, Context &)
 	{
 		throw TranslationException("special integers not yet supported in domain mapping");
 	}
 
-	void visit(String &, Term &, Context &)
+	void visit(ast::String &, ast::Term &, Context &)
 	{
 		throw TranslationException("strings not yet supported in domain mapping");
 	}
 
-	void visit(UnaryOperation &unaryOperation, Term &, Context &context)
+	void visit(ast::UnaryOperation &unaryOperation, ast::Term &, Context &context)
 	{
 		// TODO: check
 		mapDomains(unaryOperation.argument, context);
 	}
 
-	void visit(Variable &, Term &, Context &)
+	void visit(ast::Variable &, ast::Term &, Context &)
 	{
 	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mapDomains(Formula &formula, Context &context)
+void mapDomains(ast::Formula &formula, Context &context)
 {
 	formula.accept(FormulaMapDomainsVisitor(), context);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mapDomains(Term &term, Context &context)
+void mapDomains(ast::Term &term, Context &context)
 {
 	term.accept(TermMapDomainsVisitor(), term, context);
 }

@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__EQUALITY_H
-#define __ANTHEM__EQUALITY_H
+#ifndef __ANTHEM__EXAMINE_SEMANTICS__EQUALITY_H
+#define __ANTHEM__EXAMINE_SEMANTICS__EQUALITY_H
 
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>

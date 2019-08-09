@@ -3,7 +3,7 @@
 #include <optional>
 
 #include <anthem/ASTCopy.h>
-#include <anthem/Equality.h>
+#include <anthem/examine-semantics/Equality.h>
 #include <anthem/examine-semantics/SimplificationVisitors.h>
 #include <anthem/examine-semantics/Type.h>
 

@@ -4,7 +4,6 @@
 #include <anthem/AST.h>
 #include <anthem/ASTCopy.h>
 #include <anthem/RuleContext.h>
-#include <anthem/Utils.h>
 #include <anthem/examine-semantics/Rule.h>
 #include <anthem/verify-strong-equivalence/Rule.h>
 

@@ -1,12 +1,7 @@
 #ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__BODY_H
 #define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__BODY_H
 
-#include <algorithm>
-
 #include <anthem/AST.h>
-#include <anthem/Utils.h>
-#include <anthem/translation-common/ComparisonOperator.h>
-#include <anthem/translation-common/Term.h>
 #include <anthem/verify-strong-equivalence/ChooseValueInTerm.h>
 
 namespace anthem

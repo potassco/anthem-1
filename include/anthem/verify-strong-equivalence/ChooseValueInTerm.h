@@ -8,7 +8,6 @@
 #include <anthem/Exception.h>
 #include <anthem/RuleContext.h>
 #include <anthem/Utils.h>
-#include <anthem/translation-common/Term.h>
 
 namespace anthem
 {

@@ -7,7 +7,6 @@
 #include <clingo.hh>
 
 #include <anthem/Context.h>
-#include <anthem/MapDomains.h>
 #include <anthem/StatementVisitor.h>
 #include <anthem/examine-semantics/Translation.h>
 #include <anthem/verify-strong-equivalence/Translation.h>

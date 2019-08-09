@@ -2,8 +2,8 @@
 
 #include <anthem/output/FormatterHumanReadable.h>
 #include <anthem/output/FormatterTPTP.h>
-#include <anthem/MapDomains.h>
 #include <anthem/translation-common/Output.h>
+#include <anthem/verify-strong-equivalence/MapDomains.h>
 
 namespace anthem
 {

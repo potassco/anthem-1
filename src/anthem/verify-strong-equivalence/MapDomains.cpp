@@ -1,4 +1,4 @@
-#include <anthem/MapDomains.h>
+#include <anthem/verify-strong-equivalence/MapDomains.h>
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>

@@ -5,6 +5,7 @@
 #include <anthem/ASTCopy.h>
 #include <anthem/RuleContext.h>
 #include <anthem/examine-semantics/Rule.h>
+#include <anthem/verify-properties/Rule.h>
 #include <anthem/verify-strong-equivalence/Rule.h>
 
 namespace anthem
@@ -35,11 +36,14 @@ struct StatementVisitor
 
 		switch (context.translationTarget)
 		{
-			case TranslationTarget::VerifyStrongEquivalence:
-				verifyStrongEquivalence::translate(rule, statement, scopedFormulas, context);
-				break;
 			case TranslationTarget::ExamineSemantics:
 				examineSemantics::translate(rule, statement, scopedFormulas, context);
+				break;
+			case TranslationTarget::VerifyProperties:
+				verifyProperties::translate(rule, statement, scopedFormulas, context);
+				break;
+			case TranslationTarget::VerifyStrongEquivalence:
+				verifyStrongEquivalence::translate(rule, statement, scopedFormulas, context);
 				break;
 		}
 	}

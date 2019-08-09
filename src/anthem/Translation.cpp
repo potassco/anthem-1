@@ -9,6 +9,7 @@
 #include <anthem/Context.h>
 #include <anthem/StatementVisitor.h>
 #include <anthem/examine-semantics/Translation.h>
+#include <anthem/verify-properties/Translation.h>
 #include <anthem/verify-strong-equivalence/Translation.h>
 
 namespace anthem
@@ -75,6 +76,16 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 			examineSemantics::translate(std::move(scopedFormulas), context);
 			break;
 		}
+		case TranslationTarget::VerifyProperties:
+		{
+			if (fileNames.size() > 1)
+				throw TranslationException("only one file may me translated at a time when verifying properties");
+
+			auto scopedFormulas = translateSingleFile(fileNames.front());
+
+			verifyProperties::translate(std::move(scopedFormulas), context);
+			break;
+		}
 		case TranslationTarget::VerifyStrongEquivalence:
 		{
 			if (fileNames.size() > 2)
@@ -102,6 +113,11 @@ void translate(const char *fileName, std::istream &stream, Context &context)
 		case TranslationTarget::ExamineSemantics:
 		{
 			examineSemantics::translate(std::move(scopedFormulas), context);
+			break;
+		}
+		case TranslationTarget::VerifyProperties:
+		{
+			verifyProperties::translate(std::move(scopedFormulas), context);
 			break;
 		}
 		case TranslationTarget::VerifyStrongEquivalence:

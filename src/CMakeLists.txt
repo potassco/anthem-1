@@ -12,6 +12,9 @@ file(GLOB output_headers "../include/anthem/output/*.h")
 file(GLOB translation_common_sources "anthem/translation-common/*.cpp")
 file(GLOB translation_common_headers "../include/anthem/translation-common/*.h")
 
+file(GLOB verify_properties_sources "anthem/verify-properties/*.cpp")
+file(GLOB verify_properties_headers "../include/anthem/verify-properties/*.h")
+
 file(GLOB verify_strong_equivalence_sources "anthem/verify-strong-equivalence/*.cpp")
 file(GLOB verify_strong_equivalence_headers "../include/anthem/verify-strong-equivalence/*.h")
 
@@ -27,6 +30,9 @@ set(sources
 
 	${translation_common_sources}
 	${translation_common_headers}
+
+	${verify_properties_sources}
+	${verify_properties_headers}
 
 	${verify_strong_equivalence_sources}
 	${verify_strong_equivalence_headers}

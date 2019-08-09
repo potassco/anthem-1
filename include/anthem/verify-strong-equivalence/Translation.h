@@ -1,0 +1,26 @@
+#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__TRANSLATION_H
+#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__TRANSLATION_H
+
+#include <anthem/ASTForward.h>
+#include <anthem/Context.h>
+
+namespace anthem
+{
+namespace verifyStrongEquivalence
+{
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Translation
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translate(std::vector<ast::ScopedFormula> &&scopedFormulasA,
+	std::optional<std::vector<ast::ScopedFormula>> &&scopedFormulasB, Context &context);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}
+}
+
+#endif

@@ -25,6 +25,9 @@ set(sources
 	${output_sources}
 	${output_headers}
 
+	${translation_common_sources}
+	${translation_common_headers}
+
 	${verify_strong_equivalence_sources}
 	${verify_strong_equivalence_headers}
 )

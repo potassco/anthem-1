@@ -21,7 +21,7 @@ namespace verifyStrongEquivalence
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoiceRule, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+inline ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoiceRule, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
 {
 	auto predicateDeclaration = context.findOrCreatePredicateDeclaration(function.name, function.arguments.size());
 	predicateDeclaration->isUsed = true;

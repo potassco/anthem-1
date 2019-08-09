@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__INPUT__LOCATION_H
-#define __ANTHEM__INPUT__LOCATION_H
+#ifndef __ANTHEM__LOCATION_H
+#define __ANTHEM__LOCATION_H
 
 #include <cstdlib>
 

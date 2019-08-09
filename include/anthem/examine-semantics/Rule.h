@@ -17,7 +17,7 @@ namespace examineSemantics
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+inline void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
 	RuleContext ruleContext;
 	ast::VariableStack variableStack;

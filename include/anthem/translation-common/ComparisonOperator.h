@@ -17,7 +17,7 @@ namespace translationCommon
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOperator)
+inline ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator comparisonOperator)
 {
 	switch (comparisonOperator)
 	{

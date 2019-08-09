@@ -20,7 +20,7 @@ namespace translationCommon
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOperator)
+inline ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOperator)
 {
 	switch (binaryOperator)
 	{
@@ -49,7 +49,7 @@ ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOpera
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOperator, const Clingo::AST::Term &term)
+inline ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOperator, const Clingo::AST::Term &term)
 {
 	try
 	{
@@ -64,7 +64,7 @@ ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator binaryOpera
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::UnaryOperation::Operator translate(Clingo::AST::UnaryOperator unaryOperator, const Clingo::AST::Term &term)
+inline ast::UnaryOperation::Operator translate(Clingo::AST::UnaryOperator unaryOperator, const Clingo::AST::Term &term)
 {
 	switch (unaryOperator)
 	{
@@ -198,7 +198,7 @@ struct TermTranslateVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
+inline ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 {
 	auto translatedTerm = term.data.accept(TermTranslateVisitor(), term, ruleContext, context, variableStack);
 

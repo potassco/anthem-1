@@ -25,7 +25,7 @@ ast::Formula chooseValueInTerm(const Clingo::AST::Term &term, ast::VariableDecla
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula chooseValueInPrimitive(ast::Term &&term, ast::VariableDeclaration &variableDeclaration)
+inline ast::Formula chooseValueInPrimitive(ast::Term &&term, ast::VariableDeclaration &variableDeclaration)
 {
 	ast::Variable variable(&variableDeclaration);
 
@@ -319,7 +319,7 @@ struct ChooseValueInTermVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula chooseValueInTerm(const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+inline ast::Formula chooseValueInTerm(const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
 {
 	return term.data.accept(ChooseValueInTermVisitor(), term, variableDeclaration, context, ruleContext, variableStack);
 }

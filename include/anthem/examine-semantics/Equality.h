@@ -389,14 +389,14 @@ struct TermEqualityVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Tristate equal(const ast::Formula &lhs, const ast::Formula &rhs)
+inline Tristate equal(const ast::Formula &lhs, const ast::Formula &rhs)
 {
 	return lhs.accept(FormulaEqualityVisitor(), rhs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Tristate equal(const ast::Term &lhs, const ast::Term &rhs)
+inline Tristate equal(const ast::Term &lhs, const ast::Term &rhs)
 {
 	return lhs.accept(TermEqualityVisitor(), rhs);
 }

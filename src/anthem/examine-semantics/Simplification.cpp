@@ -365,7 +365,7 @@ struct SimplificationRuleSubsumptionInBiconditionals
 			std::find_if(and_.arguments.cbegin(), and_.arguments.cend(),
 			[&](const auto &argument)
 			{
-				return (ast::equal(predicateSide, argument) == Tristate::True);
+				return (equal(predicateSide, argument) == Tristate::True);
 			});
 
 		if (matchingPredicate == and_.arguments.cend())

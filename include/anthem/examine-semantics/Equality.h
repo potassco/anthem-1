@@ -7,7 +7,7 @@
 
 namespace anthem
 {
-namespace ast
+namespace examineSemantics
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,19 +16,19 @@ namespace ast
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Tristate equal(const Formula &lhs, const Formula &rhs);
-Tristate equal(const Term &lhs, const Term &rhs);
+Tristate equal(const ast::Formula &lhs, const ast::Formula &rhs);
+Tristate equal(const ast::Term &lhs, const ast::Term &rhs);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct FormulaEqualityVisitor
 {
-	Tristate visit(const And &and_, const Formula &otherFormula)
+	Tristate visit(const ast::And &and_, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<And>())
+		if (!otherFormula.is<ast::And>())
 			return Tristate::Unknown;
 
-		const auto &otherAnd = otherFormula.get<And>();
+		const auto &otherAnd = otherFormula.get<ast::And>();
 
 		for (const auto &argument : and_.arguments)
 		{
@@ -59,12 +59,12 @@ struct FormulaEqualityVisitor
 		return Tristate::True;
 	}
 
-	Tristate visit(const Biconditional &biconditional, const Formula &otherFormula)
+	Tristate visit(const ast::Biconditional &biconditional, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Biconditional>())
+		if (!otherFormula.is<ast::Biconditional>())
 			return Tristate::Unknown;
 
-		const auto &otherBiconditional = otherFormula.get<Biconditional>();
+		const auto &otherBiconditional = otherFormula.get<ast::Biconditional>();
 
 		if (equal(biconditional.left, otherBiconditional.left) == Tristate::True
 		    && equal(biconditional.right, otherBiconditional.right) == Tristate::True)
@@ -81,24 +81,24 @@ struct FormulaEqualityVisitor
 		return Tristate::Unknown;
 	}
 
-	Tristate visit(const Boolean &boolean, const Formula &otherFormula)
+	Tristate visit(const ast::Boolean &boolean, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Boolean>())
+		if (!otherFormula.is<ast::Boolean>())
 			return Tristate::Unknown;
 
-		const auto &otherBoolean = otherFormula.get<Boolean>();
+		const auto &otherBoolean = otherFormula.get<ast::Boolean>();
 
 		return (boolean.value == otherBoolean.value)
 			? Tristate::True
 			: Tristate::False;
 	}
 
-	Tristate visit(const Comparison &comparison, const Formula &otherFormula)
+	Tristate visit(const ast::Comparison &comparison, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Comparison>())
+		if (!otherFormula.is<ast::Comparison>())
 			return Tristate::Unknown;
 
-		const auto &otherComparison = otherFormula.get<Comparison>();
+		const auto &otherComparison = otherFormula.get<ast::Comparison>();
 
 		if (comparison.operator_ != otherComparison.operator_)
 			return Tristate::Unknown;
@@ -110,8 +110,8 @@ struct FormulaEqualityVisitor
 		}
 
 		// Only = and != are commutative operators, all others don’t need to be checked with exchanged arguments
-		if (comparison.operator_ != Comparison::Operator::Equal
-		    && comparison.operator_ != Comparison::Operator::NotEqual)
+		if (comparison.operator_ != ast::Comparison::Operator::Equal
+		    && comparison.operator_ != ast::Comparison::Operator::NotEqual)
 		{
 			return Tristate::Unknown;
 		}
@@ -125,30 +125,30 @@ struct FormulaEqualityVisitor
 		return Tristate::Unknown;
 	}
 
-	Tristate visit(const Exists &, const Formula &otherFormula)
+	Tristate visit(const ast::Exists &, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Exists>())
+		if (!otherFormula.is<ast::Exists>())
 			return Tristate::Unknown;
 
 		// TODO: implement stronger check
 		return Tristate::Unknown;
 	}
 
-	Tristate visit(const ForAll &, const Formula &otherFormula)
+	Tristate visit(const ast::ForAll &, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<ForAll>())
+		if (!otherFormula.is<ast::ForAll>())
 			return Tristate::Unknown;
 
 		// TODO: implement stronger check
 		return Tristate::Unknown;
 	}
 
-	Tristate visit(const Implies &implies, const Formula &otherFormula)
+	Tristate visit(const ast::Implies &implies, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Implies>())
+		if (!otherFormula.is<ast::Implies>())
 			return Tristate::Unknown;
 
-		const auto &otherImplies = otherFormula.get<Implies>();
+		const auto &otherImplies = otherFormula.get<ast::Implies>();
 
 		if (equal(implies.antecedent, otherImplies.antecedent) == Tristate::True
 		    && equal(implies.consequent, otherImplies.consequent) == Tristate::True)
@@ -159,12 +159,12 @@ struct FormulaEqualityVisitor
 		return Tristate::Unknown;
 	}
 
-	Tristate visit(const In &in, const Formula &otherFormula)
+	Tristate visit(const ast::In &in, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<In>())
+		if (!otherFormula.is<ast::In>())
 			return Tristate::Unknown;
 
-		const auto &otherIn = otherFormula.get<In>();
+		const auto &otherIn = otherFormula.get<ast::In>();
 
 		if (equal(in.element, otherIn.element) == Tristate::True
 		    && equal(in.set, otherIn.set) == Tristate::True)
@@ -175,22 +175,22 @@ struct FormulaEqualityVisitor
 		return Tristate::Unknown;
 	}
 
-	Tristate visit(const Not &not_, const Formula &otherFormula)
+	Tristate visit(const ast::Not &not_, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Not>())
+		if (!otherFormula.is<ast::Not>())
 			return Tristate::Unknown;
 
-		const auto &otherNot = otherFormula.get<Not>();
+		const auto &otherNot = otherFormula.get<ast::Not>();
 
 		return equal(not_.argument, otherNot.argument);
 	}
 
-	Tristate visit(const Or &or_, const Formula &otherFormula)
+	Tristate visit(const ast::Or &or_, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Or>())
+		if (!otherFormula.is<ast::Or>())
 			return Tristate::Unknown;
 
-		const auto &otherOr = otherFormula.get<Or>();
+		const auto &otherOr = otherFormula.get<ast::Or>();
 
 		for (const auto &argument : or_.arguments)
 		{
@@ -221,12 +221,12 @@ struct FormulaEqualityVisitor
 		return Tristate::True;
 	}
 
-	Tristate visit(const Predicate &predicate, const Formula &otherFormula)
+	Tristate visit(const ast::Predicate &predicate, const ast::Formula &otherFormula)
 	{
-		if (!otherFormula.is<Predicate>())
+		if (!otherFormula.is<ast::Predicate>())
 			return Tristate::Unknown;
 
-		const auto &otherPredicate = otherFormula.get<Predicate>();
+		const auto &otherPredicate = otherFormula.get<ast::Predicate>();
 
 		if (predicate.declaration != otherPredicate.declaration)
 			return Tristate::False;
@@ -245,12 +245,12 @@ struct FormulaEqualityVisitor
 
 struct TermEqualityVisitor
 {
-	Tristate visit(const BinaryOperation &binaryOperation, const Term &otherTerm)
+	Tristate visit(const ast::BinaryOperation &binaryOperation, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<BinaryOperation>())
+		if (!otherTerm.is<ast::BinaryOperation>())
 			return Tristate::Unknown;
 
-		const auto &otherBinaryOperation = otherTerm.get<BinaryOperation>();
+		const auto &otherBinaryOperation = otherTerm.get<ast::BinaryOperation>();
 
 		if (binaryOperation.operator_ != otherBinaryOperation.operator_)
 			return Tristate::Unknown;
@@ -262,8 +262,8 @@ struct TermEqualityVisitor
 		}
 
 		// Only + and * are commutative operators, all others don’t need to be checked with exchanged arguments
-		if (binaryOperation.operator_ != BinaryOperation::Operator::Plus
-		    && binaryOperation.operator_ != BinaryOperation::Operator::Multiplication)
+		if (binaryOperation.operator_ != ast::BinaryOperation::Operator::Plus
+		    && binaryOperation.operator_ != ast::BinaryOperation::Operator::Multiplication)
 		{
 			return Tristate::Unknown;
 		}
@@ -277,24 +277,24 @@ struct TermEqualityVisitor
 		return Tristate::Unknown;
 	}
 
-	Tristate visit(const Boolean &boolean, const Term &otherTerm)
+	Tristate visit(const ast::Boolean &boolean, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<Boolean>())
+		if (!otherTerm.is<ast::Boolean>())
 			return Tristate::Unknown;
 
-		const auto &otherBoolean = otherTerm.get<Boolean>();
+		const auto &otherBoolean = otherTerm.get<ast::Boolean>();
 
 		return (boolean.value == otherBoolean.value)
 			? Tristate::True
 			: Tristate::False;
 	}
 
-	Tristate visit(const Function &function, const Term &otherTerm)
+	Tristate visit(const ast::Function &function, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<Function>())
+		if (!otherTerm.is<ast::Function>())
 			return Tristate::Unknown;
 
-		const auto &otherFunction = otherTerm.get<Function>();
+		const auto &otherFunction = otherTerm.get<ast::Function>();
 
 		if (function.declaration != otherFunction.declaration)
 			return Tristate::False;
@@ -309,24 +309,24 @@ struct TermEqualityVisitor
 		return Tristate::True;
 	}
 
-	Tristate visit(const Integer &integer, const Term &otherTerm)
+	Tristate visit(const ast::Integer &integer, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<Integer>())
+		if (!otherTerm.is<ast::Integer>())
 			return Tristate::Unknown;
 
-		const auto &otherInteger = otherTerm.get<Integer>();
+		const auto &otherInteger = otherTerm.get<ast::Integer>();
 
 		return (integer.value == otherInteger.value)
 			? Tristate::True
 			: Tristate::False;
 	}
 
-	Tristate visit(const Interval &interval, const Term &otherTerm)
+	Tristate visit(const ast::Interval &interval, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<Interval>())
+		if (!otherTerm.is<ast::Interval>())
 			return Tristate::Unknown;
 
-		const auto &otherInterval = otherTerm.get<Interval>();
+		const auto &otherInterval = otherTerm.get<ast::Interval>();
 
 		if (equal(interval.from, otherInterval.from) != Tristate::True)
 			return Tristate::Unknown;
@@ -337,36 +337,36 @@ struct TermEqualityVisitor
 		return Tristate::True;
 	}
 
-	Tristate visit(const SpecialInteger &specialInteger, const Term &otherTerm)
+	Tristate visit(const ast::SpecialInteger &specialInteger, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<SpecialInteger>())
+		if (!otherTerm.is<ast::SpecialInteger>())
 			return Tristate::Unknown;
 
-		const auto &otherSpecialInteger = otherTerm.get<SpecialInteger>();
+		const auto &otherSpecialInteger = otherTerm.get<ast::SpecialInteger>();
 
 		return (specialInteger.type == otherSpecialInteger.type)
 			? Tristate::True
 			: Tristate::False;
 	}
 
-	Tristate visit(const String &string, const Term &otherTerm)
+	Tristate visit(const ast::String &string, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<String>())
+		if (!otherTerm.is<ast::String>())
 			return Tristate::Unknown;
 
-		const auto &otherString = otherTerm.get<String>();
+		const auto &otherString = otherTerm.get<ast::String>();
 
 		return (string.text == otherString.text)
 			? Tristate::True
 			: Tristate::False;
 	}
 
-	Tristate visit(const UnaryOperation &unaryOperation, const Term &otherTerm)
+	Tristate visit(const ast::UnaryOperation &unaryOperation, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<UnaryOperation>())
+		if (!otherTerm.is<ast::UnaryOperation>())
 			return Tristate::Unknown;
 
-		const auto &otherUnaryOperation = otherTerm.get<UnaryOperation>();
+		const auto &otherUnaryOperation = otherTerm.get<ast::UnaryOperation>();
 
 		if (unaryOperation.operator_ != otherUnaryOperation.operator_)
 			return Tristate::Unknown;
@@ -374,12 +374,12 @@ struct TermEqualityVisitor
 		return equal(unaryOperation.argument, otherUnaryOperation.argument);
 	}
 
-	Tristate visit(const Variable &variable, const Term &otherTerm)
+	Tristate visit(const ast::Variable &variable, const ast::Term &otherTerm)
 	{
-		if (!otherTerm.is<Variable>())
+		if (!otherTerm.is<ast::Variable>())
 			return Tristate::Unknown;
 
-		const auto &otherVariable = otherTerm.get<Variable>();
+		const auto &otherVariable = otherTerm.get<ast::Variable>();
 
 		return (variable.declaration == otherVariable.declaration)
 			? Tristate::True
@@ -389,14 +389,14 @@ struct TermEqualityVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Tristate equal(const Formula &lhs, const Formula &rhs)
+Tristate equal(const ast::Formula &lhs, const ast::Formula &rhs)
 {
 	return lhs.accept(FormulaEqualityVisitor(), rhs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Tristate equal(const Term &lhs, const Term &rhs)
+Tristate equal(const ast::Term &lhs, const ast::Term &rhs)
 {
 	return lhs.accept(TermEqualityVisitor(), rhs);
 }

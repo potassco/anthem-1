@@ -19,12 +19,13 @@ namespace verifyProperties
 
 inline void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
-	/*RuleContext ruleContext;
+	RuleContext ruleContext;
 	ast::VariableStack variableStack;
 	variableStack.push(&ruleContext.freeVariables);
 
 	// Translate the head
-	auto consequent = rule.head.data.accept(verifyStrongEquivalence::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
+	// TODO: implement
+	auto consequent = ast::Boolean(true);//rule.head.data.accept(verifyStrongEquivalence::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
 
 	ast::And antecedent;
 
@@ -40,7 +41,7 @@ inline void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statemen
 	ast::Implies formula(std::move(antecedent), std::move(consequent));
 	ast::ScopedFormula scopedFormula(std::move(formula), std::move(ruleContext.freeVariables));
 	scopedFormulas.emplace_back(std::move(scopedFormula));
-	translationCommon::normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());*/
+	translationCommon::normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

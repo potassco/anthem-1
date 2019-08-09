@@ -88,6 +88,8 @@ int main(int argc, char **argv)
 
 	if (translationTargetString == "verify-strong-equivalence")
 		context.translationTarget = anthem::TranslationTarget::VerifyStrongEquivalence;
+	else if (translationTargetString == "verify-properties")
+		context.translationTarget = anthem::TranslationTarget::VerifyProperties;
 	else if (translationTargetString == "examine-semantics")
 		context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	else

@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__RULE_H
-#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__RULE_H
+#ifndef __ANTHEM__VERIFY_PROPERTIES__RULE_H
+#define __ANTHEM__VERIFY_PROPERTIES__RULE_H
 
 #include <anthem/AST.h>
 #include <anthem/translation-common/Rule.h>
@@ -8,7 +8,7 @@
 
 namespace anthem
 {
-namespace verifyStrongEquivalence
+namespace verifyProperties
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@ namespace verifyStrongEquivalence
 
 inline void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
 {
-	RuleContext ruleContext;
+	/*RuleContext ruleContext;
 	ast::VariableStack variableStack;
 	variableStack.push(&ruleContext.freeVariables);
 
@@ -40,7 +40,7 @@ inline void translate(const Clingo::AST::Rule &rule, const Clingo::AST::Statemen
 	ast::Implies formula(std::move(antecedent), std::move(consequent));
 	ast::ScopedFormula scopedFormula(std::move(formula), std::move(ruleContext.freeVariables));
 	scopedFormulas.emplace_back(std::move(scopedFormula));
-	translationCommon::normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());
+	translationCommon::normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

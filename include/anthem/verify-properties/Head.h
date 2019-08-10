@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__HEAD_H
-#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__HEAD_H
+#ifndef __ANTHEM__VERIFY_PROPERTIES__HEAD_H
+#define __ANTHEM__VERIFY_PROPERTIES__HEAD_H
 
 #include <algorithm>
 #include <optional>
@@ -12,7 +12,7 @@
 
 namespace anthem
 {
-namespace verifyStrongEquivalence
+namespace verifyProperties
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -21,7 +21,25 @@ namespace verifyStrongEquivalence
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool isChoiceRule, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+enum class HeadType
+{
+	SingleAtom,
+	ChoiceSingleAtom,
+	IntegrityConstraint,
+	Fact,
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct HeadTranslationResult
+{
+	HeadType headType;
+	std::optional<ast::Predicate> atom;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline ast::Predicate makePredicate(const Clingo::AST::Function &function, Context &context)
 {
 	auto predicateDeclaration = context.findOrCreatePredicateDeclaration(function.name, function.arguments.size());
 	predicateDeclaration->isUsed = true;
@@ -31,59 +49,24 @@ inline ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool 
 
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 	{
-		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
+		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
 		// TODO: should be Domain::Unknown
 		parameters.back()->domain = Domain::Symbolic;
 	}
 
-	const auto makePredicate =
-		[&]()
-		{
-			ast::Predicate predicate(predicateDeclaration);
-
-			for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
-				predicate.arguments.emplace_back(ast::Variable(parameters[i].get()));
-
-			return predicate;
-		};
-
-	const auto makeImplication =
-		[&]() -> ast::Formula
-		{
-			if (!isChoiceRule)
-				return makePredicate();
-
-			ast::Or or_;
-			or_.arguments.reserve(2);
-			or_.arguments.emplace_back(makePredicate());
-			or_.arguments.emplace_back(ast::Not(makePredicate()));
-
-			// This std::move is not actually necessary but a workaround for a bug in gcc 7
-			return std::move(or_);
-		};
-
-	if (parameters.empty())
-		return makeImplication();
-
-	ast::And and_;
-	and_.arguments.reserve(parameters.size());
+	ast::Predicate predicate(predicateDeclaration);
 
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
-	{
-		auto &argument = function.arguments[i];
-		and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
-	}
+		predicate.arguments.emplace_back(ast::Variable(parameters[i].get()));
 
-	ast::Implies implies(std::move(and_), makeImplication());
-
-	return ast::ForAll(std::move(parameters), std::move(implies));
+	return predicate;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct HeadLiteralTranslateToConsequentVisitor
+struct HeadLiteralVisitor
 {
-	ast::Formula visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	HeadTranslationResult visit(const Clingo::AST::Aggregate &aggregate, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
 		if (aggregate.left_guard || aggregate.right_guard)
 			throw TranslationException(headLiteral.location, "aggregates with left or right guards not yet supported in rule head");
@@ -109,19 +92,21 @@ struct HeadLiteralTranslateToConsequentVisitor
 
 		const auto &function = term.data.get<Clingo::AST::Function>();
 
-		// Choice rules require us to translate the rules to formulas in the logic of here-and-there
-		context.semantics = Semantics::LogicOfHereAndThere;
-
-		return makeHeadFormula(function, true, context, ruleContext, variableStack);
+		return HeadTranslationResult{HeadType::ChoiceSingleAtom, makePredicate(function, context)};
 	}
 
-	ast::Formula visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &headLiteral, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	HeadTranslationResult visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
 	{
 		if (literal.sign != Clingo::AST::Sign::None)
 			throw TranslationException(literal.location, "negated head literals not yet supported in rule head");
 
 		if (literal.data.is<Clingo::AST::Boolean>())
-			return ast::Boolean(literal.data.get<Clingo::AST::Boolean>().value);
+		{
+			if (literal.data.get<Clingo::AST::Boolean>().value == true)
+				return HeadTranslationResult{HeadType::Fact, std::nullopt};
+
+			return HeadTranslationResult{HeadType::IntegrityConstraint, std::nullopt};
+		}
 
 		if (!literal.data.is<Clingo::AST::Term>())
 			throw TranslationException(headLiteral.location, "only terms currently supported in literals in rule head");
@@ -133,11 +118,11 @@ struct HeadLiteralTranslateToConsequentVisitor
 
 		const auto &function = term.data.get<Clingo::AST::Function>();
 
-		return makeHeadFormula(function, false, context, ruleContext, variableStack);
+		return HeadTranslationResult{HeadType::SingleAtom, makePredicate(function, context)};
 	}
 
 	template<class T>
-	ast::Formula visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &, RuleContext &, ast::VariableStack &)
+	HeadTranslationResult visit(const T &, const Clingo::AST::HeadLiteral &headLiteral, Context &)
 	{
 		throw TranslationException(headLiteral.location, "head literal not yet supported in rule head, expected literal or aggregate");
 	}

@@ -2,7 +2,7 @@
 #define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__BODY_H
 
 #include <anthem/AST.h>
-#include <anthem/verify-strong-equivalence/ChooseValueInTerm.h>
+#include <anthem/translation-common/ChooseValueInTerm.h>
 
 namespace anthem
 {
@@ -44,7 +44,7 @@ struct BodyTermTranslateVisitor
 		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			auto &argument = function.arguments[i];
-			and_.arguments.emplace_back(chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
+			and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
 		}
 
 		auto makePredicateLiteral =
@@ -120,10 +120,10 @@ struct BodyLiteralTranslateVisitor
 		auto &parameterZ1 = parameters[0];
 		auto &parameterZ2 = parameters[1];
 
-		auto chooseZ1InT1 = chooseValueInTerm(comparison.left, *parameterZ1, context, ruleContext, variableStack);
+		auto chooseZ1InT1 = translationCommon::chooseValueInTerm(comparison.left, *parameterZ1, context, ruleContext, variableStack);
 		and_.arguments.emplace_back(std::move(chooseZ1InT1));
 
-		auto chooseZ2InT2 = chooseValueInTerm(comparison.right, *parameterZ2, context, ruleContext, variableStack);
+		auto chooseZ2InT2 = translationCommon::chooseValueInTerm(comparison.right, *parameterZ2, context, ruleContext, variableStack);
 		and_.arguments.emplace_back(std::move(chooseZ2InT2));
 
 		const auto operator_ = translationCommon::translate(comparison.comparison);

@@ -17,9 +17,11 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<class StatementTranslationPolicy>
 struct StatementVisitor
 {
-	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
+	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement,
+		typename StatementTranslationPolicy::Context &, Context &context)
 	{
 		context.logger.log(output::Priority::Debug, statement.location) << "reading program “" << program.name << "”";
 
@@ -30,22 +32,12 @@ struct StatementVisitor
 			throw LogicException(statement.location, "program parameters currently unsupported");
 	}
 
-	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &scopedFormulas, Context &context)
+	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement,
+		typename StatementTranslationPolicy::Context &translationContext, Context &context)
 	{
 		context.logger.log(output::Priority::Debug, statement.location) << "reading rule";
 
-		switch (context.translationTarget)
-		{
-			case TranslationTarget::ExamineSemantics:
-				examineSemantics::translate(rule, statement, scopedFormulas, context);
-				break;
-			case TranslationTarget::VerifyProperties:
-				verifyProperties::translate(rule, statement, scopedFormulas, context);
-				break;
-			case TranslationTarget::VerifyStrongEquivalence:
-				verifyStrongEquivalence::translate(rule, statement, scopedFormulas, context);
-				break;
-		}
+		StatementTranslationPolicy::translate(rule, statement, translationContext, context);
 	}
 
 	void visit(const Clingo::AST::ShowSignature &showSignature, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)

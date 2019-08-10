@@ -2,7 +2,7 @@
 #define __ANTHEM__VERIFY_PROPERTIES__BODY_H
 
 #include <anthem/AST.h>
-#include <anthem/verify-strong-equivalence/ChooseValueInTerm.h>
+#include <anthem/translation-common/ChooseValueInTerm.h>
 
 namespace anthem
 {
@@ -15,7 +15,7 @@ namespace verifyProperties
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct BodyTermTranslateVisitor
+struct BodyTermVisitor
 {
 	ast::Formula visit(const Clingo::AST::Function &function,
 		const Clingo::AST::Literal &literal, const Clingo::AST::Term &, Context &context,
@@ -44,7 +44,7 @@ struct BodyTermTranslateVisitor
 		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			auto &argument = function.arguments[i];
-			and_.arguments.emplace_back(chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
+			and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
 		}
 
 		auto makePredicateLiteral =
@@ -57,7 +57,7 @@ struct BodyTermTranslateVisitor
 					case Clingo::AST::Sign::Negation:
 						return ast::Not(std::move(predicate));
 					case Clingo::AST::Sign::DoubleNegation:
-						return ast::Not(predicate);
+						return std::move(predicate);
 				}
 
 				throw LogicException("unreachable code, please report to bug tracker");
@@ -84,7 +84,7 @@ struct BodyTermTranslateVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct BodyLiteralTranslateVisitor
+struct BodyLiteralVisitor
 {
 	ast::Formula visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &literal, Context &, RuleContext &, ast::VariableStack &)
 	{
@@ -96,7 +96,7 @@ struct BodyLiteralTranslateVisitor
 
 	ast::Formula visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
-		return term.data.accept(BodyTermTranslateVisitor(), literal, term, context, ruleContext, variableStack);
+		return term.data.accept(BodyTermVisitor(), literal, term, context, ruleContext, variableStack);
 	}
 
 	ast::Formula visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
@@ -120,10 +120,10 @@ struct BodyLiteralTranslateVisitor
 		auto &parameterZ1 = parameters[0];
 		auto &parameterZ2 = parameters[1];
 
-		auto chooseZ1InT1 = chooseValueInTerm(comparison.left, *parameterZ1, context, ruleContext, variableStack);
+		auto chooseZ1InT1 = translationCommon::chooseValueInTerm(comparison.left, *parameterZ1, context, ruleContext, variableStack);
 		and_.arguments.emplace_back(std::move(chooseZ1InT1));
 
-		auto chooseZ2InT2 = chooseValueInTerm(comparison.right, *parameterZ2, context, ruleContext, variableStack);
+		auto chooseZ2InT2 = translationCommon::chooseValueInTerm(comparison.right, *parameterZ2, context, ruleContext, variableStack);
 		and_.arguments.emplace_back(std::move(chooseZ2InT2));
 
 		const auto operator_ = translationCommon::translate(comparison.comparison);
@@ -142,14 +142,14 @@ struct BodyLiteralTranslateVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct BodyBodyLiteralTranslateVisitor
+struct BodyBodyLiteralVisitor
 {
 	ast::Formula visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
 	{
 		if (bodyLiteral.sign != Clingo::AST::Sign::None)
 			throw TranslationException(bodyLiteral.location, "only positive body literals supported currently");
 
-		return literal.data.accept(BodyLiteralTranslateVisitor(), literal, context, ruleContext, variableStack);
+		return literal.data.accept(BodyLiteralVisitor(), literal, context, ruleContext, variableStack);
 	}
 
 	template<class T>

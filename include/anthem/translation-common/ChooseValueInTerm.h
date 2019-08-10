@@ -1,5 +1,5 @@
-#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__CHOOSE_VALUE_IN_TERM_H
-#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__CHOOSE_VALUE_IN_TERM_H
+#ifndef __ANTHEM__TRANSLATION_COMMON__CHOOSE_VALUE_IN_TERM_H
+#define __ANTHEM__TRANSLATION_COMMON__CHOOSE_VALUE_IN_TERM_H
 
 #include <algorithm>
 
@@ -11,7 +11,7 @@
 
 namespace anthem
 {
-namespace verifyStrongEquivalence
+namespace translationCommon
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

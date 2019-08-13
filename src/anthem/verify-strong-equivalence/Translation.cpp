@@ -1,9 +1,17 @@
 #include <anthem/verify-strong-equivalence/Translation.h>
 
+#include <anthem/ASTUtils.h>
+#include <anthem/RuleContext.h>
 #include <anthem/output/FormatterHumanReadable.h>
 #include <anthem/output/FormatterTPTP.h>
+#include <anthem/translation-common/Input.h>
 #include <anthem/translation-common/Output.h>
+#include <anthem/translation-common/Rule.h>
+#include <anthem/translation-common/StatementVisitor.h>
+#include <anthem/verify-strong-equivalence/Body.h>
+#include <anthem/verify-strong-equivalence/Head.h>
 #include <anthem/verify-strong-equivalence/MapDomains.h>
+#include <anthem/verify-strong-equivalence/TranslationContext.h>
 
 namespace anthem
 {
@@ -16,9 +24,56 @@ namespace verifyStrongEquivalence
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(std::vector<ast::ScopedFormula> &&scopedFormulasA,
-	std::optional<std::vector<ast::ScopedFormula>> &&scopedFormulasB, Context &context)
+/*struct Translation
 {
+	// TODO: drop unneeded namespace specifier
+	using TranslationContext = std::vector<ast::ScopedFormula>;
+
+	static void read(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &, Context &context,
+		TranslationContext &translationContext)
+	{
+		// TODO: drop unneeded namespace specifier
+		verifyStrongEquivalence::read(rule, context, translationContext);
+	}
+
+	static void translate(Context &context, TranslationContext &&scopedFormulas);
+};*/
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void read(const Clingo::AST::Rule &rule, Context &context, TranslationContext &translationContext)
+{
+	RuleContext ruleContext;
+	ast::VariableStack variableStack;
+	variableStack.push(&ruleContext.freeVariables);
+
+	// Translate the head
+	auto consequent = rule.head.data.accept(verifyStrongEquivalence::HeadLiteralTranslateToConsequentVisitor(), rule.head, context, ruleContext, variableStack);
+
+	ast::And antecedent;
+
+	// Translate body literals
+	for (auto i = rule.body.cbegin(); i != rule.body.cend(); i++)
+	{
+		const auto &bodyLiteral = *i;
+
+		auto argument = bodyLiteral.data.accept(verifyStrongEquivalence::BodyBodyLiteralTranslateVisitor(), bodyLiteral, context, ruleContext, variableStack);
+		antecedent.arguments.emplace_back(std::move(argument));
+	}
+
+	auto &scopedFormulas = translationContext.scopedFormulasA;
+
+	ast::Implies formula(std::move(antecedent), std::move(consequent));
+	ast::ScopedFormula scopedFormula(std::move(formula), std::move(ruleContext.freeVariables));
+	scopedFormulas.emplace_back(std::move(scopedFormula));
+	translationCommon::normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());
+}
+
+void translate(Context &context, TranslationContext &translationContext)
+{
+	auto &scopedFormulasA = translationContext.scopedFormulasA;
+	auto &scopedFormulasB = translationContext.scopedFormulasB;
+
 	output::PrintContext printContext(context);
 	auto &stream = context.logger.outputStream();
 
@@ -193,6 +248,69 @@ tff(greater, axiom, (![X1: $int, X2: $i]: ~p__greater__(f__integer__(X1), f__sym
 		translationCommon::printFormula(finalFormula, formulaType(), context, printContext);
 		context.logger.outputStream() << std::endl;
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translate(const std::vector<std::string> &fileNames, Context &context)
+{
+	assert(!fileNames.empty());
+
+	if (fileNames.size() > 2)
+		throw TranslationException("only one or two files may me translated at a time when verifying strong equivalence");
+
+	TranslationContext translationContext;
+
+	const auto read =
+		[&](const Clingo::AST::Rule &rule)
+		{
+			verifyStrongEquivalence::read(rule, context, translationContext);
+		};
+
+	const auto readStatement =
+		[&](const Clingo::AST::Statement &statement)
+		{
+			statement.data.accept(StatementVisitor<decltype(read), TranslationContext>(), statement,
+				read, context, translationContext);
+		};
+
+	translationCommon::readSingleFile(readStatement, fileNames.front(), context);
+
+	if (fileNames.size() == 2)
+	{
+		translationContext.scopedFormulasB = std::move(translationContext.scopedFormulasA);
+
+		translationCommon::readSingleFile(readStatement, fileNames.front(), context);
+
+		assert(translationContext.scopedFormulasB);
+		std::swap(translationContext.scopedFormulasA, *translationContext.scopedFormulasB);
+	}
+
+	translate(context, translationContext);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void translate(const char *fileName, std::istream &stream, Context &context)
+{
+	TranslationContext translationContext;
+
+	const auto read =
+		[&](const Clingo::AST::Rule &rule)
+		{
+			verifyStrongEquivalence::read(rule, context, translationContext);
+		};
+
+	const auto readStatement =
+		[&](const Clingo::AST::Statement &statement)
+		{
+			statement.data.accept(StatementVisitor<decltype(read), TranslationContext>(), statement,
+				read, context, translationContext);
+		};
+
+	translationCommon::readSingleStream(readStatement, fileName, stream, context);
+
+	translate(context, translationContext);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

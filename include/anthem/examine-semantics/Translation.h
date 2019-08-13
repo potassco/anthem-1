@@ -1,7 +1,9 @@
 #ifndef __ANTHEM__EXAMINE_SEMANTICS__TRANSLATION_H
 #define __ANTHEM__EXAMINE_SEMANTICS__TRANSLATION_H
 
-#include <anthem/ASTForward.h>
+#include <string>
+#include <vector>
+
 #include <anthem/Context.h>
 
 namespace anthem
@@ -15,7 +17,8 @@ namespace examineSemantics
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context);
+void translate(const std::vector<std::string> &fileNames, Context &context);
+void translate(const char *fileName, std::istream &stream, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -4,7 +4,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>
-#include <anthem/Translation.h>
+#include <anthem/examine-semantics/Translation.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -16,14 +16,13 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	context.performSimplification = true;
 	context.performCompletion = true;
 
 	SECTION("predicate in single rule head")
 	{
 		input << "p :- q.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"(p <-> q)\n"
@@ -36,7 +35,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"p :- q.\n"
 			"p :- r.\n"
 			"p :- s.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"(p <-> (q or r or s))\n"
@@ -53,7 +52,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"p :- q.\n"
 			"r :- t.\n"
 			"q :- r.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"(p <-> (s or q))\n"
@@ -71,7 +70,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			":- s(N).\n"
 			"#false :- t.\n"
 			"#false :- u(5).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"not q\n"
@@ -93,7 +92,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"#true :- #false.\n"
 			"#false :- #true.\n"
 			"#false :- #false.\n";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"not #true\n"
@@ -107,7 +106,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"r.\n"
 			"s :- #true.\n"
 			"t :- #true.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"q\n"
@@ -121,7 +120,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 		input <<
 			"f(f(f(f(f(X))))) :- f(X).\n"
 			"f(1..5).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (f(V1) <-> (exists U1 (V1 = f(f(f(f(U1)))) and f(U1)) or V1 in (1..5)))\n");
@@ -133,7 +132,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"#true :- p, q(N), t(1, 2).\n"
 			"#true.\n"
 			"v :- #false.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"not p\n"
@@ -149,7 +148,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 			"covered(I) :- in(I, S).\n"
 			":- I = 1..n, not covered(I).\n"
 			":- in(I, S), in(J, S), in(I + J, S).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (covered(V1) <-> exists U1 in(V1, U1))\n"
@@ -161,7 +160,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 	SECTION("binary operations with multiple variables")
 	{
 		input << "a(X, Y) :- b(c(X + Y), d(1 + Y)).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1, V2 (a(V1, V2) <-> b(c(V1 + V2), d(1 + V2)))\n"
@@ -171,7 +170,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 	SECTION("predicate with more than one argument")
 	{
 		input << "p(X, Y, Z).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		// TODO: simplify further
 		CHECK(output.str() ==
@@ -181,7 +180,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 	SECTION("negated comparisons")
 	{
 		input << ":- color(V, C1), color(V, C2), C1 != C2.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() == "forall V1, V2 not color(V1, V2)\nforall U1, U2, U3 (not color(U1, U2) or not color(U1, U3) or U2 = U3)\n");
 	}
@@ -189,7 +188,7 @@ TEST_CASE("[completion] Rules are completed", "[completion]")
 	SECTION("absolute value operation")
 	{
 		input << "adj(X, Y) :- X = 1..n, Y = 1..n, |X - Y| = 1.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() == "forall V1, V2 (adj(V1, V2) <-> (V1 in (1..n) and V2 in (1..n) and |V1 - V2| = 1))\n");
 	}

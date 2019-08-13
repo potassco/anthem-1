@@ -1,12 +1,7 @@
-#ifndef __ANTHEM__STATEMENT_VISITOR_H
-#define __ANTHEM__STATEMENT_VISITOR_H
+#ifndef __ANTHEM__TRANSLATION_COMMON__STATEMENT_VISITOR_H
+#define __ANTHEM__TRANSLATION_COMMON__STATEMENT_VISITOR_H
 
-#include <anthem/AST.h>
-#include <anthem/ASTCopy.h>
-#include <anthem/RuleContext.h>
-#include <anthem/examine-semantics/Rule.h>
-#include <anthem/verify-properties/Rule.h>
-#include <anthem/verify-strong-equivalence/Rule.h>
+#include <clingo.hh>
 
 namespace anthem
 {
@@ -17,11 +12,11 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<class StatementTranslationPolicy>
+template<typename ReadFunctor, class TranslationContext>
 struct StatementVisitor
 {
 	void visit(const Clingo::AST::Program &program, const Clingo::AST::Statement &statement,
-		typename StatementTranslationPolicy::Context &, Context &context)
+		ReadFunctor &, Context &context, TranslationContext &)
 	{
 		context.logger.log(output::Priority::Debug, statement.location) << "reading program “" << program.name << "”";
 
@@ -33,14 +28,15 @@ struct StatementVisitor
 	}
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement,
-		typename StatementTranslationPolicy::Context &translationContext, Context &context)
+		ReadFunctor &readFunctor, Context &context, TranslationContext &translationContext)
 	{
 		context.logger.log(output::Priority::Debug, statement.location) << "reading rule";
 
-		StatementTranslationPolicy::translate(rule, statement, translationContext, context);
+		readFunctor(rule);
 	}
 
-	void visit(const Clingo::AST::ShowSignature &showSignature, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
+	void visit(const Clingo::AST::ShowSignature &showSignature,
+		const Clingo::AST::Statement &statement, ReadFunctor &, Context &context, TranslationContext &)
 	{
 		if (showSignature.csp)
 			throw LogicException(statement.location, "CSP #show statements are not supported");
@@ -65,12 +61,14 @@ struct StatementVisitor
 		predicateDeclaration->visibility = ast::PredicateDeclaration::Visibility::Visible;
 	}
 
-	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &)
+	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement,
+		ReadFunctor &, Context &, TranslationContext &)
 	{
 		throw LogicException(statement.location, "only #show statements for atoms (not terms) are supported currently");
 	}
 
-	void visit(const Clingo::AST::External &external, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &context)
+	void visit(const Clingo::AST::External &external, const Clingo::AST::Statement &statement,
+		ReadFunctor &, Context &context, TranslationContext &)
 	{
 		const auto fail =
 			[&]()
@@ -149,7 +147,8 @@ struct StatementVisitor
 	}
 
 	template<class T>
-	void visit(const T &, const Clingo::AST::Statement &statement, std::vector<ast::ScopedFormula> &, Context &)
+	void visit(const T &, const Clingo::AST::Statement &statement, ReadFunctor &, Context &,
+		TranslationContext &)
 	{
 		throw LogicException(statement.location, "statement currently unsupported");
 	}

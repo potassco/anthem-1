@@ -4,7 +4,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>
-#include <anthem/Translation.h>
+#include <anthem/examine-semantics/Translation.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -16,7 +16,6 @@ TEST_CASE("[placeholders] Programs with placeholders are correctly completed", "
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	context.performSimplification = true;
 	context.performCompletion = true;
 
@@ -24,7 +23,7 @@ TEST_CASE("[placeholders] Programs with placeholders are correctly completed", "
 	{
 		input <<
 			"colored(V, red) :- vertex(V), not colored(V, green), not colored(V, blue).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1, V2 (colored(V1, V2) <-> (V2 = red and vertex(V1) and not colored(V1, green) and not colored(V1, blue)))\n"
@@ -36,7 +35,7 @@ TEST_CASE("[placeholders] Programs with placeholders are correctly completed", "
 		input <<
 			"#external vertex(1).\n"
 			"colored(V, red) :- vertex(V), not colored(V, green), not colored(V, blue).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1, V2 (colored(V1, V2) <-> (V2 = red and vertex(V1) and not colored(V1, green) and not colored(V1, blue)))\n");
@@ -53,7 +52,7 @@ TEST_CASE("[placeholders] Programs with placeholders are correctly completed", "
 			"covered(V) :- color(V, _).\n"
 			":- vertex(V), not covered(V).\n"
 			":- color(V1, C), color(V2, C), edge(V1, V2).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1, V2 (color(V1, V2) -> (vertex(V1) and color(V2)))\n"

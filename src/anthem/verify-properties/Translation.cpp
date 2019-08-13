@@ -3,7 +3,7 @@
 #include <anthem/output/FormatterHumanReadable.h>
 #include <anthem/output/FormatterTPTP.h>
 #include <anthem/translation-common/Output.h>
-#include <anthem/verify-properties/Output.h>
+//#include <anthem/verify-properties/Output.h>
 
 namespace anthem
 {
@@ -16,7 +16,15 @@ namespace verifyProperties
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(std::vector<ast::ScopedFormula> &&scopedFormulas, Context &context)
+void translate(const std::vector<std::string> &fileNames, Context &context)
+{
+}
+
+void translate(const char *fileName, std::istream &stream, Context &context)
+{
+}
+
+/*void translate(Context &context, TranslationContext &&translationContext)
 {
 	TranslationContext translationContext;
 
@@ -184,7 +192,7 @@ tff(greater, axiom, (![X1: $int, X2: $i]: ~p__greater__(f__integer__(X1), f__sym
 		translationCommon::printFormula(finalFormula, formulaType(), context, printContext);
 		context.logger.outputStream() << std::endl;
 	}
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

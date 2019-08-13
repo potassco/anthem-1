@@ -26,9 +26,9 @@ enum class FormulaType
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline void translate(const Clingo::AST::Rule &rule, Context &context, TranslationContext &translationContext)
+inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationContext &translationContext)
 {
-	RuleContext ruleContext;
+	/*RuleContext ruleContext;
 	ast::VariableStack variableStack;
 	variableStack.push(&ruleContext.freeVariables);
 
@@ -76,7 +76,7 @@ inline void translate(const Clingo::AST::Rule &rule, Context &context, Translati
 			return;
 	}
 
-	throw LogicException("unreachable code, please report to bug tracker");
+	throw LogicException("unreachable code, please report to bug tracker");*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

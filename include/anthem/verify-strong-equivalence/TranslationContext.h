@@ -1,10 +1,10 @@
-#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__TRANSLATION_H
-#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__TRANSLATION_H
+#ifndef __ANTHEM__VERIFY_STRONG_EQUIVALENCE__TRANSLATION_CONTEXT_H
+#define __ANTHEM__VERIFY_STRONG_EQUIVALENCE__TRANSLATION_CONTEXT_H
 
-#include <string>
+#include <optional>
 #include <vector>
 
-#include <anthem/Context.h>
+#include <anthem/ASTForward.h>
 
 namespace anthem
 {
@@ -13,12 +13,15 @@ namespace verifyStrongEquivalence
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Translation
+// TranslationContext
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void translate(const std::vector<std::string> &fileNames, Context &context);
-void translate(const char *fileName, std::istream &stream, Context &context);
+struct TranslationContext
+{
+	std::vector<ast::ScopedFormula> scopedFormulasA;
+	std::optional<std::vector<ast::ScopedFormula>> scopedFormulasB;
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

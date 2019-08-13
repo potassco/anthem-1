@@ -3,6 +3,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/translation-common/ChooseValueInTerm.h>
+#include <anthem/translation-common/ComparisonOperator.h>
 
 namespace anthem
 {

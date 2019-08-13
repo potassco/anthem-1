@@ -4,7 +4,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>
-#include <anthem/Translation.h>
+#include <anthem/examine-semantics/Translation.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -16,7 +16,6 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	context.performSimplification = true;
 	context.performCompletion = true;
 
@@ -26,7 +25,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"p :- q.\n"
 			"q.\n"
 			"#show p/0.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"(p <-> #true)\n");
@@ -37,7 +36,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 		input <<
 			"p :- q.\n"
 			"#show p/0.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"(p <-> #false)\n");
@@ -51,7 +50,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"c(1).\n"
 			"c(2).\n"
 			"#show a/1.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (a(V1) <-> (not #false and (V1 = 1 or V1 = 2)))\n");
@@ -68,7 +67,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"#show b/1."
 			"#show c/1."
 			"#show d/1.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (a(V1) <-> (b(V1) and c(V1)))\n"
@@ -84,7 +83,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"b(X) :- not d(X).\n"
 			"c(1).\n"
 			"c(2).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (a(V1) <-> (b(V1) and c(V1)))\n"
@@ -102,7 +101,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"d(X) :- not b(X).\n"
 			"{e(X)}.\n"
 			"#show a/1.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		// TODO: simplify further
 		CHECK(output.str() ==
@@ -119,7 +118,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"c(X).\n"
 			"#show a/1.\n"
 			"#show b/1.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (a(V1) <-> #true)\n"
@@ -134,7 +133,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"a(1, 2, 3).\n"
 			"a(2, 4, 6).\n"
 			"#show a/2.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1, V2 (a(V1, V2) <-> exists U1 ((V1 = 1 and V2 = 2 and U1 = 3) or (V1 = 2 and V2 = 4 and U1 = 6)))\n");
@@ -147,7 +146,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"b(c(X)) :- c(X).\n"
 			"c(1..4).\n"
 			"#show a/1.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		// TODO: simplify further
 		CHECK(output.str() ==
@@ -164,7 +163,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			":- p, q, r.\n"
 			"#show s/0.\n"
 			"#show t/0.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"(s -> not #false)\n"
@@ -179,7 +178,7 @@ TEST_CASE("[hidden predicate elimination] Hidden predicates are correctly elimin
 			"a(X, Y, Z) :- p(X, Y, Z).\n"
 			"p(X, Y, Z).\n"
 			"#show a/3.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		// TODO: simplify further
 		CHECK(output.str() ==

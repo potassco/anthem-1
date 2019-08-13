@@ -1,4 +1,4 @@
-#include <anthem/Translation.h>
+/*#include <anthem/Translation.h>
 
 #include <fstream>
 #include <iostream>
@@ -9,8 +9,11 @@
 #include <anthem/Context.h>
 #include <anthem/StatementVisitor.h>
 #include <anthem/examine-semantics/Translation.h>
+#include <anthem/examine-semantics/TranslationPolicy.h>
 #include <anthem/verify-properties/Translation.h>
+#include <anthem/verify-properties/TranslationPolicy.h>
 #include <anthem/verify-strong-equivalence/Translation.h>
+#include <anthem/verify-strong-equivalence/TranslationPolicy.h>
 
 namespace anthem
 {
@@ -21,48 +24,19 @@ namespace anthem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ast::ScopedFormula> translateSingleStream(const char *fileName, std::istream &stream, Context &context)
-{
-	context.logger.log(output::Priority::Info) << "reading " << fileName;
 
-	auto fileContent = std::string(std::istreambuf_iterator<char>(stream), {});
-
-	std::vector<ast::ScopedFormula> scopedFormulas;
-
-	const auto translateStatement =
-		[&scopedFormulas, &context](const Clingo::AST::Statement &statement)
-		{
-			statement.data.accept(StatementVisitor(), statement, scopedFormulas, context);
-		};
-
-	const auto logger =
-		[&context](const Clingo::WarningCode, const char *text)
-		{
-			context.logger.log(output::Priority::Error) << text;
-		};
-
-	Clingo::parse_program(fileContent.c_str(), translateStatement, logger);
-
-	return scopedFormulas;
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<class TranslationPolicy>
 void translate(const std::vector<std::string> &fileNames, Context &context)
 {
 	if (fileNames.empty())
 		throw TranslationException("no input files specified");
 
-	const auto translateSingleFile =
-		[&](const auto &fileName)
-		{
-			std::ifstream file(fileName, std::ios::in);
+	typename TranslationPolicy::TranslationContext translationContext;
 
-			if (!file.is_open())
-				throw LogicException("could not read file “" + fileName + "”");
 
-			return translateSingleStream(fileName.c_str(), file, context);
-		};
 
 	switch (context.translationTarget)
 	{
@@ -71,9 +45,9 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 			if (fileNames.size() > 1)
 				throw TranslationException("only one file may me translated at a time when examining semantics");
 
-			auto scopedFormulas = translateSingleFile(fileNames.front());
+			readSingleFile(fileNames.front());
 
-			examineSemantics::translate(std::move(scopedFormulas), context);
+			examineSemantics::translate(context, std::move(translationContext));
 			break;
 		}
 		case TranslationTarget::VerifyProperties:
@@ -81,9 +55,9 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 			if (fileNames.size() > 1)
 				throw TranslationException("only one file may me translated at a time when verifying properties");
 
-			auto scopedFormulas = translateSingleFile(fileNames.front());
+			readSingleFile(fileNames.front());
 
-			verifyProperties::translate(std::move(scopedFormulas), context);
+			verifyProperties::translate(context, std::move(translationContext));
 			break;
 		}
 		case TranslationTarget::VerifyStrongEquivalence:
@@ -91,9 +65,12 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 			if (fileNames.size() > 2)
 				throw TranslationException("only one or two files may me translated at a time when verifying strong equivalence");
 
-			auto scopedFormulasA = translateSingleFile(fileNames.front());
+			auto scopedFormulasA = readSingleFile(fileNames.front());
+
+			translationContext.
+
 			auto scopedFormulasB = (fileNames.size() > 1)
-				? std::optional<std::vector<ast::ScopedFormula>>(translateSingleFile(fileNames[1]))
+				? std::optional<std::vector<ast::ScopedFormula>>(readSingleFile(fileNames[1]))
 				: std::nullopt;
 
 			verifyStrongEquivalence::translate(std::move(scopedFormulasA), std::move(scopedFormulasB), context);
@@ -104,30 +81,14 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<class TranslationPolicy>
 void translate(const char *fileName, std::istream &stream, Context &context)
 {
-	auto scopedFormulas = translateSingleStream(fileName, stream, context);
-
-	switch (context.translationTarget)
-	{
-		case TranslationTarget::ExamineSemantics:
-		{
-			examineSemantics::translate(std::move(scopedFormulas), context);
-			break;
-		}
-		case TranslationTarget::VerifyProperties:
-		{
-			verifyProperties::translate(std::move(scopedFormulas), context);
-			break;
-		}
-		case TranslationTarget::VerifyStrongEquivalence:
-		{
-			verifyStrongEquivalence::translate(std::move(scopedFormulas), std::nullopt, context);
-			break;
-		}
-	};
+	typename TranslationPolicy::TranslationContext translationContext;
+	readSingleStream<TranslationPolicy>(fileName, stream, context, translationContext);
+	TranslationPolicy::translate(context, std::move(translationContext));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-}
+}*/

@@ -4,7 +4,9 @@
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>
-#include <anthem/Translation.h>
+#include <anthem/examine-semantics/Translation.h>
+#include <anthem/verify-properties/Translation.h>
+#include <anthem/verify-strong-equivalence/Translation.h>
 
 int main(int argc, char **argv)
 {
@@ -86,20 +88,6 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	if (translationTargetString == "verify-strong-equivalence")
-		context.translationTarget = anthem::TranslationTarget::VerifyStrongEquivalence;
-	else if (translationTargetString == "verify-properties")
-		context.translationTarget = anthem::TranslationTarget::VerifyProperties;
-	else if (translationTargetString == "examine-semantics")
-		context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
-	else
-	{
-		context.logger.log(anthem::output::Priority::Error) << "unknown translation target “" << translationTargetString << "”";
-		context.logger.errorStream() << std::endl;
-		printHelp();
-		return EXIT_FAILURE;
-	}
-
 	if (outputFormatString == "human-readable")
 		context.outputFormat = anthem::OutputFormat::HumanReadable;
 	else if (outputFormatString == "tptp")
@@ -165,10 +153,35 @@ int main(int argc, char **argv)
 
 	try
 	{
-		if (!inputFiles.empty())
-			anthem::translate(inputFiles, context);
+		// TODO: refactor
+		if (translationTargetString == "examine-semantics")
+		{
+			if (!inputFiles.empty())
+				anthem::examineSemantics::translate(inputFiles, context);
+			else
+				anthem::examineSemantics::translate("std::cin", std::cin, context);
+		}
+		else if (translationTargetString == "verify-properties")
+		{
+			if (!inputFiles.empty())
+				anthem::verifyProperties::translate(inputFiles, context);
+			else
+				anthem::verifyProperties::translate("std::cin", std::cin, context);
+		}
+		else if (translationTargetString == "verify-strong-equivalence")
+		{
+			if (!inputFiles.empty())
+				anthem::verifyStrongEquivalence::translate(inputFiles, context);
+			else
+				anthem::verifyStrongEquivalence::translate("std::cin", std::cin, context);
+		}
 		else
-			anthem::translate("std::cin", std::cin, context);
+		{
+			context.logger.log(anthem::output::Priority::Error) << "unknown translation target “" << translationTargetString << "”";
+			context.logger.errorStream() << std::endl;
+			printHelp();
+			return EXIT_FAILURE;
+		}
 	}
 	catch (const std::exception &e)
 	{

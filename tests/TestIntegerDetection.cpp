@@ -4,7 +4,7 @@
 
 #include <anthem/AST.h>
 #include <anthem/Context.h>
-#include <anthem/Translation.h>
+#include <anthem/examine-semantics/Translation.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -16,7 +16,6 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 
 	anthem::output::Logger logger(output, errors);
 	anthem::Context context(std::move(logger));
-	context.translationTarget = anthem::TranslationTarget::ExamineSemantics;
 	context.performSimplification = true;
 	context.performCompletion = true;
 	context.performIntegerDetection = true;
@@ -24,7 +23,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 	SECTION("simple-to-detect integer parameter")
 	{
 		input << "p(X) :- X = 1..5.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"int(p/1@1)\n"
@@ -36,7 +35,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		input <<
 			"p(X) :- X = 1..5.\n"
 			"p(X) :- X = error.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"forall V1 (p(V1) <-> (V1 in (1..5) or V1 = error))\n");
@@ -45,7 +44,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 	SECTION("integer parameter with arithmetics")
 	{
 		input << "p(X) :- X = (2 + (1..5)) * 2.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"int(p/1@1)\n"
@@ -57,7 +56,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 		input
 			<< "p(X) :- X = 1..5."
 			<< "q(X) :- p(Y), X = (Y + 5) / 3.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"int(p/1@1)\n"
@@ -72,7 +71,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 			<< "p(X) :- X = 1..5."
 			<< "q(X) :- X = error."
 			<< "r(A, B, C) :- p(X), A = X ** 2, q(B), p(C).";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"int(p/1@1)\n"
@@ -87,7 +86,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 	{
 		input
 			<< "p(X) :- X = 2..n.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"int(p/1@1)\n"
@@ -98,7 +97,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 	{
 		input
 			<< "p(X) :- X = 5 + 9 ** 2.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"int(p/1@1)\n"
@@ -109,7 +108,7 @@ TEST_CASE("[integer detection] Integer variables are correctly detected", "[inte
 	{
 		input
 			<< "p(X) :- X = 5 + 9 / 0.";
-		anthem::translate("input", input, context);
+		anthem::examineSemantics::translate("input", input, context);
 
 		CHECK(output.str() ==
 			"int(p/1@1)\n"

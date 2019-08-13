@@ -31,15 +31,23 @@ enum class HeadType
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct HeadTranslationResult
+struct HeadAtom
 {
-	HeadType headType;
-	std::optional<ast::Predicate> atom;
+	ast::Predicate predicate;
+	const std::vector<Clingo::AST::Term> &arguments;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline ast::Predicate makePredicate(const Clingo::AST::Function &function, Context &context)
+struct HeadTranslationResult
+{
+	HeadType headType;
+	std::optional<HeadAtom> headAtom;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline HeadAtom makeHeadAtom(const Clingo::AST::Function &function, Context &context)
 {
 	auto predicateDeclaration = context.findOrCreatePredicateDeclaration(function.name, function.arguments.size());
 	predicateDeclaration->isUsed = true;
@@ -59,7 +67,7 @@ inline ast::Predicate makePredicate(const Clingo::AST::Function &function, Conte
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		predicate.arguments.emplace_back(ast::Variable(parameters[i].get()));
 
-	return predicate;
+	return HeadAtom{std::move(predicate), function.arguments};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -92,7 +100,7 @@ struct HeadLiteralVisitor
 
 		const auto &function = term.data.get<Clingo::AST::Function>();
 
-		return HeadTranslationResult{HeadType::ChoiceSingleAtom, makePredicate(function, context)};
+		return HeadTranslationResult{HeadType::ChoiceSingleAtom, makeHeadAtom(function, context)};
 	}
 
 	HeadTranslationResult visit(const Clingo::AST::Literal &literal, const Clingo::AST::HeadLiteral &headLiteral, Context &context)
@@ -118,7 +126,7 @@ struct HeadLiteralVisitor
 
 		const auto &function = term.data.get<Clingo::AST::Function>();
 
-		return HeadTranslationResult{HeadType::SingleAtom, makePredicate(function, context)};
+		return HeadTranslationResult{HeadType::SingleAtom, makeHeadAtom(function, context)};
 	}
 
 	template<class T>

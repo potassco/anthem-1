@@ -1,9 +1,10 @@
 #ifndef __ANTHEM__VERIFY_PROPERTIES__TRANSLATION_H
 #define __ANTHEM__VERIFY_PROPERTIES__TRANSLATION_H
 
-#include <anthem/ASTForward.h>
-#include <anthem/verify-properties/Rule.h>
-#include <anthem/verify-properties/TranslationContext.h>
+#include <string>
+#include <vector>
+
+#include <anthem/Context.h>
 
 namespace anthem
 {

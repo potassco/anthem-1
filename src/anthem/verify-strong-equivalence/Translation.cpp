@@ -69,6 +69,8 @@ void read(const Clingo::AST::Rule &rule, Context &context, TranslationContext &t
 	translationCommon::normalizeAntecedent(scopedFormulas.back().formula.get<ast::Implies>());
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void translate(Context &context, TranslationContext &translationContext)
 {
 	auto &scopedFormulasA = translationContext.scopedFormulasA;
@@ -246,7 +248,7 @@ tff(greater, axiom, (![X1: $int, X2: $i]: ~p__greater__(f__integer__(X1), f__sym
 	for (auto &finalFormula : finalFormulas)
 	{
 		translationCommon::printFormula(finalFormula, formulaType(), context, printContext);
-		context.logger.outputStream() << std::endl;
+		stream << std::endl;
 	}
 }
 

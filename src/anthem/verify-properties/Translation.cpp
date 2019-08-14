@@ -67,13 +67,22 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 			auto formula = std::move(translatedBody);
 			translateHeadTerms(headAtom, formula);
 
-			ast::ScopedFormula scopedFormula{std::move(formula), std::move(ruleContext.freeVariables)};
+			auto scopedFormula = ast::ScopedFormula{std::move(formula), std::move(ruleContext.freeVariables)};
 
 			translationContext.definitions[headAtom.predicate.declaration].emplace_back(std::move(scopedFormula));
+
+			return;
+		}
+		case HeadType::IntegrityConstraint:
+		{
+			auto not_ = ast::Not{std::move(translatedBody)};
+			auto scopedFormula = ast::ScopedFormula{std::move(not_), std::move(ruleContext.freeVariables)};
+			translationContext.integrityConstraints.emplace_back(std::move(scopedFormula));
+
+			return;
 		}
 		default:
-			// TODO: implement
-			return;
+			break;
 	}
 
 	throw LogicException("unreachable code, please report to bug tracker");
@@ -101,11 +110,38 @@ void translate(Context &context, TranslationContext &translationContext)
 				stream << ", ";
 			}
 
+			if (definition.freeVariables.empty())
+				stream << "(none)";
+
 			stream << std::endl;
 
 			translationCommon::printFormula(definition.formula, translationCommon::FormulaType::Axiom, context, printContext);
 			stream << std::endl;
 		}
+
+		stream << std::endl;
+	}
+
+	if (!translationContext.integrityConstraints.empty())
+		stream << "# integrity constraints" << std::endl;
+
+	// Print integrity constraints
+	for (auto &integrityConstraint : translationContext.integrityConstraints)
+	{
+		stream << "## free variables: ";
+
+		for (auto &freeVariable : integrityConstraint.freeVariables)
+		{
+			output::print<output::FormatterHumanReadable>(stream, *freeVariable, printContext, true);
+			stream << ", ";
+		}
+
+		if (integrityConstraint.freeVariables.empty())
+			stream << "(none)";
+
+		stream << std::endl;
+
+		translationCommon::printFormula(integrityConstraint.formula, translationCommon::FormulaType::Axiom, context, printContext);
 
 		stream << std::endl;
 	}

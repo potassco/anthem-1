@@ -26,6 +26,28 @@ namespace verifyProperties
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const auto makeExistentiallyClosedFormula =
+	[](auto &&scopedFormula) -> ast::Formula
+	{
+		if (scopedFormula.freeVariables.empty())
+			return std::move(scopedFormula.formula);
+
+		return ast::Exists(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const auto makeUniversallyClosedFormula =
+	[](auto &&scopedFormula) -> ast::Formula
+	{
+		if (scopedFormula.freeVariables.empty())
+			return std::move(scopedFormula.formula);
+
+		return ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationContext &translationContext)
 {
 	RuleContext ruleContext;
@@ -61,15 +83,6 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 					headArgument, headParameter, context, ruleContext, variableStack);
 				formula.arguments.emplace_back(std::move(translatedHeadTerm));
 			}
-		};
-
-	const auto makeExistentiallyClosedFormula =
-		[](auto &&scopedFormula) -> ast::Formula
-		{
-			if (scopedFormula.freeVariables.empty())
-				return std::move(scopedFormula.formula);
-
-			return ast::Exists(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
 		};
 
 	switch (headTranslationResult.headType)
@@ -125,7 +138,8 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 		{
 			auto not_ = ast::Not{translateBody()};
 			auto scopedFormula = ast::ScopedFormula{std::move(not_), std::move(ruleContext.freeVariables)};
-			translationContext.integrityConstraints.emplace_back(std::move(scopedFormula));
+			auto integrityConstraint = makeUniversallyClosedFormula(std::move(scopedFormula));
+			translationContext.integrityConstraints.emplace_back(std::move(integrityConstraint));
 
 			return;
 		}
@@ -171,14 +185,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	}*/
 
 	// TODO: Avoid code duplication
-	const auto makeUniversallyClosedFormula =
-		[](auto &&scopedFormula) -> ast::Formula
-		{
-			if (scopedFormula.freeVariables.empty())
-				return std::move(scopedFormula.formula);
 
-			return ast::ForAll(std::move(scopedFormula.freeVariables), std::move(scopedFormula.formula));
-		};
 
 	for (auto &definitions : translationContext.definitions)
 	{
@@ -211,20 +218,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)
 	{
-		stream << "## free variables: ";
-
-		for (auto &freeVariable : integrityConstraint.freeVariables)
-		{
-			output::print<output::FormatterHumanReadable>(stream, *freeVariable, printContext, true);
-			stream << ", ";
-		}
-
-		if (integrityConstraint.freeVariables.empty())
-			stream << "(none)";
-
-		stream << std::endl;
-
-		translationCommon::printFormula(integrityConstraint.formula, translationCommon::FormulaType::Axiom, context, printContext);
+		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom, context, printContext);
 
 		stream << std::endl;
 	}

@@ -25,7 +25,7 @@ struct TranslationContext
 	};
 
 	std::map<ast::PredicateDeclaration *, Definitions> definitions;
-	std::vector<ast::ScopedFormula> integrityConstraints;
+	std::vector<ast::Formula> integrityConstraints;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

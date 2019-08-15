@@ -18,7 +18,13 @@ namespace verifyProperties
 
 struct TranslationContext
 {
-	std::map<const ast::PredicateDeclaration *, std::vector<ast::ScopedFormula>> definitions;
+	struct Definitions
+	{
+		ast::VariableDeclarationPointers headAtomParameters;
+		std::vector<ast::Formula> definitions;
+	};
+
+	std::map<ast::PredicateDeclaration *, Definitions> definitions;
 	std::vector<ast::ScopedFormula> integrityConstraints;
 };
 

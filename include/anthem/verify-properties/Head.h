@@ -33,7 +33,7 @@ enum class HeadType
 
 struct HeadAtom
 {
-	ast::Predicate predicate;
+	ast::PredicateDeclaration *predicateDeclaration;
 	const std::vector<Clingo::AST::Term> &arguments;
 };
 
@@ -52,22 +52,7 @@ inline HeadAtom makeHeadAtom(const Clingo::AST::Function &function, Context &con
 	auto predicateDeclaration = context.findOrCreatePredicateDeclaration(function.name, function.arguments.size());
 	predicateDeclaration->isUsed = true;
 
-	ast::VariableDeclarationPointers parameters;
-	parameters.reserve(function.arguments.size());
-
-	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
-	{
-		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
-		// TODO: should be Domain::Unknown
-		parameters.back()->domain = Domain::Symbolic;
-	}
-
-	ast::Predicate predicate(predicateDeclaration);
-
-	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
-		predicate.arguments.emplace_back(ast::Variable(parameters[i].get()));
-
-	return HeadAtom{std::move(predicate), function.arguments};
+	return HeadAtom{predicateDeclaration, function.arguments};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

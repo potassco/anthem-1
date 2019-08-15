@@ -71,7 +71,7 @@ inline ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool 
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 	{
 		auto &argument = function.arguments[i];
-		and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
+		and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, ruleContext.freeVariables, variableStack));
 	}
 
 	ast::Implies implies(std::move(and_), makeImplication());

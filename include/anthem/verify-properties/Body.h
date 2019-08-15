@@ -20,7 +20,7 @@ struct BodyTermVisitor
 {
 	ast::Formula visit(const Clingo::AST::Function &function,
 		const Clingo::AST::Literal &literal, const Clingo::AST::Term &, Context &context,
-		RuleContext &ruleContext, ast::VariableStack &variableStack)
+		ast::VariableDeclarationPointers &freeVariables, ast::VariableStack &variableStack)
 	{
 		auto predicateDeclaration = context.findOrCreatePredicateDeclaration(function.name, function.arguments.size());
 		predicateDeclaration->isUsed = true;
@@ -45,7 +45,7 @@ struct BodyTermVisitor
 		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			auto &argument = function.arguments[i];
-			and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, ruleContext, variableStack));
+			and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, freeVariables, variableStack));
 		}
 
 		auto makePredicateLiteral =
@@ -75,7 +75,7 @@ struct BodyTermVisitor
 
 	template<class T>
 	ast::Formula visit(const T &, const Clingo::AST::Literal &,
-		const Clingo::AST::Term &term, Context &, RuleContext &, ast::VariableStack &)
+		const Clingo::AST::Term &term, Context &, ast::VariableDeclarationPointers &, ast::VariableStack &)
 	{
 		assert(!term.data.is<Clingo::AST::Function>());
 
@@ -87,7 +87,7 @@ struct BodyTermVisitor
 
 struct BodyLiteralVisitor
 {
-	ast::Formula visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &literal, Context &, RuleContext &, ast::VariableStack &)
+	ast::Formula visit(const Clingo::AST::Boolean &boolean, const Clingo::AST::Literal &literal, Context &, ast::VariableDeclarationPointers &, ast::VariableStack &)
 	{
 		if (literal.sign != Clingo::AST::Sign::None)
 			throw TranslationException(literal.location, "negated booleans not expected, please report to bug tracker");
@@ -95,12 +95,12 @@ struct BodyLiteralVisitor
 		return ast::Boolean(boolean.value);
 	}
 
-	ast::Formula visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Term &term, const Clingo::AST::Literal &literal, Context &context, ast::VariableDeclarationPointers &freeVariables, ast::VariableStack &variableStack)
 	{
-		return term.data.accept(BodyTermVisitor(), literal, term, context, ruleContext, variableStack);
+		return term.data.accept(BodyTermVisitor(), literal, term, context, freeVariables, variableStack);
 	}
 
-	ast::Formula visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Comparison &comparison, const Clingo::AST::Literal &literal, Context &context, ast::VariableDeclarationPointers &freeVariables, ast::VariableStack &variableStack)
 	{
 		if (literal.sign != Clingo::AST::Sign::None)
 			throw TranslationException(literal.location, "negated comparisons not expected, please report to bug tracker");
@@ -121,10 +121,10 @@ struct BodyLiteralVisitor
 		auto &parameterZ1 = parameters[0];
 		auto &parameterZ2 = parameters[1];
 
-		auto chooseZ1InT1 = translationCommon::chooseValueInTerm(comparison.left, *parameterZ1, context, ruleContext, variableStack);
+		auto chooseZ1InT1 = translationCommon::chooseValueInTerm(comparison.left, *parameterZ1, context, freeVariables, variableStack);
 		and_.arguments.emplace_back(std::move(chooseZ1InT1));
 
-		auto chooseZ2InT2 = translationCommon::chooseValueInTerm(comparison.right, *parameterZ2, context, ruleContext, variableStack);
+		auto chooseZ2InT2 = translationCommon::chooseValueInTerm(comparison.right, *parameterZ2, context, freeVariables, variableStack);
 		and_.arguments.emplace_back(std::move(chooseZ2InT2));
 
 		const auto operator_ = translationCommon::translate(comparison.comparison);
@@ -135,7 +135,7 @@ struct BodyLiteralVisitor
 	}
 
 	template<class T>
-	ast::Formula visit(const T &, const Clingo::AST::Literal &literal, Context &, RuleContext &, ast::VariableStack &)
+	ast::Formula visit(const T &, const Clingo::AST::Literal &literal, Context &, ast::VariableDeclarationPointers &, ast::VariableStack &)
 	{
 		throw TranslationException(literal.location, "literal not yet supported in this context, expected boolean, comparison, or term");
 	}
@@ -145,16 +145,16 @@ struct BodyLiteralVisitor
 
 struct BodyBodyLiteralVisitor
 {
-	ast::Formula visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context, RuleContext &ruleContext, ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Literal &literal, const Clingo::AST::BodyLiteral &bodyLiteral, Context &context, ast::VariableDeclarationPointers &freeVariables, ast::VariableStack &variableStack)
 	{
 		if (bodyLiteral.sign != Clingo::AST::Sign::None)
 			throw TranslationException(bodyLiteral.location, "only positive body literals supported currently");
 
-		return literal.data.accept(BodyLiteralVisitor(), literal, context, ruleContext, variableStack);
+		return literal.data.accept(BodyLiteralVisitor(), literal, context, freeVariables, variableStack);
 	}
 
 	template<class T>
-	ast::Formula visit(const T &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &, RuleContext &, ast::VariableStack &)
+	ast::Formula visit(const T &, const Clingo::AST::BodyLiteral &bodyLiteral, Context &, ast::VariableDeclarationPointers &, ast::VariableStack &)
 	{
 		throw TranslationException(bodyLiteral.location, "body literal not yet supported in this context, expected literal");
 	}

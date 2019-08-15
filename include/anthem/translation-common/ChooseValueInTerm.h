@@ -6,7 +6,6 @@
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>
 #include <anthem/Exception.h>
-#include <anthem/RuleContext.h>
 #include <anthem/Utils.h>
 #include <anthem/translation-common/Term.h>
 
@@ -21,7 +20,7 @@ namespace translationCommon
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ast::Formula chooseValueInTerm(const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack);
+ast::Formula chooseValueInTerm(const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -36,7 +35,7 @@ inline ast::Formula chooseValueInPrimitive(ast::Term &&term, ast::VariableDeclar
 
 struct ChooseValueInTermVisitor
 {
-	ast::Formula visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &, const ast::VariableStack &)
+	ast::Formula visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &, const ast::VariableStack &)
 	{
 		switch (symbol.type())
 		{
@@ -63,7 +62,7 @@ struct ChooseValueInTermVisitor
 		throw LogicException("unreachable code, please report to bug tracker");
 	}
 
-	ast::Formula visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
 	{
 		const auto matchingVariableDeclaration = variableStack.findUserVariableDeclaration(variable.name);
 		const auto isAnonymousVariable = (strcmp(variable.name, "_") == 0);
@@ -77,12 +76,12 @@ struct ChooseValueInTermVisitor
 		// TODO: should be Domain::Unknown
 		otherVariableDeclaration->domain = Domain::Symbolic;
 		ast::Variable otherVariable(otherVariableDeclaration.get());
-		ruleContext.freeVariables.emplace_back(std::move(otherVariableDeclaration));
+		freeVariables.emplace_back(std::move(otherVariableDeclaration));
 
 		return chooseValueInPrimitive(std::move(otherVariable), variableDeclaration);
 	}
 
-	ast::Formula visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translationCommon::translate(binaryOperation.binary_operator, term);
 
@@ -106,10 +105,10 @@ struct ChooseValueInTermVisitor
 				ast::Comparison equals(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), std::move(translatedBinaryOperation));
 				andArguments.emplace_back(std::move(equals));
 
-				auto chooseValueFromLeftArgument = chooseValueInTerm(binaryOperation.left, *parameters[0], context, ruleContext, variableStack);
+				auto chooseValueFromLeftArgument = chooseValueInTerm(binaryOperation.left, *parameters[0], context, freeVariables, variableStack);
 				andArguments.emplace_back(std::move(chooseValueFromLeftArgument));
 
-				auto chooseValueFromRightArgument = chooseValueInTerm(binaryOperation.right, *parameters[1], context, ruleContext, variableStack);
+				auto chooseValueFromRightArgument = chooseValueInTerm(binaryOperation.right, *parameters[1], context, freeVariables, variableStack);
 				andArguments.emplace_back(std::move(chooseValueFromRightArgument));
 
 				ast::And and_(std::move(andArguments));
@@ -142,10 +141,10 @@ struct ChooseValueInTermVisitor
 				ast::Comparison iEqualsJTimesQPlusR(ast::Comparison::Operator::Equal, ast::Variable(parameterI.get()), std::move(jTimesQPlusR));
 				and_.arguments.emplace_back(std::move(iEqualsJTimesQPlusR));
 
-				auto chooseIInT1 = chooseValueInTerm(binaryOperation.left, *parameterI, context, ruleContext, variableStack);
+				auto chooseIInT1 = chooseValueInTerm(binaryOperation.left, *parameterI, context, freeVariables, variableStack);
 				and_.arguments.emplace_back(std::move(chooseIInT1));
 
-				auto chooseJInT2 = chooseValueInTerm(binaryOperation.right, *parameterJ, context, ruleContext, variableStack);
+				auto chooseJInT2 = chooseValueInTerm(binaryOperation.right, *parameterJ, context, freeVariables, variableStack);
 				and_.arguments.emplace_back(std::move(chooseJInT2));
 
 				ast::Comparison jNotEqualTo0(ast::Comparison::Operator::NotEqual, ast::Variable(parameterJ.get()), ast::Integer(0));
@@ -197,7 +196,7 @@ struct ChooseValueInTermVisitor
 		throw LogicException("unreachable code, please report to bug tracker");
 	}
 
-	ast::Formula visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
 	{
 		switch (unaryOperation.unary_operator)
 		{
@@ -219,7 +218,7 @@ struct ChooseValueInTermVisitor
 				ast::Comparison equals(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), std::move(minusZPrime));
 				and_.arguments.emplace_back(std::move(equals));
 
-				auto chooseZPrimeInTPrime = chooseValueInTerm(unaryOperation.argument, *parameterZPrime, context, ruleContext, variableStack);
+				auto chooseZPrimeInTPrime = chooseValueInTerm(unaryOperation.argument, *parameterZPrime, context, freeVariables, variableStack);
 				and_.arguments.emplace_back(std::move(chooseZPrimeInTPrime));
 
 				return ast::Exists(std::move(parameters), std::move(and_));
@@ -231,7 +230,7 @@ struct ChooseValueInTermVisitor
 		throw LogicException("unreachable code, please report to bug tracker");
 	}
 
-	ast::Formula visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
 	{
 		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(3);
@@ -249,10 +248,10 @@ struct ChooseValueInTermVisitor
 		ast::And and_;
 		and_.arguments.reserve(5);
 
-		auto chooseIInT1 = chooseValueInTerm(interval.left, *parameterI, context, ruleContext, variableStack);
+		auto chooseIInT1 = chooseValueInTerm(interval.left, *parameterI, context, freeVariables, variableStack);
 		and_.arguments.emplace_back(std::move(chooseIInT1));
 
-		auto chooseJInT2 = chooseValueInTerm(interval.right, *parameterJ, context, ruleContext, variableStack);
+		auto chooseJInT2 = chooseValueInTerm(interval.right, *parameterJ, context, freeVariables, variableStack);
 		and_.arguments.emplace_back(std::move(chooseJInT2));
 
 		ast::Comparison iLessOrEqualToK(ast::Comparison::Operator::LessEqual, ast::Variable(parameterI.get()), ast::Variable(parameterK.get()));
@@ -267,7 +266,7 @@ struct ChooseValueInTermVisitor
 		return ast::Exists(std::move(parameters), std::move(and_));
 	}
 
-	ast::Formula visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
 	{
 		// Functions with arguments are represented as Clingo::AST::Function by the parser. At this point,
 		// we only have to handle functions with arguments
@@ -304,14 +303,14 @@ struct ChooseValueInTermVisitor
 			auto &parameter = *parameters[i];
 			const auto &argument = function.arguments[i];
 
-			auto chooseValueInArgument = chooseValueInTerm(argument, parameter, context, ruleContext, variableStack);
+			auto chooseValueInArgument = chooseValueInTerm(argument, parameter, context, freeVariables, variableStack);
 			and_.arguments.emplace_back(std::move(chooseValueInArgument));
 		}
 
 		return ast::Exists(std::move(parameters), std::move(and_));
 	}
 
-	ast::Formula visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, ast::VariableDeclaration &, Context &, RuleContext &, const ast::VariableStack &)
+	ast::Formula visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, ast::VariableDeclaration &, Context &, ast::VariableDeclarationPointers &, const ast::VariableStack &)
 	{
 		throw TranslationException(term.location, "“pool” terms not yet unsupported in this context");
 	}
@@ -319,9 +318,9 @@ struct ChooseValueInTermVisitor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline ast::Formula chooseValueInTerm(const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, RuleContext &ruleContext, const ast::VariableStack &variableStack)
+inline ast::Formula chooseValueInTerm(const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
 {
-	return term.data.accept(ChooseValueInTermVisitor(), term, variableDeclaration, context, ruleContext, variableStack);
+	return term.data.accept(ChooseValueInTermVisitor(), term, variableDeclaration, context, freeVariables, variableStack);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -4,7 +4,6 @@
 
 #include <anthem/AST.h>
 #include <anthem/ASTUtils.h>
-#include <anthem/RuleContext.h>
 #include <anthem/output/FormatterHumanReadable.h>
 #include <anthem/output/FormatterTPTP.h>
 #include <anthem/translation-common/ChooseValueInTerm.h>
@@ -69,9 +68,9 @@ const auto declarePredicateParameters =
 
 inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationContext &translationContext)
 {
-	RuleContext ruleContext;
+	ast::VariableDeclarationPointers freeVariables;
 	ast::VariableStack variableStack;
-	variableStack.push(&ruleContext.freeVariables);
+	variableStack.push(&freeVariables);
 
 	const auto translateBody =
 		[&]()
@@ -81,7 +80,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 			// Translate body literals
 			for (const auto &bodyLiteral : rule.body)
 			{
-				auto argument = bodyLiteral.data.accept(BodyBodyLiteralVisitor(), bodyLiteral, context, ruleContext, variableStack);
+				auto argument = bodyLiteral.data.accept(BodyBodyLiteralVisitor(), bodyLiteral, context, freeVariables, variableStack);
 				translatedBody.arguments.emplace_back(std::move(argument));
 			}
 
@@ -99,7 +98,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 				auto &headArgument = headArguments[i];
 
 				auto translatedHeadTerm = translationCommon::chooseValueInTerm(
-					headArgument, headParameter, context, ruleContext, variableStack);
+					headArgument, headParameter, context, freeVariables, variableStack);
 				formula.arguments.emplace_back(std::move(translatedHeadTerm));
 			}
 		};
@@ -133,7 +132,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 			variableStack.pop();
 
-			auto scopedFormula = ast::ScopedFormula{std::move(formula), std::move(ruleContext.freeVariables)};
+			auto scopedFormula = ast::ScopedFormula{std::move(formula), std::move(freeVariables)};
 			auto definition = makeExistentiallyClosedFormula(std::move(scopedFormula));
 
 			definitions.definitions.emplace_back(std::move(definition));
@@ -143,7 +142,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 		case HeadType::IntegrityConstraint:
 		{
 			auto not_ = ast::Not{translateBody()};
-			auto scopedFormula = ast::ScopedFormula{std::move(not_), std::move(ruleContext.freeVariables)};
+			auto scopedFormula = ast::ScopedFormula{std::move(not_), std::move(freeVariables)};
 			auto integrityConstraint = makeUniversallyClosedFormula(std::move(scopedFormula));
 			translationContext.integrityConstraints.emplace_back(std::move(integrityConstraint));
 

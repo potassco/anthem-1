@@ -24,8 +24,16 @@ struct TranslationContext
 		std::vector<ast::Formula> definitions;
 	};
 
+	struct ConstantReplacementsComparator
+	{
+		bool operator()(const ast::FunctionDeclaration *x1, const ast::FunctionDeclaration *x2) const
+		{
+			return x1->name < x2->name;
+		}
+	};
+
 	ast::VariableDeclarationPointers inputParameters;
-	std::map<ast::FunctionDeclaration *, ast::VariableDeclaration *> constantReplacements;
+	std::map<ast::FunctionDeclaration *, ast::VariableDeclaration *, ConstantReplacementsComparator> constantReplacements;
 
 	std::map<ast::PredicateDeclaration *, Definitions> definitions;
 	std::vector<ast::Formula> integrityConstraints;

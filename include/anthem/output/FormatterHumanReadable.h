@@ -134,6 +134,11 @@ struct FormatterHumanReadable
 		return stream;
 	}
 
+	static output::ColorStream &print(output::ColorStream &stream, const ast::FunctionDeclaration &functionDeclaration, PrintContext &, bool)
+	{
+		return (stream << functionDeclaration.name << "/" << functionDeclaration.arity());
+	}
+
 	static output::ColorStream &print(output::ColorStream &stream, const ast::In &in, PrintContext &printContext, bool)
 	{
 		if (printContext.context.parenthesisStyle == ParenthesisStyle::Full)

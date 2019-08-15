@@ -244,12 +244,16 @@ void translate(Context &context, TranslationContext &translationContext)
 	{
 		stream << "% input parameters: ";
 
-		for (const auto &inputParameter : translationContext.inputParameters)
+		for (const auto &constantReplacement : translationContext.constantReplacements)
 		{
-			if (&inputParameter != &translationContext.inputParameters.front())
+			if (&constantReplacement.first != &translationContext.constantReplacements.begin()->first)
 				stream << ", ";
 
-			output::print<output::FormatterHumanReadable>(stream, *inputParameter, printContext);
+			output::print<output::FormatterHumanReadable>(stream, *constantReplacement.second, printContext);
+
+			stream << " for ";
+
+			output::print<output::FormatterHumanReadable>(stream, *constantReplacement.first, printContext);
 		}
 
 		stream << std::endl;

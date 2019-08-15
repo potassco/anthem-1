@@ -139,6 +139,11 @@ struct FormatterTPTP
 		return stream;
 	}
 
+	static output::ColorStream &print(output::ColorStream &stream, const ast::FunctionDeclaration &functionDeclaration, PrintContext &, bool)
+	{
+		return (stream << functionDeclaration.name << "/" << functionDeclaration.arity());
+	}
+
 	static output::ColorStream &print(output::ColorStream &, const ast::In &, PrintContext &, bool)
 	{
 		throw TranslationException("set inclusion operator not implemented with TPTP, please report to bug tracker");

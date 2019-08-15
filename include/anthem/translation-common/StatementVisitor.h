@@ -28,7 +28,7 @@ struct StatementVisitor
 	}
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement,
-		ReadFunctor &readFunctor, Context &context, TranslationContext &translationContext)
+		ReadFunctor &readFunctor, Context &context, TranslationContext &)
 	{
 		context.logger.log(output::Priority::Debug, statement.location) << "reading rule";
 

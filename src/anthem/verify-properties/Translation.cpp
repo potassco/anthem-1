@@ -12,6 +12,7 @@
 #include <anthem/translation-common/StatementVisitor.h>
 #include <anthem/verify-properties/Body.h>
 #include <anthem/verify-properties/Head.h>
+#include <anthem/verify-properties/ReplaceConstants.h>
 #include <anthem/verify-properties/TranslationContext.h>
 
 namespace anthem
@@ -132,7 +133,11 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 			variableStack.pop();
 
-			auto scopedFormula = ast::ScopedFormula{std::move(formula), std::move(freeVariables)};
+			// Replace constants with variables
+			ast::Formula constantFreeFormula = ast::Formula(std::move(formula));
+			replaceConstants(constantFreeFormula, translationContext);
+
+			auto scopedFormula = ast::ScopedFormula{std::move(constantFreeFormula), std::move(freeVariables)};
 			auto definition = makeExistentiallyClosedFormula(std::move(scopedFormula));
 
 			definitions.definitions.emplace_back(std::move(definition));
@@ -234,6 +239,21 @@ void translate(Context &context, TranslationContext &translationContext)
 
 			return ast::ScopedFormula(std::move(biconditional), std::move(definitions.second.headAtomParameters));
 		};
+
+	if (!translationContext.inputParameters.empty())
+	{
+		stream << "% input parameters: ";
+
+		for (const auto &inputParameter : translationContext.inputParameters)
+		{
+			if (&inputParameter != &translationContext.inputParameters.front())
+				stream << ", ";
+
+			output::print<output::FormatterHumanReadable>(stream, *inputParameter, printContext);
+		}
+
+		stream << std::endl;
+	}
 
 	for (auto &predicateDeclaration : context.predicateDeclarations)
 	{

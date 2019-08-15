@@ -373,6 +373,7 @@ struct VariableDeclaration
 		UserDefined,
 		Head,
 		Body,
+		Input,
 	};
 
 	explicit VariableDeclaration(Type type)

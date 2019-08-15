@@ -277,6 +277,8 @@ struct FormatterHumanReadable
 				return printVariableDeclaration(HeadVariablePrefix, printContext.headVariableIDs);
 			case ast::VariableDeclaration::Type::Body:
 				return printVariableDeclaration(BodyVariablePrefix, printContext.bodyVariableIDs);
+			case ast::VariableDeclaration::Type::Input:
+				return printVariableDeclaration(InputVariablePrefix, printContext.inputVariableIDs);
 		}
 
 		return stream;

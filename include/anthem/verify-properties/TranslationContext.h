@@ -24,6 +24,9 @@ struct TranslationContext
 		std::vector<ast::Formula> definitions;
 	};
 
+	ast::VariableDeclarationPointers inputParameters;
+	std::map<ast::FunctionDeclaration *, ast::VariableDeclaration *> constantReplacements;
+
 	std::map<ast::PredicateDeclaration *, Definitions> definitions;
 	std::vector<ast::Formula> integrityConstraints;
 };

@@ -48,6 +48,25 @@ const auto makeUniversallyClosedFormula =
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const auto declarePredicateParameters =
+	[](const auto &predicateDeclaration)
+	{
+		ast::VariableDeclarationPointers parameters;
+		parameters.reserve(predicateDeclaration.arity());
+
+		for (int i = 0; i < static_cast<int>(predicateDeclaration.arity()); i++)
+		{
+			parameters.emplace_back(
+				std::make_unique<ast::VariableDeclaration>( ast::VariableDeclaration::Type::Head));
+			// TODO: should be Domain::Program
+			parameters.back()->domain = Domain::Unknown;
+		}
+
+		return parameters;
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationContext &translationContext)
 {
 	RuleContext ruleContext;
@@ -95,21 +114,9 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 			if (translationContext.definitions.find(headAtom.predicateDeclaration)
 				== translationContext.definitions.cend())
 			{
-				ast::VariableDeclarationPointers headAtomParameters;
-				headAtomParameters.reserve(headAtom.predicateDeclaration->arity());
-
-				for (int i = 0; i < static_cast<int>(headAtom.predicateDeclaration->arity()); i++)
-				{
-					headAtomParameters.emplace_back(
-						std::make_unique<ast::VariableDeclaration>(
-							ast::VariableDeclaration::Type::Head));
-					// TODO: should be Domain::Unknown
-					headAtomParameters.back()->domain = Domain::Symbolic;
-				}
-
 				TranslationContext::Definitions definitions
 				{
-					std::move(headAtomParameters),
+					declarePredicateParameters(*headAtom.predicateDeclaration),
 					std::vector<ast::Formula>(),
 				};
 
@@ -126,7 +133,6 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 			variableStack.pop();
 
-			std::cout << ruleContext.freeVariables.size() << std::endl;
 			auto scopedFormula = ast::ScopedFormula{std::move(formula), std::move(ruleContext.freeVariables)};
 			auto definition = makeExistentiallyClosedFormula(std::move(scopedFormula));
 
@@ -160,11 +166,11 @@ void translate(Context &context, TranslationContext &translationContext)
 	/*// Print translated formulas
 	for (auto &definitions : translationContext.definitions)
 	{
-		stream << "# definitions for " << definitions.first->name << "/" << definitions.first->arity() << std::endl;
+		stream << "% definitions for " << definitions.first->name << "/" << definitions.first->arity() << std::endl;
 
 		for (auto &definition : definitions.second)
 		{
-			stream << "## free variables: ";
+			stream << "%% free variables: ";
 
 			for (auto &freeVariable : definition.freeVariables)
 			{
@@ -184,27 +190,62 @@ void translate(Context &context, TranslationContext &translationContext)
 		stream << std::endl;
 	}*/
 
-	// TODO: Avoid code duplication
+	std::sort(context.predicateDeclarations.begin(), context.predicateDeclarations.end(),
+		[](const auto &x, const auto &y)
+		{
+			if (x->name != y->name)
+				return x->name < y->name;
 
+			return x->arity() < y->arity();
+		});
 
-	for (auto &definitions : translationContext.definitions)
+	const auto makeCompletedDefinition =
+		[&](auto &predicateDeclaration)
+		{
+			const auto matchingDefinitions = translationContext.definitions.find(&predicateDeclaration);
+
+			if (matchingDefinitions == translationContext.definitions.cend())
+			{
+				auto headAtomParameters = declarePredicateParameters(predicateDeclaration);
+
+				ast::Predicate predicate(&predicateDeclaration);
+
+				for (int i = 0; i < static_cast<int>(headAtomParameters.size()); i++)
+					predicate.arguments.emplace_back(ast::Variable(headAtomParameters[i].get()));
+
+				ast::Not not_(std::move(predicate));
+
+				return ast::ScopedFormula(std::move(not_), std::move(headAtomParameters));
+			}
+
+			auto &definitions = *matchingDefinitions;
+
+			ast::Or or_;
+			or_.arguments.reserve(definitions.second.headAtomParameters.size());
+
+			for (auto &definition : definitions.second.definitions)
+				or_.arguments.emplace_back(std::move(definition));
+
+			ast::Predicate predicate(&predicateDeclaration);
+
+			for (int i = 0; i < static_cast<int>(definitions.second.headAtomParameters.size()); i++)
+				predicate.arguments.emplace_back(ast::Variable(definitions.second.headAtomParameters[i].get()));
+
+			ast::Biconditional biconditional{std::move(predicate), std::move(or_)};
+
+			return ast::ScopedFormula(std::move(biconditional), std::move(definitions.second.headAtomParameters));
+		};
+
+	for (auto &predicateDeclaration : context.predicateDeclarations)
 	{
-		stream << "# completed definition for " << definitions.first->name << "/" << definitions.first->arity() << std::endl;
+		stream
+			<< "% completed definition for "
+			<< predicateDeclaration->name
+			<< "/" << predicateDeclaration->arity()
+			<< std::endl;
 
-		ast::Or or_;
-		or_.arguments.reserve(definitions.second.headAtomParameters.size());
-
-		for (auto &definition : definitions.second.definitions)
-			or_.arguments.emplace_back(std::move(definition));
-
-		ast::Predicate predicate(definitions.first);
-
-		for (int i = 0; i < static_cast<int>(definitions.second.headAtomParameters.size()); i++)
-			predicate.arguments.emplace_back(ast::Variable(definitions.second.headAtomParameters[i].get()));
-
-		ast::Biconditional biconditional{std::move(predicate), std::move(or_)};
 		auto completedDefinition = makeUniversallyClosedFormula(
-			ast::ScopedFormula{std::move(biconditional), std::move(definitions.second.headAtomParameters)});
+			makeCompletedDefinition(*predicateDeclaration));
 
 		translationCommon::printFormula(completedDefinition, translationCommon::FormulaType::Axiom,
 			context, printContext);
@@ -213,7 +254,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	}
 
 	if (!translationContext.integrityConstraints.empty())
-		stream << "# integrity constraints" << std::endl;
+		stream << "% integrity constraints" << std::endl;
 
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)

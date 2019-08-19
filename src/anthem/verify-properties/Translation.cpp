@@ -225,7 +225,7 @@ void translate(Context &context, TranslationContext &translationContext)
 
 				ast::Predicate predicate(&predicateDeclaration);
 
-				for (int i = 0; i < static_cast<int>(headAtomParameters.size()); i++)
+				for (auto i = 0; i < static_cast<int>(headAtomParameters.size()); i++)
 					predicate.arguments.emplace_back(ast::Variable(headAtomParameters[i].get()));
 
 				ast::Not not_(std::move(predicate));
@@ -238,12 +238,16 @@ void translate(Context &context, TranslationContext &translationContext)
 			ast::Or or_;
 			or_.arguments.reserve(definitions.second.headAtomParameters.size());
 
-			for (auto &definition : definitions.second.definitions)
-				or_.arguments.emplace_back(std::move(definition));
+			// Otherwise, build the disjunction of all existentially closed definitions
+			for (auto &&definition : definitions.second.definitions)
+			{
+				auto existentiallyClosedDefinition = makeExistentiallyClosedFormula(std::move(definition));
+				or_.arguments.emplace_back(std::move(existentiallyClosedDefinition));
+			}
 
 			ast::Predicate predicate(&predicateDeclaration);
 
-			for (int i = 0; i < static_cast<int>(definitions.second.headAtomParameters.size()); i++)
+			for (auto i = 0; i < static_cast<int>(definitions.second.headAtomParameters.size()); i++)
 				predicate.arguments.emplace_back(ast::Variable(definitions.second.headAtomParameters[i].get()));
 
 			ast::Biconditional biconditional{std::move(predicate), std::move(or_)};

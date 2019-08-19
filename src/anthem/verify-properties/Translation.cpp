@@ -277,20 +277,6 @@ void translate(Context &context, TranslationContext &translationContext)
 		stream << std::endl;
 	}
 
-	const auto isDomainUnificationRequested =
-		[&]()
-		{
-			switch (context.unifyDomainsPolicy)
-			{
-				case UnifyDomainsPolicy::Always:
-					return true;
-				case UnifyDomainsPolicy::Auto:
-					return (context.outputFormat == OutputFormat::TPTP);
-			}
-
-			throw TranslationException("supposedly unreachable code, please report to the bug tracker");
-		};
-
 	for (auto &predicateDeclaration : predicateDeclarations)
 	{
 		stream
@@ -302,7 +288,7 @@ void translate(Context &context, TranslationContext &translationContext)
 		auto completedDefinition = makeUniversallyClosedFormula(
 			makeCompletedDefinition(*predicateDeclaration));
 
-		if (isDomainUnificationRequested())
+		if (context.isDomainUnificationRequested())
 			translationCommon::unifyDomains(completedDefinition, context);
 
 		translationCommon::printFormula(completedDefinition, translationCommon::FormulaType::Axiom,
@@ -317,7 +303,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)
 	{
-		if (isDomainUnificationRequested())
+		if (context.isDomainUnificationRequested())
 			translationCommon::unifyDomains(integrityConstraint, context);
 
 		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom, context, printContext);

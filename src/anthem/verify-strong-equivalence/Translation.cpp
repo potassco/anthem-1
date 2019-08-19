@@ -137,22 +137,8 @@ void translate(Context &context, TranslationContext &translationContext)
 
 	auto finalFormulas = buildFinalFormulas();
 
-	const auto isDomainUnificationRequested =
-		[&]()
-		{
-			switch (context.unifyDomainsPolicy)
-			{
-				case UnifyDomainsPolicy::Always:
-					return true;
-				case UnifyDomainsPolicy::Auto:
-					return (context.outputFormat == OutputFormat::TPTP);
-			}
-
-			throw TranslationException("supposedly unreachable code, please report to the bug tracker");
-		};
-
 	// If requested, unify program and integer variables into one type
-	if (isDomainUnificationRequested())
+	if (context.isDomainUnificationRequested())
 		for (auto &finalFormula : finalFormulas)
 			translationCommon::unifyDomains(finalFormula, context);
 

@@ -4,6 +4,7 @@
 #include <optional>
 
 #include <anthem/AST.h>
+#include <anthem/Exception.h>
 #include <anthem/OutputFormat.h>
 #include <anthem/Semantics.h>
 #include <anthem/UnifyDomainsPolicy.h>
@@ -28,7 +29,7 @@ struct Context
 	{
 	}
 
-	std::optional<ast::PredicateDeclaration *> findPredicateDeclaration(const char *name, size_t arity)
+	std::optional<ast::PredicateDeclaration *> findPredicateDeclaration(const char *name, size_t arity) const
 	{
 		const auto matchesExistingPredicateDeclaration =
 			[&](const auto &predicateDeclaration)
@@ -58,7 +59,7 @@ struct Context
 		return predicateDeclarations.back().get();
 	}
 
-	std::optional<ast::FunctionDeclaration *> findFunctionDeclaration(const char *name, size_t arity)
+	std::optional<ast::FunctionDeclaration *> findFunctionDeclaration(const char *name, size_t arity) const
 	{
 		const auto matchesExistingFunctionDeclaration =
 			[&](const auto &functionDeclarations)
@@ -86,6 +87,19 @@ struct Context
 		functionDeclarations.emplace_back(std::make_unique<ast::FunctionDeclaration>(name, arity));
 
 		return functionDeclarations.back().get();
+	}
+
+	bool isDomainUnificationRequested() const
+	{
+		switch (unifyDomainsPolicy)
+		{
+			case UnifyDomainsPolicy::Always:
+				return true;
+			case UnifyDomainsPolicy::Auto:
+				return (outputFormat == OutputFormat::TPTP);
+		}
+
+		throw LogicException("unexpected unify-domains policy, please report to bug tracker");
 	}
 
 	output::Logger logger;

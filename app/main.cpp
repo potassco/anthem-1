@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 		("i,input", "Input files (one file for plain translation, two files for verifying strong equivalence)", cxxopts::value<std::vector<std::string>>())
 		("target", "Translation target (verify-strong-equivalence, examine-semantics)", cxxopts::value<std::string>()->default_value("verify-strong-equivalence"))
 		("output-format", "Output format (human-readable, tptp)", cxxopts::value<std::string>()->default_value("human-readable"))
-		("map-to-integers", "Map all variable sorts to integers (always, auto)", cxxopts::value<std::string>()->default_value("auto"))
+		("unify-domains", "Unify program and integer variables into one type (always, auto)", cxxopts::value<std::string>()->default_value("auto"))
 		("no-simplify", "Do not simplify the output (only for examine-semantics translation target)")
 		("no-complete", "Do not perform completion (only for examine-semantics translation target)")
 		("no-detect-integers", "Do not detect integer variables (only for examine-semantics translation target)")
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 	std::vector<std::string> inputFiles;
 	std::string translationTargetString;
 	std::string outputFormatString;
-	std::string mapToIntegersPolicyString;
+	std::string unifyDomainsPolicyString;
 	std::string variableDomainString;
 	std::string colorPolicyString;
 	std::string parenthesisStyleString;
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
 		translationTargetString = parseResult["target"].as<std::string>();
 		outputFormatString = parseResult["output-format"].as<std::string>();
-		mapToIntegersPolicyString = parseResult["map-to-integers"].as<std::string>();
+		unifyDomainsPolicyString = parseResult["unify-domains"].as<std::string>();
 		context.performSimplification = (parseResult.count("no-simplify") == 0);
 		context.performCompletion = (parseResult.count("no-complete") == 0);
 		context.performIntegerDetection = (parseResult.count("no-detect-integers") == 0);
@@ -100,13 +100,13 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (mapToIntegersPolicyString == "auto")
-		context.mapToIntegersPolicy = anthem::MapToIntegersPolicy::Auto;
-	else if (mapToIntegersPolicyString == "always")
-		context.mapToIntegersPolicy = anthem::MapToIntegersPolicy::Always;
+	if (unifyDomainsPolicyString == "auto")
+		context.unifyDomainsPolicy = anthem::UnifyDomainsPolicy::Auto;
+	else if (unifyDomainsPolicyString == "always")
+		context.unifyDomainsPolicy = anthem::UnifyDomainsPolicy::Always;
 	else
 	{
-		context.logger.log(anthem::output::Priority::Error) << "unknown map-to-integers policy “" << mapToIntegersPolicyString << "”";
+		context.logger.log(anthem::output::Priority::Error) << "unknown unify-domains policy “" << unifyDomainsPolicyString << "”";
 		context.logger.errorStream() << std::endl;
 		printHelp();
 		return EXIT_FAILURE;

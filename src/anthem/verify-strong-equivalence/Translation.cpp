@@ -8,9 +8,9 @@
 #include <anthem/translation-common/Output.h>
 #include <anthem/translation-common/Rule.h>
 #include <anthem/translation-common/StatementVisitor.h>
+#include <anthem/translation-common/UnifyDomains.h>
 #include <anthem/verify-strong-equivalence/Body.h>
 #include <anthem/verify-strong-equivalence/Head.h>
-#include <anthem/verify-strong-equivalence/MapDomains.h>
 #include <anthem/verify-strong-equivalence/TranslationContext.h>
 
 namespace anthem
@@ -137,26 +137,26 @@ void translate(Context &context, TranslationContext &translationContext)
 
 	auto finalFormulas = buildFinalFormulas();
 
-	const auto performDomainMapping =
+	const auto isDomainUnificationRequested =
 		[&]()
 		{
-			switch (context.mapToIntegersPolicy)
+			switch (context.unifyDomainsPolicy)
 			{
-				case MapToIntegersPolicy::Always:
+				case UnifyDomainsPolicy::Always:
 					return true;
-				case MapToIntegersPolicy::Auto:
+				case UnifyDomainsPolicy::Auto:
 					return (context.outputFormat == OutputFormat::TPTP);
 			}
 
 			throw TranslationException("supposedly unreachable code, please report to the bug tracker");
 		};
 
-	// If requested, map both program and integer variables to integers
-	if (performDomainMapping())
+	// If requested, unify program and integer variables into one type
+	if (isDomainUnificationRequested())
 		for (auto &finalFormula : finalFormulas)
-			mapDomains(finalFormula, context);
+			translationCommon::unifyDomains(finalFormula, context);
 
-	// Print auxiliary definitions for mapping program and integer variables to even and odd integers
+	// Print auxiliary definitions for unifying program and integer variables into one type
 	if (context.outputFormat == OutputFormat::TPTP)
 	{
 		stream

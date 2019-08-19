@@ -52,14 +52,14 @@ struct ChooseValueInTermVisitor
 				// Functions with arguments are represented as Clingo::AST::Function by the parser. At this
 				// point, we only have to handle (0-ary) constants
 				if (!symbol.arguments().empty())
-					throw TranslationException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to the bug tracker");
+					throw TranslationException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to bug tracker");
 
 				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), 0);
 				return chooseValueInPrimitive(ast::Function(constantDeclaration), variableDeclaration);
 			}
 		}
 
-		throw LogicException("unreachable code, please report to bug tracker");
+		throw LogicException("unexpected symbol type, please report to bug tracker");
 	}
 
 	ast::Formula visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
@@ -73,8 +73,7 @@ struct ChooseValueInTermVisitor
 			return chooseValueInPrimitive(ast::Variable(*matchingVariableDeclaration), variableDeclaration);
 
 		auto otherVariableDeclaration = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::UserDefined, std::string(variable.name));
-		// TODO: should be Domain::Unknown
-		otherVariableDeclaration->domain = Domain::Symbolic;
+		otherVariableDeclaration->domain = Domain::Program;
 		ast::Variable otherVariable(otherVariableDeclaration.get());
 		freeVariables.emplace_back(std::move(otherVariableDeclaration));
 
@@ -91,7 +90,7 @@ struct ChooseValueInTermVisitor
 				ast::VariableDeclarationPointers parameters;
 				parameters.reserve(2);
 
-				for (int i = 0; i < 2; i++)
+				for (auto i = 0; i < 2; i++)
 				{
 					parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 					parameters.back()->domain = Domain::Integer;
@@ -122,7 +121,7 @@ struct ChooseValueInTermVisitor
 				ast::VariableDeclarationPointers parameters;
 				parameters.reserve(4);
 
-				for (int i = 0; i < 4; i++)
+				for (auto i = 0; i < 4; i++)
 				{
 					parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 					parameters.back()->domain = Domain::Integer;
@@ -171,7 +170,7 @@ struct ChooseValueInTermVisitor
 						break;
 					}
 					default:
-						throw TranslationException("unexpected binary operation, please report this to the bug tracker");
+						throw TranslationException("unexpected binary binary operator, please report this to the bug tracker");
 				}
 
 				return ast::Exists(std::move(parameters), std::move(and_));
@@ -190,10 +189,10 @@ struct ChooseValueInTermVisitor
 			case ast::BinaryOperation::Operator::Modulo:
 				return handleDivisonAndModulo();
 			case ast::BinaryOperation::Operator::Power:
-				throw TranslationException("binary operator “power” not yet supported in this context");
+				throw TranslationException("binary operator “power” not yet supported");
 		}
 
-		throw LogicException("unreachable code, please report to bug tracker");
+		throw LogicException("unexpected binary operator, please report to bug tracker");
 	}
 
 	ast::Formula visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
@@ -201,7 +200,7 @@ struct ChooseValueInTermVisitor
 		switch (unaryOperation.unary_operator)
 		{
 			case Clingo::AST::UnaryOperator::Absolute:
-				throw TranslationException(term.location, "unary operation “absolute value” not yet supported in this context");
+				throw TranslationException(term.location, "unary operation “absolute value” not yet supported");
 			case Clingo::AST::UnaryOperator::Minus:
 			{
 				ast::VariableDeclarationPointers parameters;
@@ -224,10 +223,10 @@ struct ChooseValueInTermVisitor
 				return ast::Exists(std::move(parameters), std::move(and_));
 			}
 			case Clingo::AST::UnaryOperator::Negation:
-				throw TranslationException(term.location, "unary operation “negation” not yet supported in this context");
+				throw TranslationException(term.location, "unary operation “negation” not yet supported");
 		};
 
-		throw LogicException("unreachable code, please report to bug tracker");
+		throw LogicException("unexpected unary operator, please report to bug tracker");
 	}
 
 	ast::Formula visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
@@ -235,7 +234,7 @@ struct ChooseValueInTermVisitor
 		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(3);
 
-		for (int i = 0; i < 3; i++)
+		for (auto i = 0; i < 3; i++)
 		{
 			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 			parameters.back()->domain = Domain::Integer;
@@ -266,53 +265,14 @@ struct ChooseValueInTermVisitor
 		return ast::Exists(std::move(parameters), std::move(and_));
 	}
 
-	ast::Formula visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
+	ast::Formula visit(const Clingo::AST::Function &, const Clingo::AST::Term &term, ast::VariableDeclaration &, Context &, ast::VariableDeclarationPointers &, const ast::VariableStack &)
 	{
-		// Functions with arguments are represented as Clingo::AST::Function by the parser. At this point,
-		// we only have to handle functions with arguments
-		if (function.arguments.empty())
-			throw TranslationException(term.location, "unexpected 0-ary function, expected at least one argument, please report to the bug tracker");
-
-		auto functionDeclaration = context.findOrCreateFunctionDeclaration(function.name, function.arguments.size());
-
-		ast::Function astFunction(functionDeclaration);
-		astFunction.arguments.reserve(function.arguments.size());
-
-		ast::VariableDeclarationPointers parameters;
-		parameters.reserve(function.arguments.size());
-
-		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
-		{
-			auto parameter = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body);
-			// TODO: should be Domain::Unknown
-			parameter->domain = Domain::Symbolic;
-
-			astFunction.arguments.emplace_back(ast::Variable(parameter.get()));
-
-			parameters.emplace_back(std::move(parameter));
-		}
-
-		ast::And and_;
-		and_.arguments.reserve(parameters.size() + 1);
-
-		ast::Comparison equals(ast::Comparison::Operator::Equal, ast::Variable(&variableDeclaration), std::move(astFunction));
-		and_.arguments.emplace_back(std::move(equals));
-
-		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
-		{
-			auto &parameter = *parameters[i];
-			const auto &argument = function.arguments[i];
-
-			auto chooseValueInArgument = chooseValueInTerm(argument, parameter, context, freeVariables, variableStack);
-			and_.arguments.emplace_back(std::move(chooseValueInArgument));
-		}
-
-		return ast::Exists(std::move(parameters), std::move(and_));
+		throw TranslationException(term.location, "symbolic functions not yet supported");
 	}
 
 	ast::Formula visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, ast::VariableDeclaration &, Context &, ast::VariableDeclarationPointers &, const ast::VariableStack &)
 	{
-		throw TranslationException(term.location, "“pool” terms not yet unsupported in this context");
+		throw TranslationException(term.location, "pools not yet supported");
 	}
 };
 

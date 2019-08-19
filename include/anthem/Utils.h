@@ -64,6 +64,7 @@ enum class Domain
 	Symbolic,
 	Integer,
 	Program,
+	Union,
 	Unknown,
 };
 

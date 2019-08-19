@@ -4,9 +4,9 @@
 #include <optional>
 
 #include <anthem/AST.h>
-#include <anthem/MapToIntegersPolicy.h>
 #include <anthem/OutputFormat.h>
 #include <anthem/Semantics.h>
+#include <anthem/UnifyDomainsPolicy.h>
 #include <anthem/output/Logger.h>
 #include <anthem/output/ParenthesisStyle.h>
 
@@ -95,7 +95,7 @@ struct Context
 	bool performSimplification{false};
 	bool performCompletion{false};
 	bool performIntegerDetection{false};
-	MapToIntegersPolicy mapToIntegersPolicy{MapToIntegersPolicy::Auto};
+	UnifyDomainsPolicy unifyDomainsPolicy{UnifyDomainsPolicy::Auto};
 	Semantics semantics{Semantics::ClassicalLogic};
 
 	std::vector<std::unique_ptr<ast::PredicateDeclaration>> predicateDeclarations;

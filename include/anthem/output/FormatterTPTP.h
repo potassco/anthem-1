@@ -250,8 +250,8 @@ struct FormatterTPTP
 				return (stream << output::Variable(variableName.c_str()));
 			};
 
-		if (variableDeclaration.domain != Domain::Integer)
-			throw TranslationException("expected all variables to have integer domain after domain mapping, please report to bug tracker");
+		if (variableDeclaration.domain != Domain::Union)
+			throw TranslationException("expected all variables to have union type, please report to bug tracker");
 
 		switch (variableDeclaration.type)
 		{

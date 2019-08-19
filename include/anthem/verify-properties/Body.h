@@ -31,7 +31,7 @@ struct BodyTermVisitor
 		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(function.arguments.size());
 
-		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+		for (auto i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 			// TODO: should be Domain::Unknown
@@ -42,7 +42,7 @@ struct BodyTermVisitor
 		ast::And and_;
 		and_.arguments.reserve(parameters.size() + 1);
 
-		for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
+		for (auto i = 0; i < static_cast<int>(function.arguments.size()); i++)
 		{
 			auto &argument = function.arguments[i];
 			and_.arguments.emplace_back(translationCommon::chooseValueInTerm(argument, *parameters[i], context, freeVariables, variableStack));
@@ -108,7 +108,7 @@ struct BodyLiteralVisitor
 		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(2);
 
-		for (size_t i = 0; i < 2; i++)
+		for (auto i = 0; i < 2; i++)
 		{
 			parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
 			// TODO: should be Domain::Unknown

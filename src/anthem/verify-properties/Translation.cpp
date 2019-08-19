@@ -54,7 +54,7 @@ const auto declarePredicateParameters =
 		ast::VariableDeclarationPointers parameters;
 		parameters.reserve(predicateDeclaration.arity());
 
-		for (int i = 0; i < static_cast<int>(predicateDeclaration.arity()); i++)
+		for (auto i = 0; i < static_cast<int>(predicateDeclaration.arity()); i++)
 		{
 			parameters.emplace_back(
 				std::make_unique<ast::VariableDeclaration>( ast::VariableDeclaration::Type::Head));

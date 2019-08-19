@@ -73,6 +73,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 	ast::VariableStack variableStack;
 	variableStack.push(&freeVariables);
 
+	// Translate the body literals into a conjunction
 	const auto translateBody =
 		[&]()
 		{
@@ -88,8 +89,10 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 			return translatedBody;
 		};
 
+	// Analyze the type of the head of the rule
 	const auto headTranslationResult = rule.head.data.accept(HeadLiteralVisitor(), rule.head, context);
 
+	// Translate the head terms
 	const auto translateHeadTerms =
 		[&](const auto &headParameters, const auto &headArguments, ast::And &formula)
 		{
@@ -106,11 +109,13 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 	switch (headTranslationResult.headType)
 	{
+		// Translate rules with a single atom in the head
 		case HeadType::SingleAtom:
 		{
 			assert(headTranslationResult.headAtom);
 			const auto &headAtom = *headTranslationResult.headAtom;
 
+			// If there are no definitions for this predicate symbol yet, create an empty data structure for it
 			if (translationContext.definitions.find(headAtom.predicateDeclaration)
 				== translationContext.definitions.cend())
 			{
@@ -144,6 +149,13 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 			return;
 		}
+		// Translate simple choice rules
+		case HeadType::ChoiceSingleAtom:
+			throw LogicException("choice rules with single atoms not supported yet");
+		// Translate facts
+		case HeadType::Fact:
+			throw LogicException("facts not supported yet");
+		// Translate integrity constraints
 		case HeadType::IntegrityConstraint:
 		{
 			auto not_ = ast::Not{translateBody()};
@@ -153,8 +165,6 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 			return;
 		}
-		default:
-			break;
 	}
 
 	throw LogicException("unreachable code, please report to bug tracker");
@@ -208,6 +218,7 @@ void translate(Context &context, TranslationContext &translationContext)
 		{
 			const auto matchingDefinitions = translationContext.definitions.find(&predicateDeclaration);
 
+			// If the predicate symbol has no definition, build the universally closed negation
 			if (matchingDefinitions == translationContext.definitions.cend())
 			{
 				auto headAtomParameters = declarePredicateParameters(predicateDeclaration);
@@ -317,6 +328,7 @@ void translate(const std::vector<std::string> &fileNames, Context &context)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: avoid code duplication
 void translate(const char *fileName, std::istream &stream, Context &context)
 {
 	TranslationContext translationContext;

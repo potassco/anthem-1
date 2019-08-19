@@ -21,7 +21,7 @@ struct TranslationContext
 	struct Definitions
 	{
 		ast::VariableDeclarationPointers headAtomParameters;
-		std::vector<ast::Formula> definitions;
+		std::vector<ast::ScopedFormula> definitions;
 	};
 
 	struct ConstantReplacementsComparator

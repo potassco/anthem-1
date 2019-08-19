@@ -122,7 +122,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 				TranslationContext::Definitions definitions
 				{
 					declarePredicateParameters(*headAtom.predicateDeclaration),
-					std::vector<ast::Formula>(),
+					std::vector<ast::ScopedFormula>(),
 				};
 
 				translationContext.definitions.insert(
@@ -142,9 +142,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 			ast::Formula constantFreeFormula = ast::Formula(std::move(formula));
 			replaceConstants(constantFreeFormula, translationContext);
 
-			auto scopedFormula = ast::ScopedFormula{std::move(constantFreeFormula), std::move(freeVariables)};
-			auto definition = makeExistentiallyClosedFormula(std::move(scopedFormula));
-
+			auto definition = ast::ScopedFormula{std::move(constantFreeFormula), std::move(freeVariables)};
 			definitions.definitions.emplace_back(std::move(definition));
 
 			return;

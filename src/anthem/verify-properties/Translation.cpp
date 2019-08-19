@@ -10,6 +10,7 @@
 #include <anthem/translation-common/Input.h>
 #include <anthem/translation-common/Output.h>
 #include <anthem/translation-common/StatementVisitor.h>
+#include <anthem/translation-common/UnifyDomains.h>
 #include <anthem/verify-properties/Body.h>
 #include <anthem/verify-properties/Head.h>
 #include <anthem/verify-properties/ReplaceConstants.h>
@@ -58,8 +59,7 @@ const auto declarePredicateParameters =
 		{
 			parameters.emplace_back(
 				std::make_unique<ast::VariableDeclaration>( ast::VariableDeclaration::Type::Head));
-			// TODO: should be Domain::Program
-			parameters.back()->domain = Domain::Unknown;
+			parameters.back()->domain = Domain::Program;
 		}
 
 		return parameters;
@@ -202,7 +202,12 @@ void translate(Context &context, TranslationContext &translationContext)
 		stream << std::endl;
 	}*/
 
-	std::sort(context.predicateDeclarations.begin(), context.predicateDeclarations.end(),
+	// The predicate declarations will be iterated over later, while potentially appending new
+	// entries at the same time. In order to prevent memory corruption issues, move them to another
+	// memory location
+	auto predicateDeclarations = std::move(context.predicateDeclarations);
+
+	std::sort(predicateDeclarations.begin(), predicateDeclarations.end(),
 		[](const auto &x, const auto &y)
 		{
 			if (x->name != y->name)
@@ -272,7 +277,21 @@ void translate(Context &context, TranslationContext &translationContext)
 		stream << std::endl;
 	}
 
-	for (auto &predicateDeclaration : context.predicateDeclarations)
+	const auto isDomainUnificationRequested =
+		[&]()
+		{
+			switch (context.unifyDomainsPolicy)
+			{
+				case UnifyDomainsPolicy::Always:
+					return true;
+				case UnifyDomainsPolicy::Auto:
+					return (context.outputFormat == OutputFormat::TPTP);
+			}
+
+			throw TranslationException("supposedly unreachable code, please report to the bug tracker");
+		};
+
+	for (auto &predicateDeclaration : predicateDeclarations)
 	{
 		stream
 			<< "% completed definition for "
@@ -282,6 +301,9 @@ void translate(Context &context, TranslationContext &translationContext)
 
 		auto completedDefinition = makeUniversallyClosedFormula(
 			makeCompletedDefinition(*predicateDeclaration));
+
+		if (isDomainUnificationRequested())
+			translationCommon::unifyDomains(completedDefinition, context);
 
 		translationCommon::printFormula(completedDefinition, translationCommon::FormulaType::Axiom,
 			context, printContext);
@@ -295,6 +317,9 @@ void translate(Context &context, TranslationContext &translationContext)
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)
 	{
+		if (isDomainUnificationRequested())
+			translationCommon::unifyDomains(integrityConstraint, context);
+
 		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom, context, printContext);
 
 		stream << std::endl;

@@ -63,6 +63,7 @@ enum class Domain
 {
 	Symbolic,
 	Integer,
+	Program,
 	Unknown,
 };
 

@@ -32,8 +32,7 @@ inline ast::Formula makeHeadFormula(const Clingo::AST::Function &function, bool 
 	for (int i = 0; i < static_cast<int>(function.arguments.size()); i++)
 	{
 		parameters.emplace_back(std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Body));
-		// TODO: should be Domain::Unknown
-		parameters.back()->domain = Domain::Symbolic;
+		parameters.back()->domain = Domain::Program;
 	}
 
 	const auto makePredicate =

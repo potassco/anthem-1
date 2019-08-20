@@ -116,9 +116,9 @@ struct EvaluateFormulaVisitor
 				return (rightType.domain == Domain::Integer) ? EvaluationResult::True : EvaluationResult::False;
 			case ast::Comparison::Operator::GreaterThan:
 				return (rightType.domain == Domain::Integer) ? EvaluationResult::True : EvaluationResult::False;
+			default:
+				throw LogicException("unexpected comparison operator, please report to bug tracker");
 		}
-
-		throw TranslationException("unknown operator, please report to bug tracker");
 	}
 
 	template <class... Arguments>

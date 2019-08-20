@@ -25,11 +25,11 @@ inline ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator bina
 	switch (binaryOperator)
 	{
 		case Clingo::AST::BinaryOperator::XOr:
-			throw TranslationException("binary operation “xor” currently unsupported");
+			throw TranslationException("binary operation “xor” not yet supported");
 		case Clingo::AST::BinaryOperator::Or:
-			throw TranslationException("binary operation “or” currently unsupported");
+			throw TranslationException("binary operation “or” not yet supported");
 		case Clingo::AST::BinaryOperator::And:
-			throw TranslationException("binary operation “and” currently unsupported");
+			throw TranslationException("binary operation “and” not yet supported");
 		case Clingo::AST::BinaryOperator::Plus:
 			return ast::BinaryOperation::Operator::Plus;
 		case Clingo::AST::BinaryOperator::Minus:
@@ -42,9 +42,9 @@ inline ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator bina
 			return ast::BinaryOperation::Operator::Modulo;
 		case Clingo::AST::BinaryOperator::Power:
 			return ast::BinaryOperation::Operator::Power;
+		default:
+			throw LogicException("unexpected binary operation, please report to bug tracker");
 	}
-
-	throw TranslationException("unknown binary operation");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -56,6 +56,11 @@ inline ast::BinaryOperation::Operator translate(Clingo::AST::BinaryOperator bina
 		return translate(binaryOperator);
 	}
 	catch (TranslationException &exception)
+	{
+		exception.setLocation(term.location);
+		throw;
+	}
+	catch (LogicException &exception)
 	{
 		exception.setLocation(term.location);
 		throw;
@@ -73,10 +78,10 @@ inline ast::UnaryOperation::Operator translate(Clingo::AST::UnaryOperator unaryO
 		case Clingo::AST::UnaryOperator::Minus:
 			return ast::UnaryOperation::Operator::Minus;
 		case Clingo::AST::UnaryOperator::Negation:
-			throw TranslationException(term.location, "unary operation “negation” currently unsupported");
+			throw TranslationException(term.location, "unary operation “negation” not yet supported");
 	}
 
-	throw TranslationException(term.location, "unknown unary operation");
+	throw LogicException(term.location, "unexpected unary operator, please report to bug tracker");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +109,7 @@ struct TermTranslateVisitor
 				// Functions with arguments are represented as Clingo::AST::Function by the parser. At this
 				// point, we only have to handle (0-ary) constants
 				if (!symbol.arguments().empty())
-					throw TranslationException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to the bug tracker");
+					throw LogicException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report the bug tracker");
 
 				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), 0);
 
@@ -165,12 +170,12 @@ struct TermTranslateVisitor
 	std::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		if (function.external)
-			throw TranslationException(term.location, "external functions currently unsupported");
+			throw TranslationException(term.location, "external functions not yet supported");
 
 		// Functions with arguments are represented as Clingo::AST::Function by the parser. At this point,
 		// we only have to handle functions with arguments
 		if (function.arguments.empty())
-			throw TranslationException(term.location, "unexpected 0-ary function, expected at least one argument, please report to the bug tracker");
+			throw LogicException(term.location, "unexpected 0-ary function, expected at least one argument, please report to bug tracker");
 
 		std::vector<ast::Term> arguments;
 		arguments.reserve(function.arguments.size());
@@ -191,7 +196,7 @@ struct TermTranslateVisitor
 
 	std::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, Context &, const ast::VariableStack &)
 	{
-		throw TranslationException(term.location, "“pool” terms currently unsupported");
+		throw TranslationException(term.location, "pool terms not yet supported");
 		return std::nullopt;
 	}
 };

@@ -52,14 +52,14 @@ struct ChooseValueInTermVisitor
 				// Functions with arguments are represented as Clingo::AST::Function by the parser. At this
 				// point, we only have to handle (0-ary) constants
 				if (!symbol.arguments().empty())
-					throw TranslationException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to bug tracker");
+					throw LogicException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to bug tracker");
 
 				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), 0);
 				return chooseValueInPrimitive(ast::Function(constantDeclaration), variableDeclaration);
 			}
+			default:
+				throw LogicException("unexpected symbol type, please report to bug tracker");
 		}
-
-		throw LogicException("unexpected symbol type, please report to bug tracker");
 	}
 
 	ast::Formula visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
@@ -170,7 +170,7 @@ struct ChooseValueInTermVisitor
 						break;
 					}
 					default:
-						throw TranslationException("unexpected binary binary operator, please report this to the bug tracker");
+						throw LogicException("unexpected binary binary operator, please report this to the bug tracker");
 				}
 
 				return ast::Exists(std::move(parameters), std::move(and_));
@@ -190,9 +190,9 @@ struct ChooseValueInTermVisitor
 				return handleDivisonAndModulo();
 			case ast::BinaryOperation::Operator::Power:
 				throw TranslationException("binary operator “power” not yet supported");
+			default:
+				throw LogicException("unexpected binary operator, please report to bug tracker");
 		}
-
-		throw LogicException("unexpected binary operator, please report to bug tracker");
 	}
 
 	ast::Formula visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)
@@ -224,9 +224,9 @@ struct ChooseValueInTermVisitor
 			}
 			case Clingo::AST::UnaryOperator::Negation:
 				throw TranslationException(term.location, "unary operation “negation” not yet supported");
-		};
-
-		throw LogicException("unexpected unary operator, please report to bug tracker");
+			default:
+				throw LogicException("unexpected unary operator, please report to bug tracker");
+		}
 	}
 
 	ast::Formula visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, ast::VariableDeclaration &variableDeclaration, Context &context, ast::VariableDeclarationPointers &freeVariables, const ast::VariableStack &variableStack)

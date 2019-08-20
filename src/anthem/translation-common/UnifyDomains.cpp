@@ -84,7 +84,7 @@ struct FormulaUnifyDomainsVisitor
 				case Domain::Program:
 					break;
 				default:
-					throw TranslationException("unexpected parameter domain, please report to bug tracker");
+					throw LogicException("unexpected parameter domain, please report to bug tracker");
 			}
 
 			variableDeclaration->domain = Domain::Union;
@@ -132,7 +132,7 @@ struct FormulaUnifyDomainsVisitor
 				case Domain::Program:
 					break;
 				default:
-					throw TranslationException("unexpected parameter domain, please report to bug tracker");
+					throw LogicException("unexpected parameter domain, please report to bug tracker");
 			}
 
 			variableDeclaration->domain = Domain::Union;
@@ -198,7 +198,7 @@ struct TermUnifyDomainsVisitor
 			case ast::BinaryOperation::Operator::Multiplication:
 				break;
 			default:
-				throw TranslationException("unexpected binary operation, please report to bug tracker");
+				throw LogicException("unexpected binary operation, please report to bug tracker");
 		}
 	}
 

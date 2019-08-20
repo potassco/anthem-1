@@ -38,11 +38,13 @@ struct FormatterTPTP
 			case ast::BinaryOperation::Operator::Multiplication:
 				return (stream << output::Keyword(AuxiliaryFunctionNameProduct));
 			case ast::BinaryOperation::Operator::Division:
-				throw TranslationException("division operator not implemented with TPTP");
+				throw LogicException("division operator not expected for TPTP, please report to bug tracker");
 			case ast::BinaryOperation::Operator::Modulo:
-				throw TranslationException("modulo operator not implemented with TPTP");
+				throw LogicException("modulo operator not expected for TPTP, please report to bug tracker");
 			case ast::BinaryOperation::Operator::Power:
-				throw TranslationException("power operator not implemented with TPTP");
+				throw LogicException("power operator not expected for TPTP, please report to bug tracker");
+			default:
+				throw LogicException("binary operator not expected for TPTP, please report to bug tracker");
 		}
 
 		return stream;
@@ -102,7 +104,7 @@ struct FormatterTPTP
 				stream << output::Keyword(AuxiliaryPredicateNameGreaterEqual);
 				break;
 			default:
-				throw TranslationException("equality operators require infix notation, please report this to the bug tracker");
+				throw LogicException("unexpected comparison operator, please report to bug tracker");
 		}
 
 		stream << "(";
@@ -146,7 +148,7 @@ struct FormatterTPTP
 
 	static output::ColorStream &print(output::ColorStream &, const ast::In &, PrintContext &, bool)
 	{
-		throw TranslationException("set inclusion operator not implemented with TPTP, please report to bug tracker");
+		throw LogicException("set inclusion operator not expected for TPTP, please report to bug tracker");
 	}
 
 	static output::ColorStream &print(output::ColorStream &stream, const ast::Integer &integer, PrintContext &, bool)
@@ -159,7 +161,7 @@ struct FormatterTPTP
 
 	static output::ColorStream &print(output::ColorStream &, const ast::Interval &, PrintContext &, bool)
 	{
-		throw TranslationException("intervals not implemented with TPTP, please report to bug tracker");
+		throw LogicException("intervals not expected for TPTP, please report to bug tracker");
 	}
 
 	static output::ColorStream &print(output::ColorStream &stream, const ast::Predicate &predicate, PrintContext &printContext, bool)
@@ -191,12 +193,12 @@ struct FormatterTPTP
 
 	static output::ColorStream &print(output::ColorStream &, const ast::SpecialInteger &, PrintContext &, bool)
 	{
-		throw TranslationException("special integers not implemented with TPTP");
+		throw TranslationException("special integers not implemented for TPTP");
 	}
 
 	static output::ColorStream &print(output::ColorStream &, const ast::String &, PrintContext &, bool)
 	{
-		throw TranslationException("strings not implemented with TPTP");
+		throw TranslationException("strings not implemented for TPTP");
 	}
 
 	static output::ColorStream &print(output::ColorStream &stream, const ast::UnaryOperation &unaryOperation, PrintContext &printContext, bool)
@@ -204,10 +206,12 @@ struct FormatterTPTP
 		switch (unaryOperation.operator_)
 		{
 			case ast::UnaryOperation::Operator::Absolute:
-				throw TranslationException("absolute value not implemented with TPTP");
+				throw TranslationException("absolute value not implemented for TPTP");
 			case ast::UnaryOperation::Operator::Minus:
 				stream << output::Keyword(AuxiliaryFunctionNameUnaryMinus) << "(";
 				break;
+			default:
+				throw LogicException("unexpected unary operator, please report to bug tracker");
 		}
 
 		print(stream, unaryOperation.argument, printContext, true);
@@ -215,10 +219,12 @@ struct FormatterTPTP
 		switch (unaryOperation.operator_)
 		{
 			case ast::UnaryOperation::Operator::Absolute:
-				throw TranslationException("absolute value not implemented with TPTP");
+				throw TranslationException("absolute value not implemented for TPTP");
 			case ast::UnaryOperation::Operator::Minus:
 				stream << ")";
 				break;
+			default:
+				throw LogicException("unexpected unary operator, please report to bug tracker");
 		}
 
 		return stream;
@@ -251,7 +257,7 @@ struct FormatterTPTP
 			};
 
 		if (variableDeclaration.domain != Domain::Union)
-			throw TranslationException("expected all variables to have union type, please report to bug tracker");
+			throw LogicException("expected all variables to have union type, please report to bug tracker");
 
 		switch (variableDeclaration.type)
 		{

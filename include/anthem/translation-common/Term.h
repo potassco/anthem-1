@@ -79,9 +79,9 @@ inline ast::UnaryOperation::Operator translate(Clingo::AST::UnaryOperator unaryO
 			return ast::UnaryOperation::Operator::Minus;
 		case Clingo::AST::UnaryOperator::Negation:
 			throw TranslationException(term.location, "unary operation “negation” not yet supported");
+		default:
+			throw LogicException(term.location, "unexpected unary operator, please report to bug tracker");
 	}
-
-	throw LogicException(term.location, "unexpected unary operator, please report to bug tracker");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -92,7 +92,7 @@ ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Con
 
 struct TermTranslateVisitor
 {
-	std::optional<ast::Term> visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &, Context &context, const ast::VariableStack &)
+	ast::Term visit(const Clingo::Symbol &symbol, const Clingo::AST::Term &term, RuleContext &, Context &context, const ast::VariableStack &)
 	{
 		switch (symbol.type())
 		{
@@ -121,12 +121,12 @@ struct TermTranslateVisitor
 
 				return ast::Function(constantDeclaration);
 			}
+			default:
+				throw LogicException("unexpected symbol type, please report to bug tracker");
 		}
-
-		return std::nullopt;
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, RuleContext &ruleContext, Context &, const ast::VariableStack &variableStack)
+	ast::Term visit(const Clingo::AST::Variable &variable, const Clingo::AST::Term &, RuleContext &ruleContext, Context &, const ast::VariableStack &variableStack)
 	{
 		const auto matchingVariableDeclaration = variableStack.findUserVariableDeclaration(variable.name);
 		const auto isAnonymousVariable = (strcmp(variable.name, "_") == 0);
@@ -142,7 +142,7 @@ struct TermTranslateVisitor
 		return ast::Variable(ruleContext.freeVariables.back().get());
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
+	ast::Term visit(const Clingo::AST::BinaryOperation &binaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translate(binaryOperation.binary_operator, term);
 		auto left = translate(binaryOperation.left, ruleContext, context, variableStack);
@@ -151,7 +151,7 @@ struct TermTranslateVisitor
 		return ast::BinaryOperation(operator_, std::move(left), std::move(right));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
+	ast::Term visit(const Clingo::AST::UnaryOperation &unaryOperation, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		const auto operator_ = translate(unaryOperation.unary_operator, term);
 		auto argument = translate(unaryOperation.argument, ruleContext, context, variableStack);
@@ -159,7 +159,7 @@ struct TermTranslateVisitor
 		return ast::UnaryOperation(operator_, std::move(argument));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
+	ast::Term visit(const Clingo::AST::Interval &interval, const Clingo::AST::Term &, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		auto left = translate(interval.left, ruleContext, context, variableStack);
 		auto right = translate(interval.right, ruleContext, context, variableStack);
@@ -167,7 +167,7 @@ struct TermTranslateVisitor
 		return ast::Interval(std::move(left), std::move(right));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
+	ast::Term visit(const Clingo::AST::Function &function, const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 	{
 		if (function.external)
 			throw TranslationException(term.location, "external functions not yet supported");
@@ -194,10 +194,9 @@ struct TermTranslateVisitor
 		return ast::Function(functionDeclaration, std::move(arguments));
 	}
 
-	std::optional<ast::Term> visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, Context &, const ast::VariableStack &)
+	ast::Term visit(const Clingo::AST::Pool &, const Clingo::AST::Term &term, RuleContext &, Context &, const ast::VariableStack &)
 	{
 		throw TranslationException(term.location, "pool terms not yet supported");
-		return std::nullopt;
 	}
 };
 
@@ -205,12 +204,7 @@ struct TermTranslateVisitor
 
 inline ast::Term translate(const Clingo::AST::Term &term, RuleContext &ruleContext, Context &context, const ast::VariableStack &variableStack)
 {
-	auto translatedTerm = term.data.accept(TermTranslateVisitor(), term, ruleContext, context, variableStack);
-
-	if (!translatedTerm)
-		throw TranslationException(term.location, "could not translate term");
-
-	return std::move(translatedTerm.value());
+	return term.data.accept(TermTranslateVisitor(), term, ruleContext, context, variableStack);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

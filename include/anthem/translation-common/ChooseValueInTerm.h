@@ -170,7 +170,7 @@ struct ChooseValueInTermVisitor
 						break;
 					}
 					default:
-						throw LogicException("unexpected binary binary operator, please report this to the bug tracker");
+						throw LogicException("unexpected binary binary operator, please report to bug tracker");
 				}
 
 				return ast::Exists(std::move(parameters), std::move(and_));

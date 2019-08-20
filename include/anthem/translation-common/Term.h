@@ -109,7 +109,7 @@ struct TermTranslateVisitor
 				// Functions with arguments are represented as Clingo::AST::Function by the parser. At this
 				// point, we only have to handle (0-ary) constants
 				if (!symbol.arguments().empty())
-					throw LogicException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report the bug tracker");
+					throw LogicException(term.location, "unexpected arguments, expected (0-ary) constant symbol, please report to bug tracker");
 
 				auto constantDeclaration = context.findOrCreateFunctionDeclaration(symbol.name(), 0);
 

@@ -21,10 +21,10 @@ struct StatementVisitor
 		context.logger.log(output::Priority::Debug, statement.location) << "reading program “" << program.name << "”";
 
 		if (std::strcmp(program.name, "base") != 0)
-			throw LogicException(statement.location, "program parts currently unsupported");
+			throw TranslationException(statement.location, "program parts not yet supported");
 
 		if (!program.parameters.empty())
-			throw LogicException(statement.location, "program parameters currently unsupported");
+			throw TranslationException(statement.location, "program parameters not yet supported");
 	}
 
 	void visit(const Clingo::AST::Rule &rule, const Clingo::AST::Statement &statement,
@@ -39,12 +39,12 @@ struct StatementVisitor
 		const Clingo::AST::Statement &statement, ReadFunctor &, Context &context, TranslationContext &)
 	{
 		if (showSignature.csp)
-			throw LogicException(statement.location, "CSP #show statements are not supported");
+			throw TranslationException(statement.location, "CSP #show statements not yet supported");
 
 		auto &signature = showSignature.signature;
 
 		if (signature.negative())
-			throw LogicException(statement.location, "negative #show atom signatures are currently unsupported");
+			throw TranslationException(statement.location, "negative #show atom signatures not yet supported");
 
 		context.showStatementsUsed = true;
 		context.defaultPredicateVisibility = ast::PredicateDeclaration::Visibility::Hidden;
@@ -64,7 +64,7 @@ struct StatementVisitor
 	void visit(const Clingo::AST::ShowTerm &, const Clingo::AST::Statement &statement,
 		ReadFunctor &, Context &, TranslationContext &)
 	{
-		throw LogicException(statement.location, "only #show statements for atoms (not terms) are supported currently");
+		throw TranslationException(statement.location, "only #show statements for atoms (not terms) currently supported");
 	}
 
 	void visit(const Clingo::AST::External &external, const Clingo::AST::Statement &statement,
@@ -73,7 +73,7 @@ struct StatementVisitor
 		const auto fail =
 			[&]()
 			{
-				throw LogicException(statement.location, "only #external declarations of the form “#external <predicate name>(<arity>).” or “#external integer(<function name>(<arity>)).” supported");
+				throw TranslationException(statement.location, "only #external declarations of the form “#external <predicate name>(<arity>).” or “#external integer(<function name>(<arity>)).” currently supported");
 			};
 
 		if (!external.body.empty())
@@ -150,7 +150,7 @@ struct StatementVisitor
 	void visit(const T &, const Clingo::AST::Statement &statement, ReadFunctor &, Context &,
 		TranslationContext &)
 	{
-		throw LogicException(statement.location, "statement currently unsupported");
+		throw TranslationException(statement.location, "statement not yet supported");
 	}
 };
 

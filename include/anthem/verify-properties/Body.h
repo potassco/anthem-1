@@ -78,7 +78,7 @@ struct BodyTermVisitor
 	{
 		assert(!term.data.is<Clingo::AST::Function>());
 
-		throw TranslationException(term.location, "term currently not yet supported, expected function");
+		throw TranslationException(term.location, "term not yet supported, expected function");
 	}
 };
 

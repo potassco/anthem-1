@@ -22,12 +22,12 @@ void unifyDomains(ast::Term &term, Context &context);
 ast::FunctionDeclaration *findOrCreateAuxiliaryUnionFunctionDeclaration(const char *functionName,
 	size_t arity, Context &context)
 {
-	auto auxiliaryIntegerFunctionDeclaration
+	auto auxiliaryUnionFunctionDeclaration
 		= context.findOrCreateFunctionDeclaration(functionName, arity);
 
-	auxiliaryIntegerFunctionDeclaration->domain = Domain::Union;
+	auxiliaryUnionFunctionDeclaration->domain = Domain::Union;
 
-	return auxiliaryIntegerFunctionDeclaration;
+	return auxiliaryUnionFunctionDeclaration;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

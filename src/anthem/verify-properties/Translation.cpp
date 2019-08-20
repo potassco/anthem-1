@@ -277,6 +277,21 @@ void translate(Context &context, TranslationContext &translationContext)
 		stream << std::endl;
 	}
 
+	// Print auxiliary definitions for unifying program and integer variables into one type
+	if (context.outputFormat == OutputFormat::TPTP)
+		stream << output::TPTPTypeHeader;
+
+	// Print type annotations for predicate signatures
+	for (const auto &predicateDeclaration : predicateDeclarations)
+		translationCommon::printTypeAnnotation(*predicateDeclaration, context, printContext);
+
+	// Print type annotations for function signatures
+	for (const auto &functionDeclaration : context.functionDeclarations)
+		translationCommon::printTypeAnnotation(*functionDeclaration, context, printContext);
+
+	if (context.outputFormat == OutputFormat::TPTP)
+		stream << output::TPTPPreamble << std::endl;
+
 	for (auto &predicateDeclaration : predicateDeclarations)
 	{
 		stream

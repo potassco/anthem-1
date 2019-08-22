@@ -33,9 +33,9 @@ inline ast::Comparison::Operator translate(Clingo::AST::ComparisonOperator compa
 			return ast::Comparison::Operator::NotEqual;
 		case Clingo::AST::ComparisonOperator::Equal:
 			return ast::Comparison::Operator::Equal;
+		default:
+			throw TranslationException("unexpected comparison operator, please report to bug tracker");
 	}
-
-	throw TranslationException("unknown comparison operator, please report to bug tracker");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

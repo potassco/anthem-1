@@ -58,7 +58,7 @@ const auto declarePredicateParameters =
 		for (auto i = 0; i < static_cast<int>(predicateDeclaration.arity()); i++)
 		{
 			parameters.emplace_back(
-				std::make_unique<ast::VariableDeclaration>( ast::VariableDeclaration::Type::Head));
+				std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Head));
 			parameters.back()->domain = Domain::Program;
 		}
 
@@ -139,7 +139,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 			variableStack.pop();
 
 			// Replace constants with variables
-			ast::Formula constantFreeFormula = ast::Formula(std::move(formula));
+			ast::Formula constantFreeFormula = std::move(formula);
 			replaceConstants(constantFreeFormula, translationContext);
 
 			auto definition = ast::ScopedFormula{std::move(constantFreeFormula), std::move(freeVariables)};

@@ -158,6 +158,7 @@ struct FunctionDeclaration
 
 	std::string name;
 	std::vector<Parameter> parameters;
+	// TODO: don’t provide a default
 	Domain domain{Domain::Symbolic};
 };
 

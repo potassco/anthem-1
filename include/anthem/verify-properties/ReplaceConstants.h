@@ -35,6 +35,7 @@ struct ReplaceConstantsInTermVisitor
 		if (matchingConstantReplacement == translationContext.constantReplacements.cend())
 		{
 			auto inputParameter = std::make_unique<ast::VariableDeclaration>(ast::VariableDeclaration::Type::Input);
+			inputParameter->domain = Domain::Union;
 
 			translationContext.inputParameters.emplace_back(std::move(inputParameter));
 

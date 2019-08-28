@@ -133,7 +133,7 @@ const auto printTypeAnnotation =
 		switch (context.outputFormat)
 		{
 			case OutputFormat::HumanReadable:
-				for (size_t i = 0; i < symbolDeclaration.parameters.size(); i++)
+				for (auto i = 0; i < static_cast<int>(symbolDeclaration.parameters.size()); i++)
 				{
 					const auto &parameter = symbolDeclaration.parameters[i];
 
@@ -161,7 +161,7 @@ const auto printTypeAnnotation =
 				if (!symbolDeclaration.parameters.empty())
 					stream << "(";
 
-				for (size_t i = 0; i < symbolDeclaration.parameters.size(); i++)
+				for (auto i = 0; i < static_cast<int>(symbolDeclaration.parameters.size()); i++)
 				{
 					if (i > 0)
 						stream << " * ";

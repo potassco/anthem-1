@@ -175,33 +175,6 @@ void translate(Context &context, TranslationContext &translationContext)
 	output::PrintContext printContext(context);
 	auto &stream = context.logger.outputStream();
 
-	/*// Print translated formulas
-	for (auto &definitions : translationContext.definitions)
-	{
-		stream << "% definitions for " << definitions.first->name << "/" << definitions.first->arity() << std::endl;
-
-		for (auto &definition : definitions.second)
-		{
-			stream << "%% free variables: ";
-
-			for (auto &freeVariable : definition.freeVariables)
-			{
-				output::print<output::FormatterHumanReadable>(stream, *freeVariable, printContext, true);
-				stream << ", ";
-			}
-
-			if (definition.freeVariables.empty())
-				stream << "(none)";
-
-			stream << std::endl;
-
-			translationCommon::printFormula(definition.formula, translationCommon::FormulaType::Axiom, context, printContext);
-			stream << std::endl;
-		}
-
-		stream << std::endl;
-	}*/
-
 	// The predicate declarations will be iterated over later, while potentially appending new
 	// entries at the same time. In order to prevent memory corruption issues, move them to another
 	// memory location

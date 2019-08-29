@@ -211,16 +211,7 @@ struct TermUnifyDomainsVisitor
 		if (!function.arguments.empty())
 			throw TranslationException("symbolic functions not yet supported");
 
-		function.declaration->domain = Domain::Symbolic;
-
-		std::vector<ast::Term> arguments;
-		arguments.reserve(1);
-		arguments.emplace_back(std::move(function));
-
-		auto auxiliaryFunctionDeclarationSymbolic
-			= findOrCreateAuxiliaryUnionFunctionDeclaration(AuxiliaryFunctionNameSymbolic, 1, context);
-
-		term = ast::Function(auxiliaryFunctionDeclarationSymbolic, std::move(arguments));
+		function.declaration->domain = Domain::Union;
 	}
 
 	void visit(ast::Integer &integer, ast::Term &term, Context &context)

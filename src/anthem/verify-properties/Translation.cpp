@@ -13,7 +13,6 @@
 #include <anthem/translation-common/UnifyDomains.h>
 #include <anthem/verify-properties/Body.h>
 #include <anthem/verify-properties/Head.h>
-#include <anthem/verify-properties/ReplaceConstants.h>
 #include <anthem/verify-properties/TranslationContext.h>
 
 namespace anthem
@@ -138,11 +137,7 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 			variableStack.pop();
 
-			// Replace constants with variables
-			ast::Formula constantFreeFormula = std::move(formula);
-			replaceConstants(constantFreeFormula, translationContext);
-
-			auto definition = ast::ScopedFormula{std::move(constantFreeFormula), std::move(freeVariables)};
+			auto definition = ast::ScopedFormula{std::move(formula), std::move(freeVariables)};
 			definitions.definitions.emplace_back(std::move(definition));
 
 			return;
@@ -231,23 +226,22 @@ void translate(Context &context, TranslationContext &translationContext)
 			return ast::ScopedFormula(std::move(biconditional), std::move(definitions.second.headAtomParameters));
 		};
 
-	if (!translationContext.inputParameters.empty())
+	std::vector<ast::Formula> completedDefinitions;
+	completedDefinitions.reserve(predicateDeclarations.size());
+
+	// Build completed definitions
+	for (auto &predicateDeclaration : predicateDeclarations)
+		completedDefinitions.emplace_back(makeUniversallyClosedFormula(
+			makeCompletedDefinition(*predicateDeclaration)));
+
+	// Make all variables and functions have the union type
+	if (context.isDomainUnificationRequested())
 	{
-		stream << "% input parameters: ";
+		for (auto &completedDefinition : completedDefinitions)
+			translationCommon::unifyDomains(completedDefinition, context);
 
-		for (const auto &constantReplacement : translationContext.constantReplacements)
-		{
-			if (&constantReplacement.first != &translationContext.constantReplacements.begin()->first)
-				stream << ", ";
-
-			output::print<output::FormatterHumanReadable>(stream, *constantReplacement.second, printContext);
-
-			stream << " for ";
-
-			output::print<output::FormatterHumanReadable>(stream, *constantReplacement.first, printContext);
-		}
-
-		stream << std::endl;
+		for (auto &integrityConstraint : translationContext.integrityConstraints)
+			translationCommon::unifyDomains(integrityConstraint, context);
 	}
 
 	// Print auxiliary definitions for unifying program and integer variables into one type
@@ -263,22 +257,21 @@ void translate(Context &context, TranslationContext &translationContext)
 		translationCommon::printTypeAnnotation(*functionDeclaration, context, printContext);
 
 	if (context.outputFormat == OutputFormat::TPTP)
-		stream << output::TPTPPreamble << std::endl;
+		stream << output::TPTPPreamble;
 
-	for (auto &predicateDeclaration : predicateDeclarations)
+	if (!completedDefinitions.empty())
 	{
 		stream
-			<< "% completed definition for "
-			<< predicateDeclaration->name
-			<< "/" << predicateDeclaration->arity()
-			<< std::endl;
+			<< R"(
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% completed definitions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+)";
+	}
 
-		auto completedDefinition = makeUniversallyClosedFormula(
-			makeCompletedDefinition(*predicateDeclaration));
-
-		if (context.isDomainUnificationRequested())
-			translationCommon::unifyDomains(completedDefinition, context);
-
+	// Print completed definitions
+	for (const auto &completedDefinition : completedDefinitions)
+	{
 		translationCommon::printFormula(completedDefinition, translationCommon::FormulaType::Axiom,
 			context, printContext);
 
@@ -286,15 +279,20 @@ void translate(Context &context, TranslationContext &translationContext)
 	}
 
 	if (!translationContext.integrityConstraints.empty())
-		stream << "% integrity constraints" << std::endl;
+	{
+		stream
+			<< R"(
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% integrity constraints
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+)";
+	}
 
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)
 	{
-		if (context.isDomainUnificationRequested())
-			translationCommon::unifyDomains(integrityConstraint, context);
-
-		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom, context, printContext);
+		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom,
+			context, printContext);
 
 		stream << std::endl;
 	}

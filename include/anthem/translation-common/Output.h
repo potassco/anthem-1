@@ -104,13 +104,10 @@ struct PrintReturnTypeTrait<ast::FunctionDeclaration>
 	{
 		switch (functionDeclaration.domain)
 		{
-			case Domain::Integer:
-				// TODO: clean up
+			case Domain::Union:
 				return (stream << output::Keyword("object"));
-			case Domain::Symbolic:
-				return (stream << output::Keyword("$i"));
 			default:
-				throw TranslationException("only functions with integer return type supported with TPTP currently");
+				throw TranslationException("unexpected function return type, please report to bug tracker");
 		}
 	}
 };

@@ -64,28 +64,23 @@ tff(operations, axiom, (![X1: $int, X2: $int]: (f__difference__(f__integer__(X1)
 tff(operations, axiom, (![X1: $int, X2: $int]: (f__product__(f__integer__(X1), f__integer__(X2)) = f__integer__($product(X1, X2))))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% integer operations: helpers
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-tff(operations, axiom, (![N: $int]: ($product(2, N) = $sum(N, N)))).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % object comparisons
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tff(less_equal, axiom, (![X1: $int, X2: $int]: (p__less_equal__(f__integer__(X1), f__integer__(X2)) <=> $lesseq(X1, X2)))).
-tff(less_equal, axiom, (![X1: $i, X2: $int]: ~p__less_equal__(f__symbolic__(X1), f__integer__(X2)))).
-tff(less_equal, axiom, (![X1: $int, X2: $i]: p__less_equal__(f__integer__(X1), f__symbolic__(X2)))).
+tff(less_equal, axiom, (![X1: $i, X2: $i]: ((p__less_equal__(f__symbolic__(X1), f__symbolic__(X2)) & p__less_equal__(f__symbolic__(X2), f__symbolic__(X1))) => (X1 = X2)))).
+tff(less_equal, axiom, (![X1: $i, X2: $i, X3: $i]: ((p__less_equal__(f__symbolic__(X1), f__symbolic__(X2)) & p__less_equal__(f__symbolic__(X2), f__symbolic__(X3))) => p__less_equal__(f__symbolic__(X1), f__symbolic__(X3))))).
+tff(less_equal, axiom, (![X1: $i, X2: $i]: (p__less_equal__(f__symbolic__(X1), f__symbolic__(X2)) | p__less_equal__(f__symbolic__(X2), f__symbolic__(X1))))).
 
-tff(less, axiom, (![X1: $int, X2: $int]: (p__less__(f__integer__(X1), f__integer__(X2)) <=> $less(X1, X2)))).
-tff(less, axiom, (![X1: $i, X2: $int]: ~p__less__(f__symbolic__(X1), f__integer__(X2)))).
-tff(less, axiom, (![X1: $int, X2: $i]: p__less__(f__integer__(X1), f__symbolic__(X2)))).
+tff(less, axiom, (![X1: object, X2: object]: (p__less__(X1, X2) <=> (p__less_equal__(X1, X2) & (X1 != X2))))).
+tff(greater_equal, axiom, (![X1: object, X2: object]: (p__greater_equal__(X1, X2) <=> p__less_equal__(X2, X1)))).
+tff(greater, axiom, (![X1: object, X2: object]: (p__greater__(X1, X2) <=> (p__less_equal__(X2, X1) & (X1 != X2))))).
 
-tff(greater_equal, axiom, (![X1: $int, X2: $int]: (p__greater_equal__(f__integer__(X1), f__integer__(X2)) <=> $greatereq(X1, X2)))).
-tff(greater_equal, axiom, (![X1: $i, X2: $int]: p__greater_equal__(f__symbolic__(X1), f__integer__(X2)))).
-tff(greater_equal, axiom, (![X1: $int, X2: $i]: ~p__greater_equal__(f__integer__(X1), f__symbolic__(X2)))).
+tff(type_order, axiom, (![X1: $int, X2: $i]: p__less__(f__integer__(X1), f__symbolic__(X2)))).
 
-tff(greater, axiom, (![X1: $int, X2: $int]: (p__greater__(f__integer__(X1), f__integer__(X2)) <=> $greater(X1, X2)))).
-tff(greater, axiom, (![X1: $i, X2: $int]: p__greater__(f__symbolic__(X1), f__integer__(X2)))).
-tff(greater, axiom, (![X1: $int, X2: $i]: ~p__greater__(f__integer__(X1), f__symbolic__(X2)))).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% helper lemmas
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+tff(operations, axiom, (![N: $int]: ($product(2, N) = $sum(N, N)))).
 )";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

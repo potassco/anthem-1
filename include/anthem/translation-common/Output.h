@@ -166,9 +166,8 @@ const auto printTypeAnnotation =
 					if (i > 0)
 						stream << " * ";
 
-					// For TPTP, all program variable values are mapped to odd integer numbers, while integer
-					// values n are mapped to 2 * n. This trick is necessary to translate variables that can take
-					// values of both program and integer variables
+					// For TPTP output, all variables need to have the union type in order to
+					// represent variables that may be either symbolic or integer
 					stream << output::Keyword("object");
 				}
 

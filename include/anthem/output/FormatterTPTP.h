@@ -34,6 +34,8 @@ constexpr const auto TPTPPreamble =
 	R"(
 tff(types, type, (f__integer__: ($int) > object)).
 tff(types, type, (f__symbolic__: ($i) > object)).
+tff(types, type, (c__infimum__: object)).
+tff(types, type, (c__supremum__: object)).
 
 tff(types, type, (f__sum__: (object * object) > object)).
 tff(types, type, (f__unary_minus__: (object) > object)).
@@ -50,10 +52,11 @@ tff(types, type, (p__greater__: (object * object) > $o)).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % objects: integers vs. symbolics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-tff(type_check, axiom, (![X: object]: (p__is_integer__(X) <=> (?[Y: $int]: (X = f__integer__(Y)))))).
-tff(type_check, axiom, (![X: object]: (p__is_symbolic__(X) <=> (?[Y: $i]: (X = f__symbolic__(Y)))))).
-tff(type_check, axiom, (![X: object]: (p__is_integer__(X) <~> p__is_symbolic__(X)))).
-tff(type_check, axiom, (![X: $int, Y: $int]: ((f__integer__(X) = f__integer__(Y)) <=> (X = Y)))).
+tff(types, axiom, (![X: object]: (p__is_integer__(X) <=> (?[Y: $int]: (X = f__integer__(Y)))))).
+tff(types, axiom, (![X: object]: (p__is_symbolic__(X) <=> (?[Y: $i]: (X = f__symbolic__(Y)))))).
+tff(types, axiom, (![X: object]: ((X = c__infimum__) | p__is_integer__(X) | p__is_symbolic__(X) | (X = c__supremum__)))).
+tff(types, axiom, (![X: $int, Y: $int]: ((f__integer__(X) = f__integer__(Y)) <=> (X = Y)))).
+tff(types, axiom, (![X: $i, Y: $i]: ((f__symbolic__(X) = f__symbolic__(Y)) <=> (X = Y)))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % integer operations
@@ -67,20 +70,17 @@ tff(operations, axiom, (![X1: $int, X2: $int]: (f__product__(f__integer__(X1), f
 % object comparisons
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tff(less_equal, axiom, (![X1: $int, X2: $int]: (p__less_equal__(f__integer__(X1), f__integer__(X2)) <=> $lesseq(X1, X2)))).
-tff(less_equal, axiom, (![X1: $i, X2: $i]: ((p__less_equal__(f__symbolic__(X1), f__symbolic__(X2)) & p__less_equal__(f__symbolic__(X2), f__symbolic__(X1))) => (X1 = X2)))).
-tff(less_equal, axiom, (![X1: $i, X2: $i, X3: $i]: ((p__less_equal__(f__symbolic__(X1), f__symbolic__(X2)) & p__less_equal__(f__symbolic__(X2), f__symbolic__(X3))) => p__less_equal__(f__symbolic__(X1), f__symbolic__(X3))))).
-tff(less_equal, axiom, (![X1: $i, X2: $i]: (p__less_equal__(f__symbolic__(X1), f__symbolic__(X2)) | p__less_equal__(f__symbolic__(X2), f__symbolic__(X1))))).
+tff(less_equal, axiom, (![X1: object, X2: object]: ((p__less_equal__(X1, X2) & p__less_equal__(X2, X1)) => (X1 = X2)))).
+tff(less_equal, axiom, (![X1: object, X2: object, X3: object]: ((p__less_equal__(X1, X2) & p__less_equal__(X2, X3)) => p__less_equal__(X1, X3)))).
+tff(less_equal, axiom, (![X1: object, X2: object]: (p__less_equal__(X1, X2) | p__less_equal__(X2, X1)))).
 
 tff(less, axiom, (![X1: object, X2: object]: (p__less__(X1, X2) <=> (p__less_equal__(X1, X2) & (X1 != X2))))).
 tff(greater_equal, axiom, (![X1: object, X2: object]: (p__greater_equal__(X1, X2) <=> p__less_equal__(X2, X1)))).
 tff(greater, axiom, (![X1: object, X2: object]: (p__greater__(X1, X2) <=> (p__less_equal__(X2, X1) & (X1 != X2))))).
 
+tff(type_order, axiom, (![X: $int]: p__less__(c__infimum__, f__integer__(X)))).
 tff(type_order, axiom, (![X1: $int, X2: $i]: p__less__(f__integer__(X1), f__symbolic__(X2)))).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% helper lemmas
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-tff(operations, axiom, (![N: $int]: ($product(2, N) = $sum(N, N)))).
+tff(type_order, axiom, (![X: $i]: p__less__(f__symbolic__(X), c__supremum__))).
 )";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

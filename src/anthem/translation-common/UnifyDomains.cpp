@@ -1,8 +1,11 @@
 #include <anthem/translation-common/UnifyDomains.h>
 
+#include <optional>
+
 #include <anthem/AST.h>
 #include <anthem/Context.h>
 #include <anthem/Exception.h>
+#include <anthem/Utils.h>
 
 namespace anthem
 {
@@ -15,7 +18,7 @@ namespace translationCommon
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void unifyDomains(ast::Term &term, Context &context);
+Domain unifyDomains(ast::Term &term, Context &context);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -34,29 +37,94 @@ ast::FunctionDeclaration *findOrCreateAuxiliaryUnionFunctionDeclaration(const ch
 
 struct FormulaUnifyDomainsVisitor
 {
-	void visit(ast::And &and_, Context &context)
+	void visit(ast::And &and_, ast::Formula &, Context &context)
 	{
 		for (auto &argument : and_.arguments)
 			unifyDomains(argument, context);
 	}
 
-	void visit(ast::Biconditional &biconditional, Context &context)
+	void visit(ast::Biconditional &biconditional, ast::Formula &, Context &context)
 	{
 		unifyDomains(biconditional.left, context);
 		unifyDomains(biconditional.right, context);
 	}
 
-	void visit(ast::Boolean &, Context &)
+	void visit(ast::Boolean &, ast::Formula &, Context &)
 	{
 	}
 
-	void visit(ast::Comparison &comparison, Context &context)
+	void visit(ast::Comparison &comparison, ast::Formula &formula, Context &context)
 	{
-		unifyDomains(comparison.left, context);
-		unifyDomains(comparison.right, context);
+		const auto domainLeft = unifyDomains(comparison.left, context);
+		const auto domainRight = unifyDomains(comparison.right, context);
+
+		const auto auxiliaryPredicateNameComparison =
+			[&]()
+			{
+				switch (comparison.operator_)
+				{
+					case ast::Comparison::Operator::GreaterThan:
+						return AuxiliaryPredicateNameGreater;
+					case ast::Comparison::Operator::LessThan:
+						return AuxiliaryPredicateNameLess;
+					case ast::Comparison::Operator::LessEqual:
+						return AuxiliaryPredicateNameLessEqual;
+					case ast::Comparison::Operator::GreaterEqual:
+						return AuxiliaryPredicateNameGreaterEqual;
+					default:
+						throw LogicException("unexpected comparison operator, please report to bug tracker");
+				}
+			};
+
+		const auto auxiliaryFunctionDeclarationInteger
+			= findOrCreateAuxiliaryUnionFunctionDeclaration(AuxiliaryFunctionNameInteger, 1, context);
+
+		// Check that both sides are of union or integer type
+		if ((domainLeft != Domain::Union && domainLeft != Domain::Integer)
+			|| (domainRight != Domain::Union && domainRight != Domain::Integer))
+		{
+			throw LogicException("unexpected type of comparison operand, please report to bug tracker");
+		}
+
+		// If both sides are of integer type, return
+		if (domainLeft == Domain::Integer && domainRight == Domain::Integer)
+			return;
+
+		// If the left side is integer, map it to a union-type object
+		if (domainLeft == Domain::Integer)
+		{
+			std::vector<ast::Term> arguments;
+			arguments.reserve(1);
+			arguments.emplace_back(std::move(comparison.left));
+			comparison.left = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		}
+
+		// If the right side is integer, map it to a union-type object
+		if (domainRight == Domain::Integer)
+		{
+			std::vector<ast::Term> arguments;
+			arguments.reserve(1);
+			arguments.emplace_back(std::move(comparison.right));
+			comparison.right = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		}
+
+		if (comparison.operator_ == ast::Comparison::Operator::Equal
+			|| comparison.operator_ == ast::Comparison::Operator::NotEqual)
+		{
+			return;
+		}
+
+		const auto auxiliaryPredicateDeclarationComparison
+			= context.findOrCreatePredicateDeclaration(auxiliaryPredicateNameComparison(), 2);
+
+		std::vector<ast::Term> arguments;
+		arguments.reserve(2);
+		arguments.emplace_back(std::move(comparison.left));
+		arguments.emplace_back(std::move(comparison.right));
+		formula = ast::Predicate(auxiliaryPredicateDeclarationComparison, std::move(arguments));
 	}
 
-	void visit(ast::Exists &exists, Context &context)
+	void visit(ast::Exists &exists, ast::Formula &, Context &context)
 	{
 		unifyDomains(exists.argument, context);
 
@@ -82,29 +150,15 @@ struct FormulaUnifyDomainsVisitor
 					break;
 				}
 				case Domain::Program:
+					variableDeclaration->domain = Domain::Union;
 					break;
 				default:
 					throw LogicException("unexpected parameter domain, please report to bug tracker");
 			}
-
-			variableDeclaration->domain = Domain::Union;
 		}
-
-		and_.arguments.emplace_back(std::move(exists.argument));
-
-		if (and_.arguments.empty())
-			return;
-
-		if (and_.arguments.size() == 1)
-		{
-			exists.argument = std::move(and_.arguments.front());
-			return;
-		}
-
-		exists.argument = std::move(and_);
 	}
 
-	void visit(ast::ForAll &forAll, Context &context)
+	void visit(ast::ForAll &forAll, ast::Formula &, Context &context)
 	{
 		unifyDomains(forAll.argument, context);
 
@@ -130,55 +184,60 @@ struct FormulaUnifyDomainsVisitor
 					break;
 				}
 				case Domain::Program:
+					variableDeclaration->domain = Domain::Union;
 					break;
 				default:
 					throw LogicException("unexpected parameter domain, please report to bug tracker");
 			}
-
-			variableDeclaration->domain = Domain::Union;
 		}
-
-		if (and_.arguments.empty())
-			return;
-
-		if (and_.arguments.size() == 1)
-		{
-			ast::Implies implies(std::move(and_.arguments.front()), std::move(forAll.argument));
-			forAll.argument = std::move(implies);
-			return;
-		}
-
-		ast::Implies implies(std::move(and_), std::move(forAll.argument));
-		forAll.argument = std::move(implies);
 	}
 
-	void visit(ast::Implies &implies, Context &context)
+	void visit(ast::Implies &implies, ast::Formula &, Context &context)
 	{
 		unifyDomains(implies.antecedent, context);
 		unifyDomains(implies.consequent, context);
 	}
 
-	void visit(ast::In &in, Context &context)
+	void visit(ast::In &, ast::Formula &, Context &)
 	{
-		unifyDomains(in.element, context);
-		unifyDomains(in.set, context);
+		throw LogicException("unexpected set inclusion operator, please report to bug tracker");
 	}
 
-	void visit(ast::Not &not_, Context &context)
+	void visit(ast::Not &not_, ast::Formula &, Context &context)
 	{
 		unifyDomains(not_.argument, context);
 	}
 
-	void visit(ast::Or &or_, Context &context)
+	void visit(ast::Or &or_, ast::Formula &, Context &context)
 	{
 		for (auto &argument : or_.arguments)
 			unifyDomains(argument, context);
 	}
 
-	void visit(ast::Predicate &predicate, Context &context)
+	void visit(ast::Predicate &predicate, ast::Formula &, Context &context)
 	{
+		const auto auxiliaryFunctionDeclarationInteger
+			= findOrCreateAuxiliaryUnionFunctionDeclaration(AuxiliaryFunctionNameInteger, 1, context);
+
 		for (auto &argument : predicate.arguments)
-			unifyDomains(argument, context);
+		{
+			const auto domain = unifyDomains(argument, context);
+
+			switch (domain)
+			{
+				case Domain::Integer:
+				{
+					std::vector<ast::Term> arguments;
+					arguments.reserve(1);
+					arguments.emplace_back(std::move(argument));
+					argument = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+				}
+				case Domain::Union:
+					break;
+				default:
+					throw LogicException("unexpected type of predicate argument, please report to bug tracker");
+			}
+		}
 	}
 };
 
@@ -186,69 +245,157 @@ struct FormulaUnifyDomainsVisitor
 
 struct TermUnifyDomainsVisitor
 {
-	void visit(ast::BinaryOperation &binaryOperation, ast::Term &, Context &context)
+	Domain visit(ast::BinaryOperation &binaryOperation, ast::Term &term, Context &context)
 	{
-		unifyDomains(binaryOperation.left, context);
-		unifyDomains(binaryOperation.right, context);
+		const auto domainLeft = unifyDomains(binaryOperation.left, context);
+		const auto domainRight = unifyDomains(binaryOperation.right, context);
 
-		switch (binaryOperation.operator_)
+		const auto auxiliaryFunctionNameBinaryOperation =
+			[&]()
+			{
+				switch (binaryOperation.operator_)
+				{
+					case ast::BinaryOperation::Operator::Plus:
+						return AuxiliaryFunctionNameSum;
+					case ast::BinaryOperation::Operator::Minus:
+						return AuxiliaryFunctionNameDifference;
+					case ast::BinaryOperation::Operator::Multiplication:
+						return AuxiliaryFunctionNameProduct;
+					default:
+						throw LogicException("unexpected binary operator, please report to bug tracker");
+				}
+			};
+
+		const auto auxiliaryFunctionDeclarationInteger
+			= findOrCreateAuxiliaryUnionFunctionDeclaration(AuxiliaryFunctionNameInteger, 1, context);
+
+		const auto auxiliaryFunctionDeclarationBinaryOperation
+			= findOrCreateAuxiliaryUnionFunctionDeclaration(auxiliaryFunctionNameBinaryOperation(), 1, context);
+
+		// Check that both sides are of union or integer type
+		if ((domainLeft != Domain::Union && domainLeft != Domain::Integer)
+			|| (domainRight != Domain::Union && domainRight != Domain::Integer))
 		{
-			case ast::BinaryOperation::Operator::Plus:
-			case ast::BinaryOperation::Operator::Minus:
-			case ast::BinaryOperation::Operator::Multiplication:
-				break;
-			default:
-				throw LogicException("unexpected binary operation, please report to bug tracker");
+			throw LogicException("unexpected type of operand of binary operation, please report to bug tracker");
 		}
+
+		// If both sides are of integer type, return
+		if (domainLeft == Domain::Integer && domainRight == Domain::Integer)
+			return Domain::Integer;
+
+		// If the left side is integer, map it to a union-type object
+		if (domainLeft == Domain::Integer)
+		{
+			std::vector<ast::Term> arguments;
+			arguments.reserve(1);
+			arguments.emplace_back(std::move(binaryOperation.left));
+			binaryOperation.left = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		}
+
+		// If the right side is integer, map it to a union-type object
+		if (domainRight == Domain::Integer)
+		{
+			std::vector<ast::Term> arguments;
+			arguments.reserve(1);
+			arguments.emplace_back(std::move(binaryOperation.right));
+			binaryOperation.right = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		}
+
+		std::vector<ast::Term> arguments;
+		arguments.reserve(2);
+		arguments.emplace_back(std::move(binaryOperation.left));
+		arguments.emplace_back(std::move(binaryOperation.right));
+		term = ast::Function(auxiliaryFunctionDeclarationBinaryOperation, std::move(arguments));
+
+		return Domain::Union;
 	}
 
-	void visit(ast::Boolean &, ast::Term &, Context &)
+	Domain visit(ast::Boolean &, ast::Term &, Context &)
 	{
+		return Domain::Union;
 	}
 
-	void visit(ast::Function &function, ast::Term &term, Context &context)
+	Domain visit(ast::Function &function, ast::Term &, Context &)
 	{
 		if (!function.arguments.empty())
 			throw TranslationException("symbolic functions not yet supported");
 
 		function.declaration->domain = Domain::Union;
+
+		return Domain::Union;
 	}
 
-	void visit(ast::Integer &integer, ast::Term &term, Context &context)
+	Domain visit(ast::Integer &integer, ast::Term &, Context &)
 	{
-		std::vector<ast::Term> arguments;
-		arguments.reserve(1);
-		arguments.emplace_back(std::move(integer));
+		return Domain::Integer;
+	}
 
-		auto auxiliaryFunctionDeclarationInteger
+	Domain visit(ast::Interval &interval, ast::Term &, Context &context)
+	{
+		const auto domainFrom = unifyDomains(interval.from, context);
+		const auto domainTo = unifyDomains(interval.to, context);
+
+		const auto auxiliaryFunctionDeclarationInteger
 			= findOrCreateAuxiliaryUnionFunctionDeclaration(AuxiliaryFunctionNameInteger, 1, context);
 
-		term = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		// Check that both sides are of union or integer type
+		if ((domainFrom != Domain::Union && domainFrom != Domain::Integer)
+			|| (domainTo != Domain::Union && domainTo != Domain::Integer))
+		{
+			throw LogicException("unexpected type of binary operation operand, please report to bug tracker");
+		}
+
+		// If both bounds are of integer type, return
+		if (domainFrom == Domain::Integer && domainTo == Domain::Integer)
+			return Domain::Integer;
+
+		// If the left bound is integer, map it to a union-type object
+		if (domainFrom == Domain::Integer)
+		{
+			std::vector<ast::Term> arguments;
+			arguments.reserve(1);
+			arguments.emplace_back(std::move(interval.from));
+			interval.from = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		}
+
+		// If the right bound is integer but the left bound is not, map the right bound to a union-type object
+		if (domainTo == Domain::Integer)
+		{
+			std::vector<ast::Term> arguments;
+			arguments.reserve(1);
+			arguments.emplace_back(std::move(interval.from));
+			interval.to = ast::Function(auxiliaryFunctionDeclarationInteger, std::move(arguments));
+		}
+
+		return Domain::Union;
 	}
 
-	void visit(ast::Interval &interval, ast::Term &, Context &context)
-	{
-		unifyDomains(interval.from, context);
-		unifyDomains(interval.to, context);
-	}
-
-	void visit(ast::SpecialInteger &, ast::Term &, Context &)
+	Domain visit(ast::SpecialInteger &, ast::Term &, Context &)
 	{
 		throw TranslationException("special integers not yet supported");
 	}
 
-	void visit(ast::String &, ast::Term &, Context &)
+	Domain visit(ast::String &, ast::Term &, Context &)
 	{
 		throw TranslationException("strings not yet supported");
 	}
 
-	void visit(ast::UnaryOperation &unaryOperation, ast::Term &, Context &context)
+	Domain visit(ast::UnaryOperation &unaryOperation, ast::Term &, Context &context)
 	{
-		unifyDomains(unaryOperation.argument, context);
+		return unifyDomains(unaryOperation.argument, context);
 	}
 
-	void visit(ast::Variable &, ast::Term &, Context &)
+	Domain visit(ast::Variable &variable, ast::Term &, Context &)
 	{
+		switch (variable.declaration->domain)
+		{
+			case Domain::Integer:
+				return Domain::Integer;
+			case Domain::Program:
+				return Domain::Union;
+			default:
+				throw LogicException("unexpected variable domain, please report to bug tracker");
+		}
 	}
 };
 
@@ -256,14 +403,14 @@ struct TermUnifyDomainsVisitor
 
 void unifyDomains(ast::Formula &formula, Context &context)
 {
-	formula.accept(FormulaUnifyDomainsVisitor(), context);
+	return formula.accept(FormulaUnifyDomainsVisitor(), formula, context);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void unifyDomains(ast::Term &term, Context &context)
+Domain unifyDomains(ast::Term &term, Context &context)
 {
-	term.accept(TermUnifyDomainsVisitor(), term, context);
+	return term.accept(TermUnifyDomainsVisitor(), term, context);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -106,6 +106,9 @@ struct PrintReturnTypeTrait<ast::FunctionDeclaration>
 		{
 			case Domain::Union:
 				return (stream << output::Keyword("object"));
+			// TODO: incorrect type
+			case Domain::Symbolic:
+				return (stream << output::Keyword("object"));
 			default:
 				throw TranslationException("unexpected function return type, please report to bug tracker");
 		}

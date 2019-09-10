@@ -96,11 +96,11 @@ struct FormatterTPTP
 		switch (operator_)
 		{
 			case ast::BinaryOperation::Operator::Plus:
-				return (stream << output::Keyword(AuxiliaryFunctionNameSum));
+				return (stream << output::Keyword("$sum"));
 			case ast::BinaryOperation::Operator::Minus:
-				return (stream << output::Keyword(AuxiliaryFunctionNameDifference));
+				return (stream << output::Keyword("$difference"));
 			case ast::BinaryOperation::Operator::Multiplication:
-				return (stream << output::Keyword(AuxiliaryFunctionNameProduct));
+				return (stream << output::Keyword("$product"));
 			case ast::BinaryOperation::Operator::Division:
 				throw LogicException("division operator not expected for TPTP, please report to bug tracker");
 			case ast::BinaryOperation::Operator::Modulo:
@@ -156,16 +156,16 @@ struct FormatterTPTP
 		{
 			// TODO: rename and reorder for consistency
 			case ast::Comparison::Operator::GreaterThan:
-				stream << output::Keyword(AuxiliaryPredicateNameGreater);
+				stream << output::Keyword("$greater");
 				break;
 			case ast::Comparison::Operator::LessThan:
-				stream << output::Keyword(AuxiliaryPredicateNameLess);
+				stream << output::Keyword("$less");
 				break;
 			case ast::Comparison::Operator::LessEqual:
-				stream << output::Keyword(AuxiliaryPredicateNameLessEqual);
+				stream << output::Keyword("$lesseq");
 				break;
 			case ast::Comparison::Operator::GreaterEqual:
-				stream << output::Keyword(AuxiliaryPredicateNameGreaterEqual);
+				stream << output::Keyword("$greatereq");
 				break;
 			default:
 				throw LogicException("unexpected comparison operator, please report to bug tracker");
@@ -320,7 +320,8 @@ struct FormatterTPTP
 				return (stream << output::Variable(variableName.c_str()));
 			};
 
-		if (variableDeclaration.domain != Domain::Union)
+		if (variableDeclaration.domain != Domain::Union && variableDeclaration.domain != Domain::Integer
+			&& variableDeclaration.domain != Domain::Program)
 			throw LogicException("expected all variables to have union type, please report to bug tracker");
 
 		switch (variableDeclaration.type)
@@ -382,7 +383,19 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-			stream << ": " << output::Keyword("object");
+
+			switch (variableDeclaration.domain)
+			{
+				case Domain::Integer:
+					stream << ": " << output::Keyword("$int");
+					break;
+				case Domain::Union:
+				case Domain::Program:
+					stream << ": " << output::Keyword("object");
+					break;
+				default:
+					throw LogicException("unexpected variable domain, please report to bug tracker");
+			}
 		}
 
 		stream << "]: ";
@@ -404,7 +417,19 @@ struct FormatterTPTP
 				stream << ", ";
 
 			print(stream, variableDeclaration, printContext, true);
-			stream << ": " << output::Keyword("object");
+
+			switch (variableDeclaration.domain)
+			{
+				case Domain::Integer:
+					stream << ": " << output::Keyword("$int");
+					break;
+				case Domain::Union:
+				case Domain::Program:
+					stream << ": " << output::Keyword("object");
+					break;
+				default:
+					throw LogicException("unexpected variable domain, please report to bug tracker");
+			}
 		}
 
 		stream << "]: ";

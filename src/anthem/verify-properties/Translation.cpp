@@ -259,7 +259,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	if (context.outputFormat == OutputFormat::TPTP)
 		stream << output::TPTPPreamble;
 
-	if (!completedDefinitions.empty())
+	/*if (!completedDefinitions.empty())
 	{
 		stream
 			<< R"(
@@ -267,18 +267,20 @@ void translate(Context &context, TranslationContext &translationContext)
 % completed definitions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 )";
-	}
+	}*/
 
 	// Print completed definitions
 	for (const auto &completedDefinition : completedDefinitions)
 	{
+		stream << "axiom: ";
+
 		translationCommon::printFormula(completedDefinition, translationCommon::FormulaType::Axiom,
 			context, printContext);
 
-		stream << std::endl;
+		stream << "." << std::endl;
 	}
 
-	if (!translationContext.integrityConstraints.empty())
+	/*if (!translationContext.integrityConstraints.empty())
 	{
 		stream
 			<< R"(
@@ -286,15 +288,17 @@ void translate(Context &context, TranslationContext &translationContext)
 % integrity constraints
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 )";
-	}
+	}*/
 
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)
 	{
+		stream << "axiom: ";
+
 		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom,
 			context, printContext);
 
-		stream << std::endl;
+		stream << "." << std::endl;
 	}
 }
 

@@ -34,6 +34,7 @@ struct PrintContext
 	std::map<const ast::VariableDeclaration *, size_t> bodyVariableIDs;
 	std::map<const ast::VariableDeclaration *, size_t> inputVariableIDs;
 	std::map<const ast::VariableDeclaration *, size_t> integerVariableIDs;
+	std::map<const ast::VariableDeclaration *, size_t> programVariableIDs;
 	size_t currentFormulaID{0};
 	size_t currentTypeID{0};
 

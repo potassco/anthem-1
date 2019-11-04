@@ -15,6 +15,7 @@ constexpr const auto BodyVariablePrefix = "X";
 constexpr const auto UserVariablePrefix = "U";
 constexpr const auto InputVariablePrefix = "C";
 constexpr const auto IntegerVariablePrefix = "N";
+constexpr const auto ProgramVariablePrefix = "X";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

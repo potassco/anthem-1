@@ -274,19 +274,7 @@ struct FormatterHumanReadable
 		if (variableDeclaration.domain == Domain::Integer)
 			return printVariableDeclaration(IntegerVariablePrefix, printContext.integerVariableIDs);
 
-		switch (variableDeclaration.type)
-		{
-			case ast::VariableDeclaration::Type::UserDefined:
-				return printVariableDeclaration(UserVariablePrefix, printContext.userVariableIDs);
-			case ast::VariableDeclaration::Type::Head:
-				return printVariableDeclaration(HeadVariablePrefix, printContext.headVariableIDs);
-			case ast::VariableDeclaration::Type::Body:
-				return printVariableDeclaration(BodyVariablePrefix, printContext.bodyVariableIDs);
-			case ast::VariableDeclaration::Type::Input:
-				return printVariableDeclaration(InputVariablePrefix, printContext.inputVariableIDs);
-		}
-
-		return stream;
+		return printVariableDeclaration(ProgramVariablePrefix, printContext.programVariableIDs);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

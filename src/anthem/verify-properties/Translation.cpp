@@ -144,7 +144,46 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 		}
 		// Translate simple choice rules
 		case HeadType::ChoiceSingleAtom:
-			throw LogicException("choice rules with single atoms not supported yet");
+		{
+			assert(headTranslationResult.headAtom);
+			const auto &headAtom = *headTranslationResult.headAtom;
+
+			// If there are no definitions for this predicate symbol yet, create an empty data structure for it
+			if (translationContext.definitions.find(headAtom.predicateDeclaration)
+				== translationContext.definitions.cend())
+			{
+				TranslationContext::Definitions definitions
+				{
+					declarePredicateParameters(*headAtom.predicateDeclaration),
+					std::vector<ast::ScopedFormula>(),
+				};
+
+				translationContext.definitions.insert(
+					std::make_pair(headAtom.predicateDeclaration, std::move(definitions)));
+			}
+
+			auto &definitions = translationContext.definitions[headAtom.predicateDeclaration];
+
+			variableStack.push(&definitions.headAtomParameters);
+
+			auto formula = translateBody();
+
+			ast::Predicate predicate(headAtom.predicateDeclaration);
+
+			for (auto i = 0; i < static_cast<int>(definitions.headAtomParameters.size()); i++)
+				predicate.arguments.emplace_back(ast::Variable(definitions.headAtomParameters[i].get()));
+
+			formula.arguments.emplace_back(std::move(predicate));
+
+			translateHeadTerms(definitions.headAtomParameters, headAtom.arguments, formula);
+
+			variableStack.pop();
+
+			auto definition = ast::ScopedFormula{std::move(formula), std::move(freeVariables)};
+			definitions.definitions.emplace_back(std::move(definition));
+
+			return;
+		}
 		// Translate facts
 		case HeadType::Fact:
 			throw LogicException("facts not supported yet");

@@ -311,7 +311,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	// Print completed definitions
 	for (const auto &completedDefinition : completedDefinitions)
 	{
-		stream << "axiom: ";
+		stream << "completion: ";
 
 		translationCommon::printFormula(completedDefinition, translationCommon::FormulaType::Axiom,
 			context, printContext);
@@ -332,7 +332,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)
 	{
-		stream << "axiom: ";
+		stream << "completion: ";
 
 		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom,
 			context, printContext);

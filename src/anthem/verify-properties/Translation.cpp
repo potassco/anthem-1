@@ -197,6 +197,9 @@ inline void read(const Clingo::AST::Rule &rule, Context &context, TranslationCon
 
 			return;
 		}
+		// Handle annotations
+		case HeadType::Annotation:
+			return;
 	}
 
 	throw LogicException("unreachable code, please report to bug tracker");
@@ -270,8 +273,14 @@ void translate(Context &context, TranslationContext &translationContext)
 
 	// Build completed definitions
 	for (auto &predicateDeclaration : predicateDeclarations)
+	{
+		if (context.inputPredicateDeclarations.find(predicateDeclaration.get())
+			!= context.inputPredicateDeclarations.cend())
+			continue;
+
 		completedDefinitions.emplace_back(makeUniversallyClosedFormula(
 			makeCompletedDefinition(*predicateDeclaration)));
+	}
 
 	// Make all variables and functions have the union type
 	if (context.isDomainUnificationRequested())

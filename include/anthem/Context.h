@@ -2,6 +2,7 @@
 #define __ANTHEM__CONTEXT_H
 
 #include <optional>
+#include <set>
 
 #include <anthem/AST.h>
 #include <anthem/Exception.h>
@@ -116,6 +117,8 @@ struct Context
 	ast::PredicateDeclaration::Visibility defaultPredicateVisibility{ast::PredicateDeclaration::Visibility::Visible};
 
 	std::vector<std::unique_ptr<ast::FunctionDeclaration>> functionDeclarations;
+
+	std::set<const ast::PredicateDeclaration*> inputPredicateDeclarations;
 
 	bool externalStatementsUsed{false};
 	bool showStatementsUsed{false};

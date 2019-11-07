@@ -268,7 +268,7 @@ void translate(Context &context, TranslationContext &translationContext)
 			return ast::ScopedFormula(std::move(biconditional), std::move(definitions.second.headAtomParameters));
 		};
 
-	std::vector<ast::Formula> completedDefinitions;
+	std::vector<std::pair<const ast::PredicateDeclaration *, ast::Formula>> completedDefinitions;
 	completedDefinitions.reserve(predicateDeclarations.size());
 
 	// Build completed definitions
@@ -278,15 +278,15 @@ void translate(Context &context, TranslationContext &translationContext)
 			!= context.inputPredicateDeclarations.cend())
 			continue;
 
-		completedDefinitions.emplace_back(makeUniversallyClosedFormula(
-			makeCompletedDefinition(*predicateDeclaration)));
+		completedDefinitions.emplace_back(std::make_pair(predicateDeclaration.get(),
+			makeUniversallyClosedFormula(makeCompletedDefinition(*predicateDeclaration))));
 	}
 
 	// Make all variables and functions have the union type
 	if (context.isDomainUnificationRequested())
 	{
 		for (auto &completedDefinition : completedDefinitions)
-			translationCommon::unifyDomains(completedDefinition, context);
+			translationCommon::unifyDomains(completedDefinition.second, context);
 
 		for (auto &integrityConstraint : translationContext.integrityConstraints)
 			translationCommon::unifyDomains(integrityConstraint, context);
@@ -320,9 +320,12 @@ void translate(Context &context, TranslationContext &translationContext)
 	// Print completed definitions
 	for (const auto &completedDefinition : completedDefinitions)
 	{
-		stream << "completion: ";
+		const auto &predicateDeclaration = completedDefinition.first;
+		const auto &formula = completedDefinition.second;
 
-		translationCommon::printFormula(completedDefinition, translationCommon::FormulaType::Axiom,
+		stream << "completion(" << predicateDeclaration->name << "/" << predicateDeclaration->arity() << "): ";
+
+		translationCommon::printFormula(formula, translationCommon::FormulaType::Axiom,
 			context, printContext);
 
 		stream << "." << std::endl;
@@ -341,7 +344,7 @@ void translate(Context &context, TranslationContext &translationContext)
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)
 	{
-		stream << "completion: ";
+		stream << "completion(constraint): ";
 
 		translationCommon::printFormula(integrityConstraint, translationCommon::FormulaType::Axiom,
 			context, printContext);

@@ -307,16 +307,6 @@ void translate(Context &context, TranslationContext &translationContext)
 	if (context.outputFormat == OutputFormat::TPTP)
 		stream << output::TPTPPreamble;
 
-	/*if (!completedDefinitions.empty())
-	{
-		stream
-			<< R"(
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% completed definitions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-)";
-	}*/
-
 	// Print completed definitions
 	for (const auto &completedDefinition : completedDefinitions)
 	{
@@ -330,16 +320,6 @@ void translate(Context &context, TranslationContext &translationContext)
 
 		stream << "." << std::endl;
 	}
-
-	/*if (!translationContext.integrityConstraints.empty())
-	{
-		stream
-			<< R"(
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% integrity constraints
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-)";
-	}*/
 
 	// Print integrity constraints
 	for (auto &integrityConstraint : translationContext.integrityConstraints)

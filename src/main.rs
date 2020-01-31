@@ -13,7 +13,7 @@ impl clingo::StatementHandler for StatementHandler<'_>
 			{
 				anthem::translate::verify_properties::read(rule, self.context)
 			},
-			_ => println!("got other kind of statement"),
+			_ => log::debug!("read statement (other kind)"),
 		}
 
 		true
@@ -26,12 +26,14 @@ impl clingo::Logger for Logger
 {
 	fn log(&mut self, code: clingo::Warning, message: &str)
 	{
-		println!("clingo warning ({:?}): {}", code, message);
+		log::warn!("clingo warning ({:?}): {}", code, message);
 	}
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>>
 {
+	pretty_env_logger::init();
+
 	let program = std::fs::read_to_string("test.lp")?;
 	let mut context = anthem::translate::verify_properties::Context::new();
 	let mut statement_handler = StatementHandler

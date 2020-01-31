@@ -6,6 +6,8 @@ edition = "2018"
 
 [dependencies]
 clingo = "0.6"
+log = "0.4"
+pretty_env_logger = "0.3"
 
 [dependencies.foliage]
 git = "ssh://gitea@git.luehne.de/patrick/foliage-rs.git"

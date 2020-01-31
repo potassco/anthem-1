@@ -1,5 +1,4 @@
+pub mod error;
 pub mod translate;
 
-pub struct Context
-{
-}
+pub use error::Error;

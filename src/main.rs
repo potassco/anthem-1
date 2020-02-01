@@ -11,7 +11,10 @@ impl clingo::StatementHandler for StatementHandler<'_>
 		{
 			clingo::ast::StatementType::Rule(ref rule) =>
 			{
-				anthem::translate::verify_properties::read(rule, self.context)
+				if let Err(error) = anthem::translate::verify_properties::read(rule, self.context)
+				{
+					log::error!("could not translate input program: {}", error);
+				}
 			},
 			_ => log::debug!("read statement (other kind)"),
 		}

@@ -1,61 +1,122 @@
-pub(crate) trait FindOrCreateFunctionDeclaration = FnMut(&str, usize)
-	-> std::rc::Rc<foliage::FunctionDeclaration>;
-
-pub(crate) trait FindOrCreatePredicateDeclaration = FnMut(&str, usize)
-	-> std::rc::Rc<foliage::PredicateDeclaration>;
-
-pub(crate) trait FindOrCreateVariableDeclaration = FnMut(&str)
-	-> std::rc::Rc<foliage::VariableDeclaration>;
-
-pub(crate) fn find_or_create_predicate_declaration(predicate_declarations: &mut foliage::PredicateDeclarations,
-	name: &str, arity: usize)
-	-> std::rc::Rc<foliage::PredicateDeclaration>
+pub(crate) trait FindOrCreateFunctionDeclaration
 {
-	match predicate_declarations.iter()
-		.find(|x| x.name == name && x.arity == arity)
+	fn find_or_create(&mut self, name: &str, arity: usize)
+		-> std::rc::Rc<foliage::FunctionDeclaration>;
+}
+
+pub(crate) trait FindOrCreatePredicateDeclaration
+{
+	fn find_or_create(&mut self, name: &str, arity: usize)
+		-> std::rc::Rc<foliage::PredicateDeclaration>;
+}
+
+pub(crate) trait FindOrCreateVariableDeclaration
+{
+	fn find_or_create(&mut self, name: &str)
+		-> std::rc::Rc<foliage::VariableDeclaration>;
+}
+
+impl FindOrCreateFunctionDeclaration for foliage::FunctionDeclarations
+{
+	fn find_or_create(&mut self, name: &str, arity: usize)
+		-> std::rc::Rc<foliage::FunctionDeclaration>
 	{
-		Some(value) => std::rc::Rc::clone(value),
-		None =>
+		match self.iter()
+			.find(|x| x.name == name && x.arity == arity)
 		{
-			let declaration = foliage::PredicateDeclaration
+			Some(value) => std::rc::Rc::clone(value),
+			None =>
 			{
-				name: name.to_owned(),
-				arity,
-			};
-			let declaration = std::rc::Rc::new(declaration);
+				let declaration = foliage::FunctionDeclaration
+				{
+					name: name.to_owned(),
+					arity,
+				};
+				let declaration = std::rc::Rc::new(declaration);
 
-			predicate_declarations.insert(std::rc::Rc::clone(&declaration));
+				self.insert(std::rc::Rc::clone(&declaration));
 
-			log::debug!("new predicate declaration: {}/{}", name, arity);
+				log::debug!("new function declaration: {}/{}", name, arity);
 
-			declaration
-		},
+				declaration
+			},
+		}
 	}
 }
 
-pub(crate) fn find_or_create_function_declaration(function_declarations: &mut foliage::FunctionDeclarations,
-	name: &str, arity: usize)
-	-> std::rc::Rc<foliage::FunctionDeclaration>
+impl FindOrCreatePredicateDeclaration for foliage::PredicateDeclarations
 {
-	match function_declarations.iter()
-		.find(|x| x.name == name && x.arity == arity)
+	fn find_or_create(&mut self, name: &str, arity: usize)
+		-> std::rc::Rc<foliage::PredicateDeclaration>
 	{
-		Some(value) => std::rc::Rc::clone(value),
-		None =>
+		match self.iter()
+			.find(|x| x.name == name && x.arity == arity)
 		{
-			let declaration = foliage::FunctionDeclaration
+			Some(value) => std::rc::Rc::clone(value),
+			None =>
 			{
-				name: name.to_owned(),
-				arity,
+				let declaration = foliage::PredicateDeclaration
+				{
+					name: name.to_owned(),
+					arity,
+				};
+				let declaration = std::rc::Rc::new(declaration);
+
+				self.insert(std::rc::Rc::clone(&declaration));
+
+				log::debug!("new predicate declaration: {}/{}", name, arity);
+
+				declaration
+			},
+		}
+	}
+}
+
+impl FindOrCreateVariableDeclaration for foliage::VariableDeclarationStack
+{
+	fn find_or_create(&mut self, name: &str)
+		-> std::rc::Rc<foliage::VariableDeclaration>
+	{
+		// TODO: check correctness
+		if name == "_"
+		{
+			let variable_declaration = foliage::VariableDeclaration
+			{
+				name: "_".to_owned(),
 			};
-			let declaration = std::rc::Rc::new(declaration);
+			let variable_declaration = std::rc::Rc::new(variable_declaration);
 
-			function_declarations.insert(std::rc::Rc::clone(&declaration));
+			self.free_variable_declarations.insert(
+				std::rc::Rc::clone(&variable_declaration));
 
-			log::debug!("new function declaration: {}/{}", name, arity);
+			return variable_declaration;
+		}
 
-			declaration
-		},
+		self.find_or_create(name)
+	}
+}
+
+pub(crate) fn translate_binary_operator(binary_operator: clingo::ast::BinaryOperator)
+	-> Result<foliage::BinaryOperator, crate::Error>
+{
+	match binary_operator
+	{
+		clingo::ast::BinaryOperator::And
+		| clingo::ast::BinaryOperator::Or
+		| clingo::ast::BinaryOperator::Xor
+			=> return Err(crate::Error::new_unsupported_language_feature("binary logical operators")),
+		clingo::ast::BinaryOperator::Plus
+			=> Ok(foliage::BinaryOperator::Addition),
+		clingo::ast::BinaryOperator::Minus
+			=> Ok(foliage::BinaryOperator::Subtraction),
+		clingo::ast::BinaryOperator::Multiplication
+			=> Ok(foliage::BinaryOperator::Multiplication),
+		clingo::ast::BinaryOperator::Division
+			=> Ok(foliage::BinaryOperator::Division),
+		clingo::ast::BinaryOperator::Modulo
+			=> Ok(foliage::BinaryOperator::Modulo),
+		clingo::ast::BinaryOperator::Power
+			=> Ok(foliage::BinaryOperator::Exponentiation),
 	}
 }
 
@@ -96,13 +157,11 @@ pub(crate) fn choose_value_in_primitive(term: Box<foliage::Term>,
 	}
 }
 
-pub(crate) fn choose_value_in_term<F1, F2>(term: &clingo::ast::Term,
+pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 	variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>,
-	mut find_or_create_function_declaration: F1, mut find_or_create_variable_declaration: F2)
+	function_declarations: &mut foliage::FunctionDeclarations,
+	variable_declaration_stack: &mut foliage::VariableDeclarationStack)
 	-> Result<foliage::Formula, crate::Error>
-where
-	F1: FindOrCreateFunctionDeclaration,
-	F2: FindOrCreateVariableDeclaration,
 {
 	match term.term_type()
 	{
@@ -139,7 +198,7 @@ where
 				let constant_name = symbol.name()
 					.map_err(|error| crate::Error::new_logic("clingo error").with(error))?;
 
-				let constant_declaration = find_or_create_function_declaration(constant_name, 0);
+				let constant_declaration = function_declarations.find_or_create(constant_name, 0);
 
 				let function = foliage::Term::Function(foliage::Function
 				{
@@ -150,8 +209,18 @@ where
 				Ok(foliage::Formula::Comparison(choose_value_in_primitive(Box::new(function), variable_declaration)))
 			}
 		},
-		clingo::ast::TermType::Variable(variable) =>
-			Err(crate::Error::new_not_yet_implemented("todo")),
+		clingo::ast::TermType::Variable(variable_name) =>
+		{
+			let other_variable_declaration = variable_declaration_stack.find_or_create(variable_name);
+
+			let other_variable = foliage::Term::Variable(foliage::Variable
+			{
+				declaration: other_variable_declaration,
+			});
+
+			Ok(foliage::Formula::Comparison(choose_value_in_primitive(Box::new(other_variable),
+				variable_declaration)))
+		},
 		_ => Err(crate::Error::new_not_yet_implemented("todo")),
 	}
 }

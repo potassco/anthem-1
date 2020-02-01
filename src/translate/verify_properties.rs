@@ -12,31 +12,32 @@ pub struct ScopedFormula
 
 pub struct Definitions
 {
-	head_atom_parameters: foliage::VariableDeclarations,
+	head_atom_parameters: std::rc::Rc<foliage::VariableDeclarations>,
 	definitions: Vec<ScopedFormula>,
 }
 
 pub fn read(rule: &clingo::ast::Rule) -> Result<(), crate::Error>
 {
+	use super::common::FindOrCreatePredicateDeclaration;
+
 	let mut function_declarations = foliage::FunctionDeclarations::new();
 	let mut predicate_declarations = foliage::PredicateDeclarations::new();
 	let mut variable_declaration_stack = foliage::VariableDeclarationStack::new();
 
 	let head_type = determine_head_type(rule.head(),
-		|name, arity| super::common::find_or_create_predicate_declaration(
-			&mut predicate_declarations, name, arity))?;
+		|name, arity| predicate_declarations.find_or_create(name, arity))?;
 
 	let mut definitions
 		= std::collections::BTreeMap::<std::rc::Rc<foliage::PredicateDeclaration>, Definitions>::new();
 
 	let declare_predicate_parameters = |predicate_declaration: &foliage::PredicateDeclaration|
 	{
-		(0..predicate_declaration.arity)
+		std::rc::Rc::new((0..predicate_declaration.arity)
 			.map(|_| std::rc::Rc::new(foliage::VariableDeclaration
 				{
 					name: "<anonymous>".to_string(),
 				}))
-			.collect()
+			.collect())
 	};
 
 	match head_type
@@ -54,8 +55,15 @@ pub fn read(rule: &clingo::ast::Rule) -> Result<(), crate::Error>
 			}
 
 			let definitions = definitions.get(&head_atom.predicate_declaration).unwrap();
+
+			variable_declaration_stack.push(std::rc::Rc::clone(&definitions.head_atom_parameters));
+
+			let translated_body = translate_body(rule.body(), &mut function_declarations,
+				&mut predicate_declarations, &mut variable_declaration_stack);
+
+			variable_declaration_stack.pop();
 		},
-		HeadType::ChoiceWithSingleAtom(test) =>
+		HeadType::ChoiceWithSingleAtom(_) =>
 			log::debug!("translating choice rule with single atom"),
 		HeadType::IntegrityConstraint =>
 			log::debug!("translating integrity constraint"),

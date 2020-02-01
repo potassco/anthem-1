@@ -1,6 +1,11 @@
-pub fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
-	context: &mut super::Context)
+pub(crate) fn translate_body_term<F1, F2, F3>(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
+	mut find_or_create_function_declaration: F1, mut find_or_create_predicate_declaration: F2,
+	mut find_or_create_variable_declaration: F3)
 	-> Result<foliage::Formula, crate::Error>
+where
+	F1: crate::translate::common::FindOrCreateFunctionDeclaration,
+	F2: crate::translate::common::FindOrCreatePredicateDeclaration,
+	F3: crate::translate::common::FindOrCreateVariableDeclaration,
 {
 	let function = match body_term.term_type()
 	{
@@ -10,7 +15,7 @@ pub fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::ast::Sig
 
 	let function_name = function.name().map_err(|error| crate::Error::new_decode_identifier(error))?;
 
-	let predicate_declaration = context.find_or_create_predicate_declaration(function_name,
+	let predicate_declaration = find_or_create_predicate_declaration(function_name,
 		function.arguments().len());
 
 	let parameters = function.arguments().iter().map(|_| std::rc::Rc::new(
@@ -49,7 +54,7 @@ pub fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::ast::Sig
 	let mut arguments = function.arguments().iter().map(|x|
 		{
 			let result = crate::translate::common::choose_value_in_term(x, &parameters[i],
-				|name, arity| context.find_or_create_function_declaration(name, arity))
+				&mut find_or_create_function_declaration, &mut find_or_create_variable_declaration)
 				.map(|x| Box::new(x));
 			i += 1;
 			result
@@ -67,8 +72,14 @@ pub fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::ast::Sig
 	}))
 }
 
-pub fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral, context: &mut super::Context)
+pub(crate) fn translate_body_literal<F1, F2, F3>(body_literal: &clingo::ast::BodyLiteral,
+	mut find_or_create_function_declaration: F1, mut find_or_create_predicate_declaration: F2,
+	mut find_or_create_variable_declaration: F3)
 	-> Result<foliage::Formula, crate::Error>
+where
+	F1: crate::translate::common::FindOrCreateFunctionDeclaration,
+	F2: crate::translate::common::FindOrCreatePredicateDeclaration,
+	F3: crate::translate::common::FindOrCreateVariableDeclaration,
 {
 	match body_literal.sign()
 	{
@@ -96,7 +107,9 @@ pub fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral, context: 
 
 			Ok(foliage::Formula::Boolean(value))
 		},
-		clingo::ast::LiteralType::Symbolic(term) => translate_body_term(term, literal.sign(), context),
+		clingo::ast::LiteralType::Symbolic(term) => translate_body_term(term, literal.sign(),
+			&mut find_or_create_function_declaration, &mut find_or_create_predicate_declaration,
+			&mut find_or_create_variable_declaration),
 		clingo::ast::LiteralType::Comparison(comparison) =>
 		{
 			let new_variable_declaration = || std::rc::Rc::new(foliage::VariableDeclaration
@@ -110,9 +123,9 @@ pub fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral, context: 
 			let parameter_z2 = &parameters[1];
 
 			let choose_z1_in_t1 = crate::translate::common::choose_value_in_term(comparison.left(), &parameter_z1,
-				|name, arity| context.find_or_create_function_declaration(name, arity))?;
+				&mut find_or_create_function_declaration, &mut find_or_create_variable_declaration)?;
 			let choose_z2_in_t2 = crate::translate::common::choose_value_in_term(comparison.right(), &parameter_z2,
-				|name, arity| context.find_or_create_function_declaration(name, arity))?;
+				&mut find_or_create_function_declaration, &mut find_or_create_variable_declaration)?;
 
 			let variable_1 = foliage::Variable
 			{
@@ -148,11 +161,19 @@ pub fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral, context: 
 	}
 }
 
-pub fn translate_body(body_literals: &[clingo::ast::BodyLiteral], context: &mut super::Context)
+pub(crate) fn translate_body<F1, F2, F3>(body_literals: &[clingo::ast::BodyLiteral],
+	mut find_or_create_function_declaration: F1, mut find_or_create_predicate_declaration: F2,
+	mut find_or_create_variable_declaration: F3)
 	-> Result<foliage::Formulas, crate::Error>
+where
+	F1: crate::translate::common::FindOrCreateFunctionDeclaration,
+	F2: crate::translate::common::FindOrCreatePredicateDeclaration,
+	F3: crate::translate::common::FindOrCreateVariableDeclaration,
 {
 	body_literals.iter()
-		.map(|body_literal| translate_body_literal(body_literal, context)
+		.map(|body_literal| translate_body_literal(body_literal,
+			&mut find_or_create_function_declaration, &mut find_or_create_predicate_declaration,
+			&mut find_or_create_variable_declaration)
 			.map(|value| Box::new(value)))
 		.collect::<Result<foliage::Formulas, crate::Error>>()
 }

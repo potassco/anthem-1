@@ -1,9 +1,6 @@
-struct StatementHandler<'context>
-{
-	context: &'context mut anthem::translate::verify_properties::Context,
-}
+struct StatementHandler;
 
-impl clingo::StatementHandler for StatementHandler<'_>
+impl clingo::StatementHandler for StatementHandler
 {
 	fn on_statement(&mut self, statement: &clingo::ast::Statement) -> bool
 	{
@@ -11,7 +8,7 @@ impl clingo::StatementHandler for StatementHandler<'_>
 		{
 			clingo::ast::StatementType::Rule(ref rule) =>
 			{
-				if let Err(error) = anthem::translate::verify_properties::read(rule, self.context)
+				if let Err(error) = anthem::translate::verify_properties::read(rule)
 				{
 					log::error!("could not translate input program: {}", error);
 					return false;
@@ -47,11 +44,8 @@ fn main()
 			std::process::exit(1);
 		},
 	};
-	let mut context = anthem::translate::verify_properties::Context::new();
-	let mut statement_handler = StatementHandler
-	{
-		context: &mut context
-	};
+
+	let mut statement_handler = StatementHandler{};
 
 	match clingo::parse_program_with_logger(&program, &mut statement_handler, &mut Logger, std::u32::MAX)
 	{

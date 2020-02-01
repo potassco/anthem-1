@@ -1,4 +1,65 @@
-pub fn translate_comparison_operator(comparison_operator: clingo::ast::ComparisonOperator)
+pub(crate) trait FindOrCreateFunctionDeclaration = FnMut(&str, usize)
+	-> std::rc::Rc<foliage::FunctionDeclaration>;
+
+pub(crate) trait FindOrCreatePredicateDeclaration = FnMut(&str, usize)
+	-> std::rc::Rc<foliage::PredicateDeclaration>;
+
+pub(crate) trait FindOrCreateVariableDeclaration = FnMut(&str)
+	-> std::rc::Rc<foliage::VariableDeclaration>;
+
+pub(crate) fn find_or_create_predicate_declaration(predicate_declarations: &mut foliage::PredicateDeclarations,
+	name: &str, arity: usize)
+	-> std::rc::Rc<foliage::PredicateDeclaration>
+{
+	match predicate_declarations.iter()
+		.find(|x| x.name == name && x.arity == arity)
+	{
+		Some(value) => std::rc::Rc::clone(value),
+		None =>
+		{
+			let declaration = foliage::PredicateDeclaration
+			{
+				name: name.to_owned(),
+				arity,
+			};
+			let declaration = std::rc::Rc::new(declaration);
+
+			predicate_declarations.insert(std::rc::Rc::clone(&declaration));
+
+			log::debug!("new predicate declaration: {}/{}", name, arity);
+
+			declaration
+		},
+	}
+}
+
+pub(crate) fn find_or_create_function_declaration(function_declarations: &mut foliage::FunctionDeclarations,
+	name: &str, arity: usize)
+	-> std::rc::Rc<foliage::FunctionDeclaration>
+{
+	match function_declarations.iter()
+		.find(|x| x.name == name && x.arity == arity)
+	{
+		Some(value) => std::rc::Rc::clone(value),
+		None =>
+		{
+			let declaration = foliage::FunctionDeclaration
+			{
+				name: name.to_owned(),
+				arity,
+			};
+			let declaration = std::rc::Rc::new(declaration);
+
+			function_declarations.insert(std::rc::Rc::clone(&declaration));
+
+			log::debug!("new function declaration: {}/{}", name, arity);
+
+			declaration
+		},
+	}
+}
+
+pub(crate) fn translate_comparison_operator(comparison_operator: clingo::ast::ComparisonOperator)
 	-> foliage::ComparisonOperator
 {
 	match comparison_operator
@@ -18,7 +79,7 @@ pub fn translate_comparison_operator(comparison_operator: clingo::ast::Compariso
 	}
 }
 
-pub fn choose_value_in_primitive(term: Box<foliage::Term>,
+pub(crate) fn choose_value_in_primitive(term: Box<foliage::Term>,
 	variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
 	-> foliage::Comparison
 {
@@ -35,12 +96,13 @@ pub fn choose_value_in_primitive(term: Box<foliage::Term>,
 	}
 }
 
-pub fn choose_value_in_term<F>(term: &clingo::ast::Term,
+pub(crate) fn choose_value_in_term<F1, F2>(term: &clingo::ast::Term,
 	variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>,
-	mut find_or_create_function_declaration: F)
+	mut find_or_create_function_declaration: F1, mut find_or_create_variable_declaration: F2)
 	-> Result<foliage::Formula, crate::Error>
 where
-	F: FnMut(&str, usize) -> std::rc::Rc<foliage::FunctionDeclaration>
+	F1: FindOrCreateFunctionDeclaration,
+	F2: FindOrCreateVariableDeclaration,
 {
 	match term.term_type()
 	{
@@ -88,6 +150,8 @@ where
 				Ok(foliage::Formula::Comparison(choose_value_in_primitive(Box::new(function), variable_declaration)))
 			}
 		},
-		_ => Ok(foliage::Formula::Boolean(false))
+		clingo::ast::TermType::Variable(variable) =>
+			Err(crate::Error::new_not_yet_implemented("todo")),
+		_ => Err(crate::Error::new_not_yet_implemented("todo")),
 	}
 }

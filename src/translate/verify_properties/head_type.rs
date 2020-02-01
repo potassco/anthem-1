@@ -1,10 +1,10 @@
-pub struct HeadAtom<'a>
+pub(crate) struct HeadAtom<'a>
 {
 	pub predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>,
 	pub arguments: &'a [clingo::ast::Term<'a>],
 }
 
-pub enum HeadType<'a>
+pub(crate) enum HeadType<'a>
 {
 	SingleAtom(HeadAtom<'a>),
 	ChoiceWithSingleAtom(HeadAtom<'a>),
@@ -12,7 +12,7 @@ pub enum HeadType<'a>
 	Trivial,
 }
 
-pub fn determine_head_type<'a, F>(head_literal: &'a clingo::ast::HeadLiteral,
+pub(crate) fn determine_head_type<'a, F>(head_literal: &'a clingo::ast::HeadLiteral,
 	mut find_or_create_predicate_declaration: F)
 	-> Result<HeadType<'a>, crate::Error>
 where

@@ -9,18 +9,22 @@ use translate_head::determine_head_type;
 
 pub fn read(rule: &clingo::ast::Rule, context: &mut Context) -> Result<(), crate::Error>
 {
-	let test = translate_body(rule.body(), context)?;
+	let translated_body = translate_body(rule.body(), context)?;
 
-	println!("{:?}", test);
-
-	let test = determine_head_type(rule.head(),
+	let head_type = determine_head_type(rule.head(),
 		|name, arity| context.find_or_create_predicate_declaration(name, arity))?;
 
-	match test
+	match head_type
 	{
-		translate_head::HeadType::ChoiceWithSingleAtom(_) => println!("choice single"),
-		translate_head::HeadType::IntegrityConstraint => println!("integrity"),
-		translate_head::HeadType::Trivial => println!("trivial"),
+		translate_head::HeadType::ChoiceWithSingleAtom(test) =>
+			log::debug!("translating choice rule with single atom"),
+		translate_head::HeadType::IntegrityConstraint =>
+			log::debug!("translating integrity constraint"),
+		translate_head::HeadType::Trivial =>
+		{
+			log::debug!("skipping trivial rule");
+			return Ok(());
+		},
 		_ => (),
 	}
 

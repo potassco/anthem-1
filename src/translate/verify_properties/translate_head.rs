@@ -1,7 +1,7 @@
 pub struct HeadAtom<'a>
 {
-	predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>,
-	arguments: &'a [clingo::ast::Term<'a>],
+	pub predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>,
+	pub arguments: &'a [clingo::ast::Term<'a>],
 }
 
 pub enum HeadType<'a>
@@ -35,6 +35,29 @@ where
 
 	match head_literal.head_literal_type()
 	{
+		clingo::ast::HeadLiteralType::Literal(literal) =>
+		{
+			if literal.sign() != clingo::ast::Sign::None
+			{
+				return Err(crate::Error::new_unsupported_language_feature("negated head literals"));
+			}
+
+			let term = match literal.literal_type()
+			{
+				clingo::ast::LiteralType::Boolean(true) => return Ok(HeadType::Trivial),
+				clingo::ast::LiteralType::Boolean(false) => return Ok(HeadType::IntegrityConstraint),
+				clingo::ast::LiteralType::Symbolic(term) => term,
+				_ => return Err(crate::Error::new_unsupported_language_feature("elements other than terms in rule head")),
+			};
+
+			let function = match term.term_type()
+			{
+				clingo::ast::TermType::Function(function) => function,
+				_ => return Err(crate::Error::new_unsupported_language_feature("elements other than atoms in rule head")),
+			};
+
+			Ok(HeadType::SingleAtom(create_head_atom(function)?))
+		},
 		clingo::ast::HeadLiteralType::Aggregate(aggregate) =>
 		{
 			if aggregate.left_guard().is_some() || aggregate.right_guard().is_some()
@@ -65,33 +88,8 @@ where
 				_ => return Err(crate::Error::new_unsupported_language_feature("elements other than atoms in aggregates")),
 			};
 
-			return Ok(HeadType::ChoiceWithSingleAtom(create_head_atom(function)?));
+			Ok(HeadType::ChoiceWithSingleAtom(create_head_atom(function)?))
 		},
-		clingo::ast::HeadLiteralType::Literal(literal) =>
-		{
-			if literal.sign() != clingo::ast::Sign::None
-			{
-				return Err(crate::Error::new_unsupported_language_feature("negated head literals"));
-			}
-
-			let term = match literal.literal_type()
-			{
-				clingo::ast::LiteralType::Boolean(true) => return Ok(HeadType::Trivial),
-				clingo::ast::LiteralType::Boolean(false) => return Ok(HeadType::IntegrityConstraint),
-				clingo::ast::LiteralType::Symbolic(term) => term,
-				_ => return Err(crate::Error::new_unsupported_language_feature("elements other than terms in rule head")),
-			};
-
-			let function = match term.term_type()
-			{
-				clingo::ast::TermType::Function(function) => function,
-				_ => return Err(crate::Error::new_unsupported_language_feature("elements other than atoms in rule head")),
-			};
-
-			return Ok(HeadType::ChoiceWithSingleAtom(create_head_atom(function)?));
-		},
-		_ => (),
+		_ => Err(crate::Error::new_unsupported_language_feature("elements other than literals and aggregates in rule head")),
 	}
-
-	Ok(HeadType::Annotation)
 }

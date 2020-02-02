@@ -18,29 +18,22 @@ pub(crate) fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::a
 		function.arguments().len());
 
 	let parameters = function.arguments().iter().map(|_| std::rc::Rc::new(
-		foliage::VariableDeclaration
-		{
-			name: "<anonymous>".to_string(),
-		}))
-		.collect::<Vec<_>>();
+		foliage::VariableDeclaration::new("<anonymous>".to_string())))
+		.collect::<foliage::VariableDeclarations>();
 
 	let predicate_arguments = parameters.iter().map(
-		|parameter| Box::new(foliage::Term::Variable(foliage::Variable{declaration: std::rc::Rc::clone(parameter)})))
+		|parameter| Box::new(foliage::Term::variable(parameter)))
 		.collect::<Vec<_>>();
 
-	let predicate = foliage::Predicate
-	{
-		declaration: predicate_declaration,
-		arguments: predicate_arguments,
-	};
+	let predicate = foliage::Formula::predicate(&predicate_declaration, predicate_arguments);
 
 	let predicate_literal = match sign
 	{
 		clingo::ast::Sign::None
 		| clingo::ast::Sign::DoubleNegation
-			=> foliage::Formula::Predicate(predicate),
+			=> predicate,
 		clingo::ast::Sign::Negation
-			=> foliage::Formula::Not(Box::new(foliage::Formula::Predicate(predicate))),
+			=> foliage::Formula::not(Box::new(predicate)),
 	};
 
 	if function.arguments().is_empty()
@@ -48,27 +41,20 @@ pub(crate) fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::a
 		return Ok(predicate_literal);
 	}
 
-	let mut i = 0;
+	assert_eq!(function.arguments().len(), parameters.len());
 
-	let mut arguments = function.arguments().iter().map(|x|
-		{
-			let result = crate::translate::common::choose_value_in_term(x, &parameters[i],
+	let mut parameters_iterator = parameters.iter();
+	let mut arguments = function.arguments().iter().map(
+		|x| crate::translate::common::choose_value_in_term(x, &parameters_iterator.next().unwrap(),
 				&mut function_declarations, &mut variable_declaration_stack)
-				.map(|x| Box::new(x));
-			i += 1;
-			result
-		})
+			.map(|x| Box::new(x)))
 		.collect::<Result<Vec<_>, _>>()?;
 
 	arguments.push(Box::new(predicate_literal));
 
-	let and = foliage::Formula::And(arguments);
+	let and = foliage::Formula::and(arguments);
 
-	Ok(foliage::Formula::Exists(foliage::Exists
-	{
-		parameters,
-		argument: Box::new(and),
-	}))
+	Ok(foliage::Formula::exists(parameters, Box::new(and)))
 }
 
 pub(crate) fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral,
@@ -108,49 +94,32 @@ pub(crate) fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral,
 			&mut variable_declaration_stack),
 		clingo::ast::LiteralType::Comparison(comparison) =>
 		{
-			let new_variable_declaration = || std::rc::Rc::new(foliage::VariableDeclaration
-			{
-				name: "<anonymous>".to_string()
-			});
+			let parameters = (0..2).map(|_| std::rc::Rc::new(foliage::VariableDeclaration::new(
+					"<anonymous>".to_string())))
+				.collect::<foliage::VariableDeclarations>();
 
-			let parameters = vec![new_variable_declaration(), new_variable_declaration()];
+			let mut parameters_iterator = parameters.iter();
+			let parameter_z1 = &parameters_iterator.next().unwrap();
+			let parameter_z2 = &parameters_iterator.next().unwrap();
 
-			let parameter_z1 = &parameters[0];
-			let parameter_z2 = &parameters[1];
+			let choose_z1_in_t1 = crate::translate::common::choose_value_in_term(comparison.left(),
+				parameter_z1, &mut function_declarations, &mut variable_declaration_stack)?;
+			let choose_z2_in_t2 = crate::translate::common::choose_value_in_term(comparison.right(),
+				parameter_z2, &mut function_declarations, &mut variable_declaration_stack)?;
 
-			let choose_z1_in_t1 = crate::translate::common::choose_value_in_term(comparison.left(), &parameter_z1,
-				&mut function_declarations, &mut variable_declaration_stack)?;
-			let choose_z2_in_t2 = crate::translate::common::choose_value_in_term(comparison.right(), &parameter_z2,
-				&mut function_declarations, &mut variable_declaration_stack)?;
+			let variable_1 = foliage::Term::variable(parameter_z1);
+			let variable_2 = foliage::Term::variable(parameter_z2);
 
-			let variable_1 = foliage::Variable
-			{
-				declaration: std::rc::Rc::clone(&parameter_z1),
-			};
+			let operator = crate::translate::common::translate_comparison_operator(
+				comparison.comparison_type());
 
-			let variable_2 = foliage::Variable
-			{
-				declaration: std::rc::Rc::clone(&parameter_z2),
-			};
+			let compare_z1_and_z2 = foliage::Formula::compare(operator, Box::new(variable_1),
+				Box::new(variable_2));
 
-			let comparison_operator
-				= crate::translate::common::translate_comparison_operator(comparison.comparison_type());
+			let and = foliage::Formula::and(vec![Box::new(choose_z1_in_t1),
+				Box::new(choose_z2_in_t2), Box::new(compare_z1_and_z2)]);
 
-			let compare_z1_and_z2 = foliage::Comparison
-			{
-				operator: comparison_operator,
-				left: Box::new(foliage::Term::Variable(variable_1)),
-				right: Box::new(foliage::Term::Variable(variable_2)),
-			};
-
-			let and = foliage::Formula::And(vec![Box::new(choose_z1_in_t1),
-				Box::new(choose_z2_in_t2), Box::new(foliage::Formula::Comparison(compare_z1_and_z2))]);
-
-			Ok(foliage::Formula::Exists(foliage::Exists
-			{
-				parameters,
-				argument: Box::new(and),
-			}))
+			Ok(foliage::Formula::exists(parameters, Box::new(and)))
 		},
 		_ => Err(crate::Error::new_unsupported_language_feature(
 			"body literals other than Booleans, terms, or comparisons")),

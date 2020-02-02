@@ -33,10 +33,7 @@ pub fn read(rule: &clingo::ast::Rule) -> Result<(), crate::Error>
 	let declare_predicate_parameters = |predicate_declaration: &foliage::PredicateDeclaration|
 	{
 		std::rc::Rc::new((0..predicate_declaration.arity)
-			.map(|_| std::rc::Rc::new(foliage::VariableDeclaration
-				{
-					name: "<anonymous>".to_string(),
-				}))
+			.map(|_| std::rc::Rc::new(foliage::VariableDeclaration::new("<anonymous>".to_string())))
 			.collect())
 	};
 
@@ -54,24 +51,47 @@ pub fn read(rule: &clingo::ast::Rule) -> Result<(), crate::Error>
 					});
 			}
 
-			let definitions = definitions.get(&head_atom.predicate_declaration).unwrap();
+			let definitions = definitions.get_mut(&head_atom.predicate_declaration).unwrap();
 
 			variable_declaration_stack.push(std::rc::Rc::clone(&definitions.head_atom_parameters));
 
-			let translated_body = translate_body(rule.body(), &mut function_declarations,
-				&mut predicate_declarations, &mut variable_declaration_stack);
+			let mut definition_arguments = translate_body(rule.body(), &mut function_declarations,
+				&mut predicate_declarations, &mut variable_declaration_stack)?;
+
+			assert_eq!(definitions.head_atom_parameters.len(), head_atom.arguments.len());
+
+			let mut head_atom_arguments_iterator = head_atom.arguments.iter();
+
+			for head_atom_parameter in definitions.head_atom_parameters.iter()
+			{
+				let head_atom_argument = head_atom_arguments_iterator.next().unwrap();
+
+				let translated_head_term = crate::translate::common::choose_value_in_term(
+					head_atom_argument, head_atom_parameter, &mut function_declarations,
+					&mut variable_declaration_stack)?;
+
+				definition_arguments.push(Box::new(translated_head_term));
+			}
 
 			variable_declaration_stack.pop();
+
+			let definition = foliage::Formula::And(definition_arguments);
+
+			let definition = ScopedFormula
+			{
+				free_variable_declarations: variable_declaration_stack.free_variable_declarations,
+				formula: definition,
+			};
+
+			log::trace!("translated formula: {:?}", definition.formula);
+
+			definitions.definitions.push(definition);
 		},
 		HeadType::ChoiceWithSingleAtom(_) =>
 			log::debug!("translating choice rule with single atom"),
 		HeadType::IntegrityConstraint =>
 			log::debug!("translating integrity constraint"),
-		HeadType::Trivial =>
-		{
-			log::debug!("skipping trivial rule");
-			return Ok(());
-		},
+		HeadType::Trivial => log::debug!("skipping trivial rule"),
 	}
 
 	Ok(())

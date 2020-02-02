@@ -6,6 +6,7 @@ pub enum Kind
 	UnsupportedLanguageFeature(&'static str),
 	NotYetImplemented(&'static str),
 	DecodeIdentifier,
+	Translate,
 }
 
 pub struct Error
@@ -50,6 +51,11 @@ impl Error
 	{
 		Self::new(Kind::DecodeIdentifier).with(source)
 	}
+
+	pub(crate) fn new_translate<S: Into<Source>>(source: S) -> Self
+	{
+		Self::new(Kind::Translate).with(source)
+	}
 }
 
 impl std::fmt::Debug for Error
@@ -65,6 +71,7 @@ impl std::fmt::Debug for Error
 			Kind::NotYetImplemented(ref description) => write!(formatter,
 				"not yet implemented ({})", description),
 			Kind::DecodeIdentifier => write!(formatter, "could not decode identifier"),
+			Kind::Translate => write!(formatter, "could not translate input program"),
 		}?;
 
 		if let Some(source) = &self.source

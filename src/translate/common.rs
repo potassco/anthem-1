@@ -204,6 +204,7 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 					let parameters = (0..2).map(|_| std::rc::Rc::new(
 							foliage::VariableDeclaration::new("<anonymous>".to_string())))
 						.collect::<foliage::VariableDeclarations>();
+					let parameters = std::rc::Rc::new(parameters);
 
 					let parameter_1 = &parameters[0];
 					let parameter_2 = &parameters[1];
@@ -237,6 +238,7 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 					let parameters = (0..4).map(|_| std::rc::Rc::new(
 							foliage::VariableDeclaration::new("<anonymous>".to_string())))
 						.collect::<foliage::VariableDeclarations>();
+					let parameters = std::rc::Rc::new(parameters);
 
 					let parameter_i = &parameters[0];
 					let parameter_j = &parameters[1];
@@ -320,7 +322,7 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 					let and = foliage::Formula::and(vec![Box::new(equals),
 						Box::new(choose_z_prime_in_t_prime)]);
 
-					let parameters = vec![parameter_z_prime];
+					let parameters = std::rc::Rc::new(vec![parameter_z_prime]);
 
 					Ok(foliage::Formula::exists(parameters, Box::new(and)))
 				},
@@ -332,6 +334,7 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 			let parameters = (0..3).map(|_| std::rc::Rc::new(
 					foliage::VariableDeclaration::new("<anonymous>".to_string())))
 				.collect::<foliage::VariableDeclarations>();
+			let parameters = std::rc::Rc::new(parameters);
 
 			let parameter_i = &parameters[0];
 			let parameter_j = &parameters[1];

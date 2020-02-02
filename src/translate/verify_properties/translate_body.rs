@@ -20,6 +20,7 @@ pub(crate) fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::a
 	let parameters = function.arguments().iter().map(|_| std::rc::Rc::new(
 		foliage::VariableDeclaration::new("<anonymous>".to_string())))
 		.collect::<foliage::VariableDeclarations>();
+	let parameters = std::rc::Rc::new(parameters);
 
 	let predicate_arguments = parameters.iter().map(
 		|parameter| Box::new(foliage::Term::variable(parameter)))
@@ -97,6 +98,7 @@ pub(crate) fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral,
 			let parameters = (0..2).map(|_| std::rc::Rc::new(foliage::VariableDeclaration::new(
 					"<anonymous>".to_string())))
 				.collect::<foliage::VariableDeclarations>();
+			let parameters = std::rc::Rc::new(parameters);
 
 			let mut parameters_iterator = parameters.iter();
 			let parameter_z1 = &parameters_iterator.next().unwrap();

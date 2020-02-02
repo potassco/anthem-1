@@ -12,5 +12,9 @@ fn main()
 		},
 	};
 
-	std::process::exit(anthem::translate::verify_properties::translate(&program));
+	if let Err(error) = anthem::translate::verify_properties::translate(&program)
+	{
+		log::error!("could not translate input program: {}", error);
+		std::process::exit(1)
+	}
 }

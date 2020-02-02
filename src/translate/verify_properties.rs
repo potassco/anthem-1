@@ -6,8 +6,8 @@ use translate_body::*;
 
 struct ScopedFormula
 {
-	free_variable_declarations: foliage::VariableDeclarations,
-	formula: foliage::Formula,
+	free_variable_declarations: std::rc::Rc<foliage::VariableDeclarations>,
+	formula: Box<foliage::Formula>,
 }
 
 struct Definitions
@@ -88,29 +88,99 @@ impl clingo::Logger for Logger
 	}
 }
 
-pub fn translate(program: &str) -> i32
+pub fn translate(program: &str) -> Result<(), crate::Error>
 {
 	let mut statement_handler = StatementHandler::new();
 
-	match clingo::parse_program_with_logger(&program, &mut statement_handler, &mut Logger, std::u32::MAX)
-	{
-		Ok(()) => 0,
-		Err(error) =>
-		{
-			log::error!("could not translate input program: {}", error);
-			1
-		},
-	}
-}
+	clingo::parse_program_with_logger(&program, &mut statement_handler, &mut Logger, std::u32::MAX)
+		.map_err(|error| crate::Error::new_translate(error))?;
 
-fn universal_closure(scoped_formula: ScopedFormula) -> foliage::Formula
-{
-	match scoped_formula.free_variable_declarations.is_empty()
+	let context = statement_handler.context;
+	let mut definitions = context.definitions;
+	let integrity_constraints = context.integrity_constraints;
+	let predicate_declarations = context.predicate_declarations;
+
+	for (predicate_declaration, definitions) in definitions.iter()
 	{
-		true => scoped_formula.formula,
-		false => foliage::Formula::for_all(scoped_formula.free_variable_declarations,
-			Box::new(scoped_formula.formula)),
+		for definition in definitions.definitions.iter()
+		{
+			log::debug!("definition({}/{}): {}.", predicate_declaration.name, predicate_declaration.arity,
+				definition.formula);
+		}
 	}
+
+	let mut completed_definition = |predicate_declaration|
+	{
+		match definitions.remove(predicate_declaration)
+		{
+			// This predicate symbol has at least one definition, so build the disjunction of those
+			Some(definitions) =>
+			{
+				let or_arguments = definitions.definitions.into_iter()
+					.map(|x| existential_closure(x))
+					.collect::<Vec<_>>();
+				let or = foliage::Formula::or(or_arguments);
+
+				let head_arguments = definitions.head_atom_parameters.iter()
+					.map(|x| Box::new(foliage::Term::variable(x)))
+					.collect::<Vec<_>>();
+
+				let head_predicate = foliage::Formula::predicate(&predicate_declaration,
+					head_arguments);
+
+				let completed_definition = foliage::Formula::if_and_only_if(
+					Box::new(head_predicate), Box::new(or));
+
+				let scoped_formula = ScopedFormula
+				{
+					free_variable_declarations: definitions.head_atom_parameters,
+					formula: Box::new(completed_definition),
+				};
+
+				universal_closure(scoped_formula)
+			},
+			// This predicate has no definitions, so universally falsify it
+			None =>
+			{
+				let head_atom_parameters = std::rc::Rc::new((0..predicate_declaration.arity)
+					.map(|_| std::rc::Rc::new(foliage::VariableDeclaration::new("<anonymous>".to_string())))
+					.collect::<Vec<_>>());
+
+				let head_arguments = head_atom_parameters.iter()
+					.map(|x| Box::new(foliage::Term::variable(x)))
+					.collect();
+
+				let head_predicate = foliage::Formula::predicate(&predicate_declaration,
+					head_arguments);
+
+				let not = foliage::Formula::not(Box::new(head_predicate));
+
+				let scoped_formula = ScopedFormula
+				{
+					free_variable_declarations: head_atom_parameters,
+					formula: Box::new(not),
+				};
+
+				universal_closure(scoped_formula)
+			},
+		}
+	};
+
+	let completed_definitions = predicate_declarations.iter()
+		.map(|x| (std::rc::Rc::clone(x), completed_definition(x)));
+
+	for (predicate_declaration, completed_definition) in completed_definitions
+	{
+		println!("completion({}/{}): {}.", predicate_declaration.name,
+			predicate_declaration.arity, completed_definition);
+	}
+
+	for integrity_constraint in integrity_constraints
+	{
+		println!("axiom: {}.", integrity_constraint);
+	}
+
+	Ok(())
 }
 
 fn read_rule(rule: &clingo::ast::Rule, context: &mut Context) -> Result<(), crate::Error>
@@ -120,13 +190,6 @@ fn read_rule(rule: &clingo::ast::Rule, context: &mut Context) -> Result<(), crat
 	let head_type = determine_head_type(rule.head(),
 		|name, arity| context.predicate_declarations.find_or_create(name, arity))?;
 
-	let declare_predicate_parameters = |predicate_declaration: &foliage::PredicateDeclaration|
-	{
-		std::rc::Rc::new((0..predicate_declaration.arity)
-			.map(|_| std::rc::Rc::new(foliage::VariableDeclaration::new("<anonymous>".to_string())))
-			.collect())
-	};
-
 	match &head_type
 	{
 		HeadType::SingleAtom(head_atom)
@@ -134,10 +197,14 @@ fn read_rule(rule: &clingo::ast::Rule, context: &mut Context) -> Result<(), crat
 		{
 			if !context.definitions.contains_key(&head_atom.predicate_declaration)
 			{
+				let head_atom_parameters = std::rc::Rc::new((0..head_atom.predicate_declaration.arity)
+					.map(|_| std::rc::Rc::new(foliage::VariableDeclaration::new("<anonymous>".to_string())))
+					.collect());
+
 				context.definitions.insert(std::rc::Rc::clone(&head_atom.predicate_declaration),
 					Definitions
 					{
-						head_atom_parameters: declare_predicate_parameters(&head_atom.predicate_declaration),
+						head_atom_parameters,
 						definitions: vec![],
 					});
 			}
@@ -185,11 +252,16 @@ fn read_rule(rule: &clingo::ast::Rule, context: &mut Context) -> Result<(), crat
 			std::mem::swap(&mut context.variable_declaration_stack.free_variable_declarations,
 				&mut free_variable_declarations);
 
-			let definition = foliage::Formula::And(definition_arguments);
+			let definition = match definition_arguments.len()
+			{
+				1 => definition_arguments.pop().unwrap(),
+				0 => Box::new(foliage::Formula::true_()),
+				_ => Box::new(foliage::Formula::and(definition_arguments)),
+			};
 
 			let definition = ScopedFormula
 			{
-				free_variable_declarations,
+				free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
 				formula: definition,
 			};
 
@@ -199,7 +271,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &mut Context) -> Result<(), crat
 		},
 		HeadType::IntegrityConstraint =>
 		{
-			let arguments = translate_body(rule.body(),
+			let mut arguments = translate_body(rule.body(),
 				&mut context.function_declarations, &mut context.predicate_declarations,
 				&mut context.variable_declaration_stack)?;
 
@@ -208,22 +280,47 @@ fn read_rule(rule: &clingo::ast::Rule, context: &mut Context) -> Result<(), crat
 			std::mem::swap(&mut context.variable_declaration_stack.free_variable_declarations,
 				&mut free_variable_declarations);
 
-			let and = foliage::Formula::and(arguments);
-			let not = foliage::Formula::not(Box::new(and));
+			let formula = match arguments.len()
+			{
+				1 => foliage::Formula::not(arguments.pop().unwrap()),
+				0 => foliage::Formula::false_(),
+				_ => foliage::Formula::not(Box::new(foliage::Formula::and(arguments))),
+			};
+
 			let scoped_formula = ScopedFormula
 			{
-				free_variable_declarations,
-				formula: not,
+				free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
+				formula: Box::new(formula),
 			};
 
 			let integrity_constraint = universal_closure(scoped_formula);
 
 			log::debug!("translated integrity constraint: {:?}", integrity_constraint);
 
-			context.integrity_constraints.push(Box::new(integrity_constraint));
+			context.integrity_constraints.push(integrity_constraint);
 		},
 		HeadType::Trivial => log::info!("skipping trivial rule"),
 	}
 
 	Ok(())
+}
+
+fn existential_closure(scoped_formula: ScopedFormula) -> Box<foliage::Formula>
+{
+	match scoped_formula.free_variable_declarations.is_empty()
+	{
+		true => scoped_formula.formula,
+		false => Box::new(foliage::Formula::exists(scoped_formula.free_variable_declarations,
+			scoped_formula.formula)),
+	}
+}
+
+fn universal_closure(scoped_formula: ScopedFormula) -> Box<foliage::Formula>
+{
+	match scoped_formula.free_variable_declarations.is_empty()
+	{
+		true => scoped_formula.formula,
+		false => Box::new(foliage::Formula::for_all(scoped_formula.free_variable_declarations,
+			scoped_formula.formula)),
+	}
 }

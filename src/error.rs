@@ -7,6 +7,7 @@ pub enum Kind
 	NotYetImplemented(&'static str),
 	DecodeIdentifier,
 	Translate,
+	ReadFile(std::path::PathBuf),
 }
 
 pub struct Error
@@ -56,6 +57,11 @@ impl Error
 	{
 		Self::new(Kind::Translate).with(source)
 	}
+
+	pub(crate) fn new_read_file<S: Into<Source>>(path: std::path::PathBuf, source: S) -> Self
+	{
+		Self::new(Kind::ReadFile(path)).with(source)
+	}
 }
 
 impl std::fmt::Debug for Error
@@ -72,6 +78,7 @@ impl std::fmt::Debug for Error
 				"not yet implemented ({})", description),
 			Kind::DecodeIdentifier => write!(formatter, "could not decode identifier"),
 			Kind::Translate => write!(formatter, "could not translate input program"),
+			Kind::ReadFile(path) => write!(formatter, "could not read file “{}”", path.display()),
 		}?;
 
 		if let Some(source) = &self.source

@@ -88,12 +88,20 @@ impl clingo::Logger for Logger
 	}
 }
 
-pub fn translate(program: &str) -> Result<(), crate::Error>
+pub fn translate<P>(program_paths: &[P]) -> Result<(), crate::Error>
+where
+	P: AsRef<std::path::Path>
 {
 	let mut statement_handler = StatementHandler::new();
 
-	clingo::parse_program_with_logger(&program, &mut statement_handler, &mut Logger, std::u32::MAX)
-		.map_err(|error| crate::Error::new_translate(error))?;
+	for program_path in program_paths
+	{
+		let program = std::fs::read_to_string(program_path.as_ref())
+			.map_err(|error| crate::Error::new_read_file(program_path.as_ref().to_path_buf(), error))?;
+
+		clingo::parse_program_with_logger(&program, &mut statement_handler, &mut Logger, std::u32::MAX)
+			.map_err(|error| crate::Error::new_translate(error))?;
+	}
 
 	let context = statement_handler.context;
 	let mut definitions = context.definitions;

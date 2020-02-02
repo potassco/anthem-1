@@ -179,13 +179,15 @@ where
 
 	for (predicate_declaration, completed_definition) in completed_definitions
 	{
-		println!("completion({}/{}): {}.", predicate_declaration.name,
-			predicate_declaration.arity, completed_definition);
+		println!("tff(completion_{}_{}, axiom, {}).", predicate_declaration.name,
+			predicate_declaration.arity,
+			crate::output::tptp::display_formula(&completed_definition));
 	}
 
 	for integrity_constraint in integrity_constraints
 	{
-		println!("axiom: {}.", integrity_constraint);
+		println!("tff(integrity_constraint, axiom, {}).",
+			crate::output::tptp::display_formula(&integrity_constraint));
 	}
 
 	Ok(())

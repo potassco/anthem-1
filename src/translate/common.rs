@@ -1,87 +1,44 @@
-pub(crate) trait FindOrCreateFunctionDeclaration
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Domain
 {
-	fn find_or_create(&mut self, name: &str, arity: usize)
+	Program,
+	Integer,
+}
+
+pub(crate) trait AssignVariableDeclarationDomain
+{
+	fn assign_variable_declaration_domain(&self,
+		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>, domain: Domain);
+}
+
+pub(crate) trait VariableDeclarationDomain
+{
+	fn variable_declaration_domain(&self,
+		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>) -> Option<Domain>;
+}
+
+pub(crate) trait VariableDeclarationID
+{
+	fn variable_declaration_id(&self,
+		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>) -> usize;
+}
+
+pub(crate) trait GetOrCreateFunctionDeclaration
+{
+	fn get_or_create_function_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<foliage::FunctionDeclaration>;
 }
 
-pub(crate) trait FindOrCreatePredicateDeclaration
+pub(crate) trait GetOrCreatePredicateDeclaration
 {
-	fn find_or_create(&mut self, name: &str, arity: usize)
+	fn get_or_create_predicate_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<foliage::PredicateDeclaration>;
 }
 
-pub(crate) trait FindOrCreateVariableDeclaration
+pub(crate) trait GetOrCreateVariableDeclaration
 {
-	fn find_or_create(&mut self, name: &str)
+	fn get_or_create_variable_declaration(&self, name: &str)
 		-> std::rc::Rc<foliage::VariableDeclaration>;
-}
-
-impl FindOrCreateFunctionDeclaration for foliage::FunctionDeclarations
-{
-	fn find_or_create(&mut self, name: &str, arity: usize)
-		-> std::rc::Rc<foliage::FunctionDeclaration>
-	{
-		match self.iter()
-			.find(|x| x.name == name && x.arity == arity)
-		{
-			Some(value) => std::rc::Rc::clone(value),
-			None =>
-			{
-				let declaration = std::rc::Rc::new(foliage::FunctionDeclaration::new(
-					name.to_string(), arity));
-
-				self.insert(std::rc::Rc::clone(&declaration));
-
-				log::debug!("new function declaration: {}/{}", name, arity);
-
-				declaration
-			},
-		}
-	}
-}
-
-impl FindOrCreatePredicateDeclaration for foliage::PredicateDeclarations
-{
-	fn find_or_create(&mut self, name: &str, arity: usize)
-		-> std::rc::Rc<foliage::PredicateDeclaration>
-	{
-		match self.iter()
-			.find(|x| x.name == name && x.arity == arity)
-		{
-			Some(value) => std::rc::Rc::clone(value),
-			None =>
-			{
-				let declaration = std::rc::Rc::new(foliage::PredicateDeclaration::new(
-					name.to_string(), arity));
-
-				self.insert(std::rc::Rc::clone(&declaration));
-
-				log::debug!("new predicate declaration: {}/{}", name, arity);
-
-				declaration
-			},
-		}
-	}
-}
-
-impl FindOrCreateVariableDeclaration for foliage::VariableDeclarationStack
-{
-	fn find_or_create(&mut self, name: &str)
-		-> std::rc::Rc<foliage::VariableDeclaration>
-	{
-		// TODO: check correctness
-		if name == "_"
-		{
-			let variable_declaration = std::rc::Rc::new(foliage::VariableDeclaration::new(
-				"_".to_owned()));
-
-			self.free_variable_declarations.push(std::rc::Rc::clone(&variable_declaration));
-
-			return variable_declaration;
-		}
-
-		self.find_or_create(name)
-	}
 }
 
 pub(crate) fn translate_binary_operator(binary_operator: clingo::ast::BinaryOperator)
@@ -137,11 +94,13 @@ pub(crate) fn choose_value_in_primitive(term: Box<foliage::Term>,
 	foliage::Formula::equal(Box::new(variable), term)
 }
 
-pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
-	variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>,
-	mut function_declarations: &mut foliage::FunctionDeclarations,
-	mut variable_declaration_stack: &mut foliage::VariableDeclarationStack)
+pub(crate) fn choose_value_in_term<C>(term: &clingo::ast::Term,
+	variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>, context: &C)
 	-> Result<foliage::Formula, crate::Error>
+where
+	C: crate::translate::common::GetOrCreateFunctionDeclaration
+		+ crate::translate::common::GetOrCreateVariableDeclaration
+		+ crate::translate::common::AssignVariableDeclarationDomain
 {
 	match term.term_type()
 	{
@@ -176,7 +135,7 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 				let constant_name = symbol.name()
 					.map_err(|error| crate::Error::new_logic("clingo error").with(error))?;
 
-				let constant_declaration = function_declarations.find_or_create(constant_name, 0);
+				let constant_declaration = context.get_or_create_function_declaration(constant_name, 0);
 				let function = foliage::Term::function(&constant_declaration, vec![]);
 
 				Ok(choose_value_in_primitive(Box::new(function), variable_declaration))
@@ -184,7 +143,10 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 		},
 		clingo::ast::TermType::Variable(variable_name) =>
 		{
-			let other_variable_declaration = variable_declaration_stack.find_or_create(variable_name);
+			let other_variable_declaration = context.get_or_create_variable_declaration(
+				variable_name);
+			context.assign_variable_declaration_domain(&other_variable_declaration,
+				Domain::Program);
 			let other_variable = foliage::Term::variable(&other_variable_declaration);
 
 			Ok(choose_value_in_primitive(Box::new(other_variable), variable_declaration))
@@ -201,8 +163,14 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 				| foliage::BinaryOperator::Multiply
 					=>
 				{
-					let parameters = (0..2).map(|_| std::rc::Rc::new(
-							foliage::VariableDeclaration::new("<anonymous>".to_string())))
+					let parameters = (0..2).map(|_|
+						{
+							let variable_declaration = std::rc::Rc::new(
+								foliage::VariableDeclaration::new("<anonymous>".to_string()));
+							context.assign_variable_declaration_domain(&variable_declaration,
+								Domain::Integer);
+							variable_declaration
+						})
 						.collect::<foliage::VariableDeclarations>();
 					let parameters = std::rc::Rc::new(parameters);
 
@@ -218,12 +186,10 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 						Box::new(translated_binary_operation));
 
 					let choose_value_from_left_argument = choose_value_in_term(
-						binary_operation.left(), &parameter_1, &mut function_declarations,
-						&mut variable_declaration_stack)?;
+						binary_operation.left(), &parameter_1, context)?;
 
 					let choose_value_from_right_argument = choose_value_in_term(
-						binary_operation.right(), &parameter_2, &mut function_declarations,
-						&mut variable_declaration_stack)?;
+						binary_operation.right(), &parameter_2, context)?;
 
 					let and = foliage::Formula::And(vec![Box::new(equals),
 						Box::new(choose_value_from_left_argument),
@@ -235,8 +201,14 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 				| foliage::BinaryOperator::Modulo
 					=>
 				{
-					let parameters = (0..4).map(|_| std::rc::Rc::new(
-							foliage::VariableDeclaration::new("<anonymous>".to_string())))
+					let parameters = (0..4).map(|_|
+						{
+							let variable_declaration = std::rc::Rc::new(
+								foliage::VariableDeclaration::new("<anonymous>".to_string()));
+							context.assign_variable_declaration_domain(&variable_declaration,
+								Domain::Integer);
+							variable_declaration
+						})
 						.collect::<foliage::VariableDeclarations>();
 					let parameters = std::rc::Rc::new(parameters);
 
@@ -256,10 +228,10 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 						Box::new(foliage::Term::variable(parameter_j)), Box::new(j_times_q_plus_r));
 
 					let choose_i_in_t1 = choose_value_in_term(binary_operation.left(), parameter_i,
-						&mut function_declarations, &mut variable_declaration_stack)?;
+						context)?;
 
 					let choose_i_in_t2 = choose_value_in_term(binary_operation.left(), parameter_j,
-						&mut function_declarations, &mut variable_declaration_stack)?;
+						context)?;
 
 					let j_not_equal_to_0 = foliage::Formula::not_equal(
 						Box::new(foliage::Term::variable(parameter_j)),
@@ -295,7 +267,8 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 
 					Ok(foliage::Formula::exists(parameters, Box::new(and)))
 				},
-				_ => Err(crate::Error::new_not_yet_implemented("todo")),
+				foliage::BinaryOperator::Exponentiate =>
+					Err(crate::Error::new_unsupported_language_feature("exponentiation")),
 			}
 		},
 		clingo::ast::TermType::UnaryOperation(unary_operation) =>
@@ -308,6 +281,7 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 				{
 					let parameter_z_prime = std::rc::Rc::new(foliage::VariableDeclaration::new(
 						"<anonymous>".to_string()));
+					context.assign_variable_declaration_domain(&parameter_z_prime, Domain::Integer);
 
 					let negative_z_prime = foliage::Term::negative(Box::new(
 						foliage::Term::variable(&parameter_z_prime)));
@@ -316,8 +290,7 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 						Box::new(negative_z_prime));
 
 					let choose_z_prime_in_t_prime = choose_value_in_term(unary_operation.argument(),
-						&parameter_z_prime, &mut function_declarations,
-						&mut variable_declaration_stack)?;
+						&parameter_z_prime, context)?;
 
 					let and = foliage::Formula::and(vec![Box::new(equals),
 						Box::new(choose_z_prime_in_t_prime)]);
@@ -331,8 +304,14 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 		},
 		clingo::ast::TermType::Interval(interval) =>
 		{
-			let parameters = (0..3).map(|_| std::rc::Rc::new(
-					foliage::VariableDeclaration::new("<anonymous>".to_string())))
+			let parameters = (0..3).map(|_|
+				{
+					let variable_declaration = std::rc::Rc::new(
+						foliage::VariableDeclaration::new("<anonymous>".to_string()));
+					context.assign_variable_declaration_domain(&variable_declaration,
+						Domain::Integer);
+					variable_declaration
+				})
 				.collect::<foliage::VariableDeclarations>();
 			let parameters = std::rc::Rc::new(parameters);
 
@@ -340,11 +319,9 @@ pub(crate) fn choose_value_in_term(term: &clingo::ast::Term,
 			let parameter_j = &parameters[1];
 			let parameter_k = &parameters[2];
 
-			let choose_i_in_t_1 = choose_value_in_term(interval.left(), parameter_i,
-				&mut function_declarations, &mut variable_declaration_stack)?;
+			let choose_i_in_t_1 = choose_value_in_term(interval.left(), parameter_i, context)?;
 
-			let choose_j_in_t_2 = choose_value_in_term(interval.right(), parameter_j,
-				&mut function_declarations, &mut variable_declaration_stack)?;
+			let choose_j_in_t_2 = choose_value_in_term(interval.right(), parameter_j, context)?;
 
 			let i_less_than_or_equal_to_k = foliage::Formula::less_or_equal(
 				Box::new(foliage::Term::variable(parameter_i)),

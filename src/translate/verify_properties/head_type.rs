@@ -12,19 +12,18 @@ pub(crate) enum HeadType<'a>
 	Trivial,
 }
 
-pub(crate) fn determine_head_type<'a, F>(head_literal: &'a clingo::ast::HeadLiteral,
-	mut find_or_create_predicate_declaration: F)
+pub(crate) fn determine_head_type<'a, C>(head_literal: &'a clingo::ast::HeadLiteral, context: &C)
 	-> Result<HeadType<'a>, crate::Error>
 where
-	F: FnMut(&str, usize) -> std::rc::Rc<foliage::PredicateDeclaration>
+	C: crate::translate::common::GetOrCreatePredicateDeclaration
 {
-	let mut create_head_atom = |function: &'a clingo::ast::Function| -> Result<_, crate::Error>
+	let create_head_atom = |function: &'a clingo::ast::Function| -> Result<_, crate::Error>
 	{
 		let function_name = function.name()
 			.map_err(|error| crate::Error::new_decode_identifier(error))?;
 
-		let predicate_declaration
-			= find_or_create_predicate_declaration(function_name, function.arguments().len());
+		let predicate_declaration = context.get_or_create_predicate_declaration(function_name,
+			function.arguments().len());
 
 		Ok(HeadAtom
 		{

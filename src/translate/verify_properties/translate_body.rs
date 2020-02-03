@@ -1,11 +1,12 @@
-pub(crate) fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
-	mut function_declarations: &mut foliage::FunctionDeclarations,
-	predicate_declarations: &mut foliage::PredicateDeclarations,
-	mut variable_declaration_stack: &mut foliage::VariableDeclarationStack)
+pub(crate) fn translate_body_term<C>(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
+	context: &C)
 	-> Result<foliage::Formula, crate::Error>
+where
+	C: crate::translate::common::GetOrCreateVariableDeclaration
+		+ crate::translate::common::GetOrCreateFunctionDeclaration
+		+ crate::translate::common::GetOrCreatePredicateDeclaration
+		+ crate::translate::common::AssignVariableDeclarationDomain
 {
-	use crate::translate::common::FindOrCreatePredicateDeclaration;
-
 	let function = match body_term.term_type()
 	{
 		clingo::ast::TermType::Function(value) => value,
@@ -14,11 +15,17 @@ pub(crate) fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::a
 
 	let function_name = function.name().map_err(|error| crate::Error::new_decode_identifier(error))?;
 
-	let predicate_declaration = predicate_declarations.find_or_create(function_name,
+	let predicate_declaration = context.get_or_create_predicate_declaration(function_name,
 		function.arguments().len());
 
-	let parameters = function.arguments().iter().map(|_| std::rc::Rc::new(
-		foliage::VariableDeclaration::new("<anonymous>".to_string())))
+	let parameters = function.arguments().iter().map(|_|
+		{
+			let variable_declaration = std::rc::Rc::new(
+				foliage::VariableDeclaration::new("<anonymous>".to_string()));
+			context.assign_variable_declaration_domain(&variable_declaration,
+				crate::translate::common::Domain::Program);
+			variable_declaration
+		})
 		.collect::<foliage::VariableDeclarations>();
 	let parameters = std::rc::Rc::new(parameters);
 
@@ -47,7 +54,7 @@ pub(crate) fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::a
 	let mut parameters_iterator = parameters.iter();
 	let mut arguments = function.arguments().iter().map(
 		|x| crate::translate::common::choose_value_in_term(x, &parameters_iterator.next().unwrap(),
-				&mut function_declarations, &mut variable_declaration_stack)
+			context)
 			.map(|x| Box::new(x)))
 		.collect::<Result<Vec<_>, _>>()?;
 
@@ -58,11 +65,14 @@ pub(crate) fn translate_body_term(body_term: &clingo::ast::Term, sign: clingo::a
 	Ok(foliage::Formula::exists(parameters, Box::new(and)))
 }
 
-pub(crate) fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral,
-	mut function_declarations: &mut foliage::FunctionDeclarations,
-	mut predicate_declarations: &mut foliage::PredicateDeclarations,
-	mut variable_declaration_stack: &mut foliage::VariableDeclarationStack)
+pub(crate) fn translate_body_literal<C>(body_literal: &clingo::ast::BodyLiteral,
+	context: &C)
 	-> Result<foliage::Formula, crate::Error>
+where
+	C: crate::translate::common::GetOrCreateVariableDeclaration
+		+ crate::translate::common::GetOrCreateFunctionDeclaration
+		+ crate::translate::common::GetOrCreatePredicateDeclaration
+		+ crate::translate::common::AssignVariableDeclarationDomain
 {
 	match body_literal.sign()
 	{
@@ -91,12 +101,17 @@ pub(crate) fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral,
 			Ok(foliage::Formula::Boolean(value))
 		},
 		clingo::ast::LiteralType::Symbolic(term) => translate_body_term(term, literal.sign(),
-			&mut function_declarations, &mut predicate_declarations,
-			&mut variable_declaration_stack),
+			context),
 		clingo::ast::LiteralType::Comparison(comparison) =>
 		{
-			let parameters = (0..2).map(|_| std::rc::Rc::new(foliage::VariableDeclaration::new(
-					"<anonymous>".to_string())))
+			let parameters = (0..2).map(|_|
+				{
+					let variable_declaration = std::rc::Rc::new(
+						foliage::VariableDeclaration::new("<anonymous>".to_string()));
+					context.assign_variable_declaration_domain(&variable_declaration,
+						crate::translate::common::Domain::Program);
+					variable_declaration
+				})
 				.collect::<foliage::VariableDeclarations>();
 			let parameters = std::rc::Rc::new(parameters);
 
@@ -105,9 +120,9 @@ pub(crate) fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral,
 			let parameter_z2 = &parameters_iterator.next().unwrap();
 
 			let choose_z1_in_t1 = crate::translate::common::choose_value_in_term(comparison.left(),
-				parameter_z1, &mut function_declarations, &mut variable_declaration_stack)?;
+				parameter_z1, context)?;
 			let choose_z2_in_t2 = crate::translate::common::choose_value_in_term(comparison.right(),
-				parameter_z2, &mut function_declarations, &mut variable_declaration_stack)?;
+				parameter_z2, context)?;
 
 			let variable_1 = foliage::Term::variable(parameter_z1);
 			let variable_2 = foliage::Term::variable(parameter_z2);
@@ -128,15 +143,17 @@ pub(crate) fn translate_body_literal(body_literal: &clingo::ast::BodyLiteral,
 	}
 }
 
-pub(crate) fn translate_body(body_literals: &[clingo::ast::BodyLiteral],
-	mut function_declaration: &mut foliage::FunctionDeclarations,
-	mut predicate_declaration: &mut foliage::PredicateDeclarations,
-	mut variable_declaration_stack: &mut foliage::VariableDeclarationStack)
+pub(crate) fn translate_body<C>(body_literals: &[clingo::ast::BodyLiteral],
+	context: &C)
 	-> Result<foliage::Formulas, crate::Error>
+where
+	C: crate::translate::common::GetOrCreateVariableDeclaration
+		+ crate::translate::common::GetOrCreateFunctionDeclaration
+		+ crate::translate::common::GetOrCreatePredicateDeclaration
+		+ crate::translate::common::AssignVariableDeclarationDomain
 {
 	body_literals.iter()
-		.map(|body_literal| translate_body_literal(body_literal, &mut function_declaration,
-			&mut predicate_declaration, &mut variable_declaration_stack)
+		.map(|body_literal| translate_body_literal(body_literal, context)
 			.map(|value| Box::new(value)))
 		.collect::<Result<foliage::Formulas, crate::Error>>()
 }

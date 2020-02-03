@@ -10,6 +10,10 @@ enum Command
 		/// ASP input program (one or multiple files)
 		#[structopt(parse(from_os_str), required(true))]
 		input: Vec<std::path::PathBuf>,
+
+		/// Output format (human-readable, tptp)
+		#[structopt(long, default_value = "human-readable")]
+		output_format: anthem::output::Format,
 	}
 }
 
@@ -21,7 +25,12 @@ fn main()
 
 	match command
 	{
-		Command::VerifyProgram{input} =>
+		Command::VerifyProgram
+		{
+			input,
+			output_format,
+		}
+			=>
 		{
 			if let Err(error) = anthem::translate::verify_properties::translate(&input)
 			{

@@ -32,7 +32,8 @@ fn main()
 		}
 			=>
 		{
-			if let Err(error) = anthem::translate::verify_properties::translate(&input)
+			if let Err(error) = anthem::translate::verify_properties::translate(&input,
+				output_format)
 			{
 				log::error!("could not translate input program: {}", error);
 				std::process::exit(1)

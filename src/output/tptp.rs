@@ -83,6 +83,9 @@ pub(crate) struct FormulaDisplay<'a, 'b, C>
 
 pub(crate) fn display_formula<'a, 'b, C>(formula: &'a foliage::Formula, context: &'b C)
 	-> FormulaDisplay<'a, 'b, C>
+where
+	C: crate::translate::common::VariableDeclarationDomain
+		+ crate::translate::common::VariableDeclarationID
 {
 	FormulaDisplay
 	{

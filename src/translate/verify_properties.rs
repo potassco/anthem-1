@@ -176,14 +176,12 @@ impl crate::translate::common::VariableDeclarationID for Context
 		{
 			Some(id) =>
 			{
-				//log::trace!("{:p} → {} (already known)", *variable_declaration, id);
 				*id
 			}
 			None =>
 			{
 				let id = variable_declaration_ids.len();
 				variable_declaration_ids.insert(std::rc::Rc::clone(variable_declaration).into(), id);
-				//log::trace!("{:p} → {} (new)", *variable_declaration, id);
 				id
 			},
 		}
@@ -214,7 +212,7 @@ impl clingo::StatementHandler for StatementHandler
 		{
 			clingo::ast::StatementType::Rule(ref rule) =>
 			{
-				if let Err(error) = read_rule(rule, &mut self.context)
+				if let Err(error) = read_rule(rule, &self.context)
 				{
 					log::error!("could not translate input program: {}", error);
 					return false;
@@ -237,7 +235,8 @@ impl clingo::Logger for Logger
 	}
 }
 
-pub fn translate<P>(program_paths: &[P]) -> Result<(), crate::Error>
+pub fn translate<P>(program_paths: &[P], output_format: crate::output::Format)
+	-> Result<(), crate::Error>
 where
 	P: AsRef<std::path::Path>
 {
@@ -259,7 +258,7 @@ where
 		for definition in definitions.definitions.iter()
 		{
 			log::debug!("definition({}/{}): {}.", predicate_declaration.name, predicate_declaration.arity,
-				definition.formula);
+				crate::output::human_readable::display_formula(&definition.formula, None, &context));
 		}
 	}
 
@@ -331,24 +330,74 @@ where
 	let completed_definitions = predicate_declarations.iter()
 		.map(|x| (std::rc::Rc::clone(x), completed_definition(x)));
 
-	for (predicate_declaration, completed_definition) in completed_definitions
-	{
-		println!("tff(completion_{}_{}, axiom, {}).", predicate_declaration.name,
-			predicate_declaration.arity,
-			crate::output::tptp::display_formula(&completed_definition, &context));
-	}
+	// Earlier log messages may have assigned IDs to the variable declarations, so reset them
+	context.variable_declaration_ids.borrow_mut().clear();
 
-	for integrity_constraint in context.integrity_constraints.borrow().iter()
+	match output_format
 	{
-		println!("tff(integrity_constraint, axiom, {}).",
-			crate::output::tptp::display_formula(&integrity_constraint, &context));
+		crate::output::Format::HumanReadable =>
+		{
+			let mut section_separator = "";
+
+			if !predicate_declarations.is_empty()
+			{
+				println!("{}% completed definitions", section_separator);
+				section_separator = "\n";
+			}
+
+			for (predicate_declaration, completed_definition) in completed_definitions
+			{
+				println!("%% completed definition of {}/{}\n{}", predicate_declaration.name,
+					predicate_declaration.arity, crate::output::human_readable::display_formula(
+						&completed_definition, None, &context));
+			}
+
+			if !context.integrity_constraints.borrow().is_empty()
+			{
+				println!("{}% integrity constraints", section_separator);
+			}
+
+			for integrity_constraint in context.integrity_constraints.borrow().iter()
+			{
+				println!("{}", crate::output::human_readable::display_formula(
+					&integrity_constraint, None, &context));
+			}
+		},
+		crate::output::Format::TPTP =>
+		{
+			let mut section_separator = "";
+
+			if !predicate_declarations.is_empty()
+			{
+				println!("{}% completed definitions", section_separator);
+				section_separator = "\n";
+			}
+
+			for (predicate_declaration, completed_definition) in completed_definitions
+			{
+				println!("tff(completion_{}_{}, axiom, {}).", predicate_declaration.name,
+					predicate_declaration.arity, crate::output::human_readable::display_formula(
+						&completed_definition, None, &context));
+			}
+
+			if !context.integrity_constraints.borrow().is_empty()
+			{
+				println!("{}% integrity constraints", section_separator);
+			}
+
+			for integrity_constraint in context.integrity_constraints.borrow().iter()
+			{
+				println!("tff(integrity_constraint, axiom, {}).",
+					crate::output::human_readable::display_formula(&integrity_constraint, None,
+						&context));
+			}
+		},
 	}
 
 	Ok(())
 }
 
-fn read_rule(rule: &clingo::ast::Rule, context: &Context)
-	-> Result<(), crate::Error>
+fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::Error>
 {
 	let head_type = determine_head_type(rule.head(), context)?;
 
@@ -434,7 +483,8 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context)
 				formula: definition,
 			};
 
-			log::debug!("translated rule with single atom in head: {:?}", definition.formula);
+			log::debug!("translated rule with single atom in head: {}",
+				crate::output::human_readable::display_formula(&definition.formula, None, context));
 
 			definitions.definitions.push(definition);
 		},
@@ -463,7 +513,9 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context)
 
 			let integrity_constraint = universal_closure(scoped_formula);
 
-			log::debug!("translated integrity constraint: {:?}", integrity_constraint);
+			log::debug!("translated integrity constraint: {}",
+				crate::output::human_readable::display_formula(&integrity_constraint, None,
+					context));
 
 			context.integrity_constraints.borrow_mut().push(integrity_constraint);
 		},

@@ -7,7 +7,7 @@ enum Command
 	#[structopt(about = "Verifies a logic program against a specification")]
 	VerifyProgram
 	{
-		#[structopt(parse(from_os_str))]
+		#[structopt(parse(from_os_str), required(true))]
 		input: Vec<std::path::PathBuf>,
 	}
 }

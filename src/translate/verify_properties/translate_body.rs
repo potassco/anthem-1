@@ -23,7 +23,7 @@ where
 			let variable_declaration = std::rc::Rc::new(
 				foliage::VariableDeclaration::new("<anonymous>".to_string()));
 			context.assign_variable_declaration_domain(&variable_declaration,
-				crate::translate::common::Domain::Program);
+				crate::Domain::Program);
 			variable_declaration
 		})
 		.collect::<foliage::VariableDeclarations>();
@@ -109,7 +109,7 @@ where
 					let variable_declaration = std::rc::Rc::new(
 						foliage::VariableDeclaration::new("<anonymous>".to_string()));
 					context.assign_variable_declaration_domain(&variable_declaration,
-						crate::translate::common::Domain::Program);
+						crate::Domain::Program);
 					variable_declaration
 				})
 				.collect::<foliage::VariableDeclarations>();

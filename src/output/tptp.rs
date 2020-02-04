@@ -1,9 +1,9 @@
 pub(crate) struct DomainDisplay
 {
-	domain: crate::translate::common::Domain,
+	domain: crate::Domain,
 }
 
-pub(crate) fn display_domain(domain: crate::translate::common::Domain) -> DomainDisplay
+pub(crate) fn display_domain(domain: crate::Domain) -> DomainDisplay
 {
 	DomainDisplay
 	{
@@ -17,8 +17,8 @@ impl std::fmt::Debug for DomainDisplay
 	{
 		let domain_name = match self.domain
 		{
-			crate::translate::common::Domain::Integer => "$int",
-			crate::translate::common::Domain::Program => "object",
+			crate::Domain::Integer => "$int",
+			crate::Domain::Program => "object",
 		};
 
 		write!(format, "{}", domain_name)
@@ -107,8 +107,8 @@ where
 
 		let prefix = match domain
 		{
-			crate::translate::common::Domain::Integer => "N",
-			crate::translate::common::Domain::Program => "X",
+			crate::Domain::Integer => "N",
+			crate::Domain::Program => "X",
 		};
 
 		write!(format, "{}{}", prefix, id + 1)

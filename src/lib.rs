@@ -3,5 +3,7 @@
 pub mod error;
 pub mod output;
 pub mod translate;
+mod utils;
 
 pub use error::Error;
+pub(crate) use utils::*;

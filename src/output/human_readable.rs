@@ -137,8 +137,8 @@ where
 
 		let prefix = match domain
 		{
-			crate::translate::common::Domain::Integer => "N",
-			crate::translate::common::Domain::Program => "X",
+			crate::Domain::Integer => "N",
+			crate::Domain::Program => "X",
 		};
 
 		write!(format, "{}{}", prefix, id + 1)

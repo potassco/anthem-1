@@ -195,8 +195,8 @@ where
 			for (predicate_declaration, completed_definition) in completed_definitions
 			{
 				println!("tff(completion_{}_{}, axiom, {}).", predicate_declaration.name,
-					predicate_declaration.arity, crate::output::human_readable::display_formula(
-						&completed_definition, None, &context));
+					predicate_declaration.arity, crate::output::tptp::display_formula(
+						&completed_definition, &context));
 			}
 
 			if !context.integrity_constraints.borrow().is_empty()
@@ -207,8 +207,7 @@ where
 			for integrity_constraint in context.integrity_constraints.borrow().iter()
 			{
 				println!("tff(integrity_constraint, axiom, {}).",
-					crate::output::human_readable::display_formula(&integrity_constraint, None,
-						&context));
+					crate::output::tptp::display_formula(&integrity_constraint, &context));
 			}
 		},
 	}

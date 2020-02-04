@@ -4,6 +4,9 @@ pub(crate) struct Definitions
 	pub definitions: Vec<crate::ScopedFormula>,
 }
 
+type InputConstantDeclarationDomains
+	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, crate::Domain>;
+
 type VariableDeclarationDomains
 	= std::collections::BTreeMap<std::rc::Rc<foliage::VariableDeclaration>, crate::Domain>;
 
@@ -16,6 +19,7 @@ pub(crate) struct Context
 		std::rc::Rc<foliage::PredicateDeclaration>, Definitions>>,
 	pub integrity_constraints: std::cell::RefCell<foliage::Formulas>,
 
+	pub input_constant_declaration_domains: std::cell::RefCell<InputConstantDeclarationDomains>,
 	pub function_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
 	pub predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
 	pub variable_declaration_stack: std::cell::RefCell<foliage::VariableDeclarationStack>,
@@ -32,12 +36,28 @@ impl Context
 			definitions: std::cell::RefCell::new(std::collections::BTreeMap::<_, _>::new()),
 			integrity_constraints: std::cell::RefCell::new(vec![]),
 
+			input_constant_declaration_domains:
+				std::cell::RefCell::new(InputConstantDeclarationDomains::new()),
 			function_declarations: std::cell::RefCell::new(foliage::FunctionDeclarations::new()),
 			predicate_declarations: std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
-			variable_declaration_stack: std::cell::RefCell::new(foliage::VariableDeclarationStack::new()),
-			variable_declaration_domains: std::cell::RefCell::new(VariableDeclarationDomains::new()),
+			variable_declaration_stack:
+				std::cell::RefCell::new(foliage::VariableDeclarationStack::new()),
+			variable_declaration_domains:
+				std::cell::RefCell::new(VariableDeclarationDomains::new()),
 			variable_declaration_ids: std::cell::RefCell::new(VariableDeclarationIDs::new()),
 		}
+	}
+}
+
+impl crate::traits::InputConstantDeclarationDomain for Context
+{
+	fn input_constant_declaration_domain(&self,
+		declaration: &std::rc::Rc<foliage::FunctionDeclaration>)
+		-> Option<crate::Domain>
+	{
+		let input_constant_declaration_domains = self.input_constant_declaration_domains.borrow();
+
+		input_constant_declaration_domains.get(declaration).map(|x| *x)
 	}
 }
 

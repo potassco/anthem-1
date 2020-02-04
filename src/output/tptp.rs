@@ -210,7 +210,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Debug for FormulaDisplay<'a, 'b, C>
 where
-	C: crate::traits::VariableDeclarationDomain
+	C: crate::traits::InputConstantDeclarationDomain
+		+ crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
@@ -219,6 +220,59 @@ where
 			display_variable_declaration(variable_declaration, self.context);
 		let display_term = |term| display_term(term, self.context);
 		let display_formula = |formula| display_formula(formula, self.context);
+
+		let mut display_compare = |left, right, notation, integer_operator_name,
+			auxiliary_predicate_name| -> std::fmt::Result
+		{
+			let mut notation = notation;
+			let mut operation_identifier = integer_operator_name;
+
+			let is_left_term_arithmetic = crate::is_term_arithmetic(left, self.context)
+				.expect("could not determine whether term is arithmetic");
+			let is_right_term_arithmetic = crate::is_term_arithmetic(right, self.context)
+				.expect("could not determine whether term is arithmetic");
+
+			match (!is_left_term_arithmetic && !is_right_term_arithmetic,
+				auxiliary_predicate_name)
+			{
+				(true, Some(auxiliary_predicate_name)) =>
+				{
+					notation = crate::OperatorNotation::Prefix;
+					operation_identifier = auxiliary_predicate_name;
+				},
+				_ => (),
+			}
+
+			if notation == crate::OperatorNotation::Prefix
+			{
+				write!(format, "{}(", operation_identifier)?;
+			}
+
+			match is_left_term_arithmetic && !is_right_term_arithmetic
+			{
+				true => write!(format, "f__integer__({})", display_term(left))?,
+				false => write!(format, "{}", display_term(left))?,
+			}
+
+			match notation
+			{
+				crate::OperatorNotation::Prefix => write!(format, ", ")?,
+				crate::OperatorNotation::Infix => write!(format, " {} ", operation_identifier)?,
+			}
+
+			match is_right_term_arithmetic && !is_left_term_arithmetic
+			{
+				true => write!(format, "f__integer__({})", display_term(right))?,
+				false => write!(format, "{}", display_term(right))?,
+			}
+
+			if notation == crate::OperatorNotation::Prefix
+			{
+				write!(format, ")")?;
+			}
+
+			write!(format, ")")
+		};
 
 		match &self.formula
 		{
@@ -299,19 +353,30 @@ where
 				=> write!(format, "({:?} => {:?})", display_formula(antecedent),
 					display_formula(implication))?,
 			foliage::Formula::IfAndOnlyIf(foliage::IfAndOnlyIf{left, right})
-				=> write!(format, "({:?} <=> {:?})", display_formula(left), display_formula(right))?,
-			foliage::Formula::Compare(foliage::Compare{operator: foliage::ComparisonOperator::Less, left, right})
-				=> write!(format, "$less({:?}, {:?})", display_term(left), display_term(right))?,
-			foliage::Formula::Compare(foliage::Compare{operator: foliage::ComparisonOperator::LessOrEqual, left, right})
-				=> write!(format, "$lesseq({:?}, {:?})", display_term(left), display_term(right))?,
-			foliage::Formula::Compare(foliage::Compare{operator: foliage::ComparisonOperator::Greater, left, right})
-				=> write!(format, "$greater({:?}, {:?})", display_term(left), display_term(right))?,
-			foliage::Formula::Compare(foliage::Compare{operator: foliage::ComparisonOperator::GreaterOrEqual, left, right})
-				=> write!(format, "$greatereq({:?}, {:?})", display_term(left), display_term(right))?,
-			foliage::Formula::Compare(foliage::Compare{operator: foliage::ComparisonOperator::Equal, left, right})
-				=> write!(format, "({:?} = {:?})", display_term(left), display_term(right))?,
-			foliage::Formula::Compare(foliage::Compare{operator: foliage::ComparisonOperator::NotEqual, left, right})
-				=> write!(format, "({:?} ~= {:?})", display_term(left), display_term(right))?,
+				=> write!(format, "({:?} <=> {:?})", display_formula(left),
+					display_formula(right))?,
+			foliage::Formula::Compare(
+				foliage::Compare{operator: foliage::ComparisonOperator::Less, left, right})
+				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$less",
+					Some("p__less__"))?,
+			foliage::Formula::Compare(
+				foliage::Compare{operator: foliage::ComparisonOperator::LessOrEqual, left, right})
+				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$lesseq",
+					Some("p__less_equal__"))?,
+			foliage::Formula::Compare(
+				foliage::Compare{operator: foliage::ComparisonOperator::Greater, left, right})
+				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$greater",
+					Some("p__greater__"))?,
+			foliage::Formula::Compare(
+				foliage::Compare{operator: foliage::ComparisonOperator::GreaterOrEqual, left, right})
+				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$greatereq",
+					Some("p__greater_equal__"))?,
+			foliage::Formula::Compare(
+				foliage::Compare{operator: foliage::ComparisonOperator::Equal, left, right})
+				=> display_compare(left, right, crate::OperatorNotation::Infix, "=", None)?,
+			foliage::Formula::Compare(
+				foliage::Compare{operator: foliage::ComparisonOperator::NotEqual, left, right})
+				=> display_compare(left, right, crate::OperatorNotation::Infix, "!=", None)?,
 			foliage::Formula::Boolean(true) => write!(format, "$true")?,
 			foliage::Formula::Boolean(false) => write!(format, "$false")?,
 			foliage::Formula::Predicate(predicate) =>
@@ -342,7 +407,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Display for FormulaDisplay<'a, 'b, C>
 where
-	C: crate::traits::VariableDeclarationDomain
+	C: crate::traits::InputConstantDeclarationDomain
+		+ crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result

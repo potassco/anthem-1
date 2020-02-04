@@ -1,4 +1,15 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
+mod arithmetic_terms;
+
+pub(crate) use arithmetic_terms::*;
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub(crate) enum OperatorNotation
+{
+	Prefix,
+	Infix,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) enum Domain
 {
 	Program,

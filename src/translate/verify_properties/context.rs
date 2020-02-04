@@ -41,7 +41,7 @@ impl Context
 	}
 }
 
-impl crate::translate::common::GetOrCreateFunctionDeclaration for Context
+impl crate::traits::GetOrCreateFunctionDeclaration for Context
 {
 	fn get_or_create_function_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<foliage::FunctionDeclaration>
@@ -67,7 +67,7 @@ impl crate::translate::common::GetOrCreateFunctionDeclaration for Context
 	}
 }
 
-impl crate::translate::common::GetOrCreatePredicateDeclaration for Context
+impl crate::traits::GetOrCreatePredicateDeclaration for Context
 {
 	fn get_or_create_predicate_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<foliage::PredicateDeclaration>
@@ -93,7 +93,7 @@ impl crate::translate::common::GetOrCreatePredicateDeclaration for Context
 	}
 }
 
-impl crate::translate::common::GetOrCreateVariableDeclaration for Context
+impl crate::traits::GetOrCreateVariableDeclaration for Context
 {
 	fn get_or_create_variable_declaration(&self, name: &str)
 		-> std::rc::Rc<foliage::VariableDeclaration>
@@ -116,7 +116,7 @@ impl crate::translate::common::GetOrCreateVariableDeclaration for Context
 	}
 }
 
-impl crate::translate::common::AssignVariableDeclarationDomain for Context
+impl crate::traits::AssignVariableDeclarationDomain for Context
 {
 	fn assign_variable_declaration_domain(&self,
 		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>, domain: crate::Domain)
@@ -136,7 +136,7 @@ impl crate::translate::common::AssignVariableDeclarationDomain for Context
 	}
 }
 
-impl crate::translate::common::VariableDeclarationDomain for Context
+impl crate::traits::VariableDeclarationDomain for Context
 {
 	fn variable_declaration_domain(&self,
 		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
@@ -149,7 +149,7 @@ impl crate::translate::common::VariableDeclarationDomain for Context
 	}
 }
 
-impl crate::translate::common::VariableDeclarationID for Context
+impl crate::traits::VariableDeclarationID for Context
 {
 	fn variable_declaration_id(&self,
 		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)

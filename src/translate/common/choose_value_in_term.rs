@@ -11,9 +11,9 @@ pub(crate) fn choose_value_in_term<C>(term: &clingo::ast::Term,
 	variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>, context: &C)
 	-> Result<foliage::Formula, crate::Error>
 where
-	C: crate::translate::common::GetOrCreateFunctionDeclaration
-		+ crate::translate::common::GetOrCreateVariableDeclaration
-		+ crate::translate::common::AssignVariableDeclarationDomain
+	C: crate::traits::GetOrCreateFunctionDeclaration
+		+ crate::traits::GetOrCreateVariableDeclaration
+		+ crate::traits::AssignVariableDeclarationDomain
 {
 	match term.term_type()
 	{

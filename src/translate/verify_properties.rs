@@ -5,7 +5,7 @@ mod translate_body;
 use context::*;
 use head_type::*;
 use translate_body::*;
-use crate::translate::common::AssignVariableDeclarationDomain as _;
+use crate::traits::AssignVariableDeclarationDomain as _;
 
 struct StatementHandler
 {

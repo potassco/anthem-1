@@ -15,7 +15,7 @@ pub(crate) enum HeadType<'a>
 pub(crate) fn determine_head_type<'a, C>(head_literal: &'a clingo::ast::HeadLiteral, context: &C)
 	-> Result<HeadType<'a>, crate::Error>
 where
-	C: crate::translate::common::GetOrCreatePredicateDeclaration
+	C: crate::traits::GetOrCreatePredicateDeclaration
 {
 	let create_head_atom = |function: &'a clingo::ast::Function| -> Result<_, crate::Error>
 	{

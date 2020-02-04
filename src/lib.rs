@@ -2,6 +2,7 @@
 
 pub mod error;
 pub mod output;
+pub(crate) mod traits;
 pub mod translate;
 mod utils;
 

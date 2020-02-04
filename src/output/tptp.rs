@@ -35,8 +35,8 @@ impl std::fmt::Display for DomainDisplay
 
 pub(crate) struct VariableDeclarationDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>,
 	context: &'b C,
@@ -46,8 +46,8 @@ pub(crate) fn display_variable_declaration<'a, 'b, C>(
 	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>, context: &'b C)
 	-> VariableDeclarationDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	VariableDeclarationDisplay
 	{
@@ -65,8 +65,8 @@ pub(crate) struct TermDisplay<'a, 'b, C>
 pub(crate) fn display_term<'a, 'b, C>(term: &'a foliage::Term, context: &'b C)
 	-> TermDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	TermDisplay
 	{
@@ -84,8 +84,8 @@ pub(crate) struct FormulaDisplay<'a, 'b, C>
 pub(crate) fn display_formula<'a, 'b, C>(formula: &'a foliage::Formula, context: &'b C)
 	-> FormulaDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	FormulaDisplay
 	{
@@ -96,8 +96,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Debug for VariableDeclarationDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
@@ -117,8 +117,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Display for VariableDeclarationDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
@@ -128,8 +128,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Debug for TermDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
@@ -199,8 +199,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Display for TermDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
@@ -210,8 +210,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Debug for FormulaDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
@@ -342,8 +342,8 @@ where
 
 impl<'a, 'b, C> std::fmt::Display for FormulaDisplay<'a, 'b, C>
 where
-	C: crate::translate::common::VariableDeclarationDomain
-		+ crate::translate::common::VariableDeclarationID
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
 {
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{

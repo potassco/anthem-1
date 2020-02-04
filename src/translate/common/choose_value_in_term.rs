@@ -66,8 +66,7 @@ where
 		},
 		clingo::ast::TermType::BinaryOperation(binary_operation) =>
 		{
-			let operator = crate::translate::common::translate_binary_operator(
-				binary_operation.binary_operator())?;
+			let operator = super::translate_binary_operator(binary_operation.binary_operator())?;
 
 			match operator
 			{

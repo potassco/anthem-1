@@ -1,67 +1,3 @@
-pub(crate) struct VariableDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>,
-	context: &'b C,
-}
-
-pub(crate) fn display_variable_declaration<'a, 'b, C>(
-	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>, context: &'b C)
-	-> VariableDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	VariableDeclarationDisplay
-	{
-		variable_declaration,
-		context,
-	}
-}
-
-pub(crate) struct TermDisplay<'a, 'b, C>
-{
-	parent_precedence: Option<i32>,
-	term: &'a foliage::Term,
-	context: &'b C,
-}
-
-pub(crate) fn display_term<'a, 'b, C>(term: &'a foliage::Term, parent_precedence: Option<i32>,
-	context: &'b C)
-	-> TermDisplay<'a, 'b, C>
-{
-	TermDisplay
-	{
-		parent_precedence,
-		term,
-		context,
-	}
-}
-
-pub(crate) struct FormulaDisplay<'a, 'b, C>
-{
-	parent_precedence: Option<i32>,
-	formula: &'a foliage::Formula,
-	context: &'b C,
-}
-
-pub(crate) fn display_formula<'a, 'b, C>(formula: &'a foliage::Formula,
-	parent_precedence: Option<i32>, context: &'b C)
-	-> FormulaDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	FormulaDisplay
-	{
-		parent_precedence,
-		formula,
-		context,
-	}
-}
-
 trait Precedence
 {
 	fn precedence(&self) -> i32;
@@ -124,6 +60,29 @@ impl Precedence for foliage::Formula
 	}
 }
 
+pub(crate) struct VariableDeclarationDisplay<'a, 'b, C>
+where
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
+{
+	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>,
+	context: &'b C,
+}
+
+pub(crate) fn display_variable_declaration<'a, 'b, C>(
+	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>, context: &'b C)
+	-> VariableDeclarationDisplay<'a, 'b, C>
+where
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
+{
+	VariableDeclarationDisplay
+	{
+		variable_declaration,
+		context,
+	}
+}
+
 impl<'a, 'b, C> std::fmt::Debug for VariableDeclarationDisplay<'a, 'b, C>
 where
 	C: crate::traits::VariableDeclarationDomain
@@ -153,6 +112,25 @@ where
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		write!(format, "{:?}", &self)
+	}
+}
+
+pub(crate) struct TermDisplay<'a, 'b, C>
+{
+	parent_precedence: Option<i32>,
+	term: &'a foliage::Term,
+	context: &'b C,
+}
+
+pub(crate) fn display_term<'a, 'b, C>(term: &'a foliage::Term, parent_precedence: Option<i32>,
+	context: &'b C)
+	-> TermDisplay<'a, 'b, C>
+{
+	TermDisplay
+	{
+		parent_precedence,
+		term,
+		context,
 	}
 }
 
@@ -251,6 +229,28 @@ where
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		write!(format, "{:?}", self)
+	}
+}
+
+pub(crate) struct FormulaDisplay<'a, 'b, C>
+{
+	parent_precedence: Option<i32>,
+	formula: &'a foliage::Formula,
+	context: &'b C,
+}
+
+pub(crate) fn display_formula<'a, 'b, C>(formula: &'a foliage::Formula,
+	parent_precedence: Option<i32>, context: &'b C)
+	-> FormulaDisplay<'a, 'b, C>
+where
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
+{
+	FormulaDisplay
+	{
+		parent_precedence,
+		formula,
+		context,
 	}
 }
 

@@ -56,44 +56,6 @@ where
 	}
 }
 
-pub(crate) struct TermDisplay<'a, 'b, C>
-{
-	term: &'a foliage::Term,
-	context: &'b C,
-}
-
-pub(crate) fn display_term<'a, 'b, C>(term: &'a foliage::Term, context: &'b C)
-	-> TermDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	TermDisplay
-	{
-		term,
-		context,
-	}
-}
-
-pub(crate) struct FormulaDisplay<'a, 'b, C>
-{
-	formula: &'a foliage::Formula,
-	context: &'b C,
-}
-
-pub(crate) fn display_formula<'a, 'b, C>(formula: &'a foliage::Formula, context: &'b C)
-	-> FormulaDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	FormulaDisplay
-	{
-		formula,
-		context,
-	}
-}
-
 impl<'a, 'b, C> std::fmt::Debug for VariableDeclarationDisplay<'a, 'b, C>
 where
 	C: crate::traits::VariableDeclarationDomain
@@ -123,6 +85,25 @@ where
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		write!(format, "{:?}", &self)
+	}
+}
+
+pub(crate) struct TermDisplay<'a, 'b, C>
+{
+	term: &'a foliage::Term,
+	context: &'b C,
+}
+
+pub(crate) fn display_term<'a, 'b, C>(term: &'a foliage::Term, context: &'b C)
+	-> TermDisplay<'a, 'b, C>
+where
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
+{
+	TermDisplay
+	{
+		term,
+		context,
 	}
 }
 
@@ -205,6 +186,25 @@ where
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		write!(format, "{:?}", self)
+	}
+}
+
+pub(crate) struct FormulaDisplay<'a, 'b, C>
+{
+	formula: &'a foliage::Formula,
+	context: &'b C,
+}
+
+pub(crate) fn display_formula<'a, 'b, C>(formula: &'a foliage::Formula, context: &'b C)
+	-> FormulaDisplay<'a, 'b, C>
+where
+	C: crate::traits::VariableDeclarationDomain
+		+ crate::traits::VariableDeclarationID
+{
+	FormulaDisplay
+	{
+		formula,
+		context,
 	}
 }
 

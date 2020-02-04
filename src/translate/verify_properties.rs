@@ -464,11 +464,9 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 
 			context.variable_declaration_stack.borrow_mut().pop();
 
-			let mut free_variable_declarations = vec![];
-
-			std::mem::swap(
+			let free_variable_declarations = std::mem::replace(
 				&mut context.variable_declaration_stack.borrow_mut().free_variable_declarations,
-				&mut free_variable_declarations);
+				vec![]);
 
 			let definition = match definition_arguments.len()
 			{
@@ -492,11 +490,9 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 		{
 			let mut arguments = translate_body(rule.body(), context)?;
 
-			let mut free_variable_declarations = vec![];
-
-			std::mem::swap(
+			let free_variable_declarations = std::mem::replace(
 				&mut context.variable_declaration_stack.borrow_mut().free_variable_declarations,
-				&mut free_variable_declarations);
+				vec![]);
 
 			let formula = match arguments.len()
 			{

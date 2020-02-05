@@ -4,9 +4,6 @@ pub(crate) struct Definitions
 	pub definitions: Vec<crate::ScopedFormula>,
 }
 
-type InputConstantDeclarationDomains
-	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, crate::Domain>;
-
 type VariableDeclarationDomains
 	= std::collections::BTreeMap<std::rc::Rc<foliage::VariableDeclaration>, crate::Domain>;
 
@@ -19,7 +16,8 @@ pub(crate) struct Context
 		std::rc::Rc<foliage::PredicateDeclaration>, Definitions>>,
 	pub integrity_constraints: std::cell::RefCell<foliage::Formulas>,
 
-	pub input_constant_declaration_domains: std::cell::RefCell<InputConstantDeclarationDomains>,
+	pub input_constant_declaration_domains: std::cell::RefCell<
+		crate::InputConstantDeclarationDomains>,
 	pub input_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
 
 	pub function_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
@@ -40,7 +38,7 @@ impl Context
 			integrity_constraints: std::cell::RefCell::new(vec![]),
 
 			input_constant_declaration_domains:
-				std::cell::RefCell::new(InputConstantDeclarationDomains::new()),
+				std::cell::RefCell::new(crate::InputConstantDeclarationDomains::new()),
 			input_predicate_declarations:
 				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
 

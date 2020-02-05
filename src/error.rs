@@ -9,6 +9,7 @@ pub enum Kind
 	Translate,
 	ReadFile(std::path::PathBuf),
 	ParsePredicateDeclaration,
+	ParseConstantDeclaration,
 }
 
 pub struct Error
@@ -68,6 +69,11 @@ impl Error
 	{
 		Self::new(Kind::ParsePredicateDeclaration)
 	}
+
+	pub(crate) fn new_parse_constant_declaration() -> Self
+	{
+		Self::new(Kind::ParseConstantDeclaration)
+	}
 }
 
 impl std::fmt::Debug for Error
@@ -87,6 +93,8 @@ impl std::fmt::Debug for Error
 			Kind::ReadFile(path) => write!(formatter, "could not read file “{}”", path.display()),
 			Kind::ParsePredicateDeclaration => write!(formatter,
 				"could not parse predicate declaration"),
+			Kind::ParseConstantDeclaration => write!(formatter,
+				"could not parse constant declaration"),
 		}?;
 
 		if let Some(source) = &self.source

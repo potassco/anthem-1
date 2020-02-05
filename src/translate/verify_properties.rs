@@ -56,6 +56,7 @@ impl clingo::Logger for Logger
 
 pub fn translate<P>(program_paths: &[P],
 	input_predicate_declarations: foliage::PredicateDeclarations,
+	input_constant_declaration_domains: crate::InputConstantDeclarationDomains,
 	output_format: crate::output::Format)
 	-> Result<(), crate::Error>
 where
@@ -67,6 +68,23 @@ where
 		= input_predicate_declarations.clone();
 	*statement_handler.context.predicate_declarations.borrow_mut()
 		= input_predicate_declarations;
+	*statement_handler.context.function_declarations.borrow_mut()
+		= input_constant_declaration_domains.keys().map(std::rc::Rc::clone).collect();
+	*statement_handler.context.input_constant_declaration_domains.borrow_mut()
+		= input_constant_declaration_domains;
+
+	for input_predicate_declaration in statement_handler.context.input_predicate_declarations
+		.borrow().iter()
+	{
+		log::info!("input predicate: {}/{}", input_predicate_declaration.name,
+			input_predicate_declaration.arity);
+	}
+
+	for (input_constant_declaration, domain) in statement_handler.context
+		.input_constant_declaration_domains.borrow().iter()
+	{
+		log::info!("input constant: {} (domain: {:?})", input_constant_declaration.name, domain);
+	}
 
 	// Read all input programs
 	for program_path in program_paths

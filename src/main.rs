@@ -18,6 +18,11 @@ enum Command
 		/// Input predicates (examples: p/0, q/2)
 		#[structopt(long, parse(try_from_str = anthem::parse_predicate_declaration))]
 		input_predicates: Vec<std::rc::Rc<foliage::PredicateDeclaration>>,
+
+		/// Input constants (example: c, integer(n))
+		#[structopt(long, parse(try_from_str = anthem::parse_constant_declaration))]
+		input_constants: Vec<
+			(std::rc::Rc<foliage::FunctionDeclaration>, anthem::Domain)>,
 	}
 }
 
@@ -34,11 +39,13 @@ fn main()
 			input,
 			output_format,
 			input_predicates,
+			input_constants,
 		}
 			=>
 		{
 			if let Err(error) = anthem::translate::verify_properties::translate(&input,
 				input_predicates.into_iter().collect::<foliage::PredicateDeclarations>(),
+				input_constants.into_iter().collect::<std::collections::BTreeMap<_, _>>(),
 				output_format)
 			{
 				log::error!("could not translate input program: {}", error);

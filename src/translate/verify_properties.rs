@@ -163,7 +163,8 @@ where
 		.map(|x| (std::rc::Rc::clone(x), completed_definition(x)));
 
 	// Earlier log messages may have assigned IDs to the variable declarations, so reset them
-	context.variable_declaration_ids.borrow_mut().clear();
+	context.program_variable_declaration_ids.borrow_mut().clear();
+	context.integer_variable_declaration_ids.borrow_mut().clear();
 
 	let print_title = |title, section_separator|
 	{

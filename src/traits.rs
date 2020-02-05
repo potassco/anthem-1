@@ -1,8 +1,7 @@
 pub(crate) trait InputConstantDeclarationDomain
 {
 	fn input_constant_declaration_domain(&self,
-		declaration: &std::rc::Rc<foliage::FunctionDeclaration>)
-		-> Option<crate::Domain>;
+		declaration: &std::rc::Rc<foliage::FunctionDeclaration>) -> crate::Domain;
 }
 
 pub(crate) trait AssignVariableDeclarationDomain

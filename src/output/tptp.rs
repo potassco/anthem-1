@@ -33,6 +33,113 @@ impl std::fmt::Display for DomainDisplay
 	}
 }
 
+pub(crate) struct FunctionDeclarationDisplay<'a, 'b, C>
+where
+	C: crate::traits::InputConstantDeclarationDomain
+{
+	function_declaration: &'a std::rc::Rc<foliage::FunctionDeclaration>,
+	context: &'b C,
+}
+
+pub(crate) fn display_function_declaration<'a, 'b, C>(
+	function_declaration: &'a std::rc::Rc<foliage::FunctionDeclaration>, context: &'b C)
+	-> FunctionDeclarationDisplay<'a, 'b, C>
+where
+	C: crate::traits::InputConstantDeclarationDomain
+{
+	FunctionDeclarationDisplay
+	{
+		function_declaration,
+		context,
+	}
+}
+
+impl<'a, 'b, C> std::fmt::Debug for FunctionDeclarationDisplay<'a, 'b, C>
+where
+	C: crate::traits::InputConstantDeclarationDomain
+{
+	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		write!(format, "{}:", self.function_declaration.name)?;
+
+		let domain = self.context.input_constant_declaration_domain(self.function_declaration);
+		let domain_identifier = match domain
+		{
+			crate::Domain::Integer => "$int",
+			crate::Domain::Program => "object",
+		};
+
+		let mut separator = "";
+
+		if self.function_declaration.arity > 0
+		{
+			write!(format, " (")?;
+
+			for _ in 0..self.function_declaration.arity
+			{
+				write!(format, "{}object", separator)?;
+				separator = " * ";
+			}
+
+			write!(format, ") >")?;
+		}
+
+		write!(format, " {}", domain_identifier)
+	}
+}
+
+impl<'a, 'b, C> std::fmt::Display for FunctionDeclarationDisplay<'a, 'b, C>
+where
+	C: crate::traits::InputConstantDeclarationDomain
+{
+	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		write!(format, "{:?}", &self)
+	}
+}
+
+pub(crate) struct PredicateDeclarationDisplay<'a>(&'a std::rc::Rc<foliage::PredicateDeclaration>);
+
+pub(crate) fn display_predicate_declaration<'a>(
+	predicate_declaration: &'a std::rc::Rc<foliage::PredicateDeclaration>)
+	-> PredicateDeclarationDisplay<'a>
+{
+	PredicateDeclarationDisplay(predicate_declaration)
+}
+
+impl<'a> std::fmt::Debug for PredicateDeclarationDisplay<'a>
+{
+	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		write!(format, "{}:", self.0.name)?;
+
+		let mut separator = "";
+
+		if self.0.arity > 0
+		{
+			write!(format, " (")?;
+
+			for _ in 0..self.0.arity
+			{
+				write!(format, "{}object", separator)?;
+				separator = " * ";
+			}
+
+			write!(format, ") >")?;
+		}
+
+		write!(format, " $o")
+	}
+}
+
+impl<'a> std::fmt::Display for PredicateDeclarationDisplay<'a>
+{
+	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		write!(format, "{:?}", &self)
+	}
+}
+
 pub(crate) struct VariableDeclarationDisplay<'a, 'b, C>
 where
 	C: crate::traits::VariableDeclarationDomain

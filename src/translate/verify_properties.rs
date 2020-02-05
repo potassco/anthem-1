@@ -156,6 +156,7 @@ where
 	};
 
 	let predicate_declarations = context.predicate_declarations.borrow();
+	let function_declarations = context.function_declarations.borrow();
 	let completed_definitions = predicate_declarations.iter()
 		// Don’t perform completion for any input predicate
 		.filter(|x| !context.input_predicate_declarations.borrow().contains(*x))
@@ -163,6 +164,13 @@ where
 
 	// Earlier log messages may have assigned IDs to the variable declarations, so reset them
 	context.variable_declaration_ids.borrow_mut().clear();
+
+	let print_title = |title, section_separator|
+	{
+		print!("{}{}", section_separator, "%".repeat(80));
+		print!("\n% {}", title);
+		println!("\n{}", "%".repeat(80));
+	};
 
 	let print_formula = |formula: &foliage::Formula|
 	{
@@ -177,14 +185,60 @@ where
 
 	let mut section_separator = "";
 
+	if output_format == crate::output::Format::TPTP
+	{
+		print_title("anthem types", section_separator);
+		section_separator = "\n";
+
+		let tptp_preamble_anthem_types
+			= include_str!("../output/tptp/preamble_types.tptp").trim_end();
+		println!("{}", tptp_preamble_anthem_types);
+
+		print_title("anthem axioms", section_separator);
+
+		let tptp_preamble_anthem_types
+			= include_str!("../output/tptp/preamble_axioms.tptp").trim_end();
+		println!("{}", tptp_preamble_anthem_types);
+
+		if !predicate_declarations.is_empty() || !function_declarations.is_empty()
+		{
+			print_title("types", section_separator);
+
+			if !predicate_declarations.is_empty()
+			{
+				println!("% predicate types")
+			}
+
+			for predicate_declaration in &*predicate_declarations
+			{
+				println!("tff(type, type, {}).",
+					crate::output::tptp::display_predicate_declaration(predicate_declaration));
+			}
+
+			if !function_declarations.is_empty()
+			{
+				println!("% function types")
+			}
+
+			for function_declaration in &*function_declarations
+			{
+				println!("tff(type, type, {}).",
+					crate::output::tptp::display_function_declaration(function_declaration,
+						&context));
+			}
+		}
+	}
+
 	for (i, (predicate_declaration, completed_definition)) in completed_definitions.enumerate()
 	{
 		if i == 0
 		{
-			println!("{}% completed definitions", section_separator);
+			print_title("completed definitions", section_separator);
 		}
 
-		println!("%% completed definition of {}/{}", predicate_declaration.name,
+		section_separator = "\n";
+
+		println!("% completed definition of {}/{}", predicate_declaration.name,
 			predicate_declaration.arity);
 
 		if output_format == crate::output::Format::TPTP
@@ -201,16 +255,16 @@ where
 		}
 
 		println!("");
-
-		section_separator = "\n";
 	}
 
 	for (i, integrity_constraint) in context.integrity_constraints.borrow().iter().enumerate()
 	{
 		if i == 0
 		{
-			println!("{}% integrity constraints", section_separator);
+			print_title("integrity constraints", section_separator);
 		}
+
+		section_separator = "\n";
 
 		if output_format == crate::output::Format::TPTP
 		{
@@ -225,8 +279,6 @@ where
 		}
 
 		println!("");
-
-		section_separator = "\n";
 	}
 
 	Ok(())

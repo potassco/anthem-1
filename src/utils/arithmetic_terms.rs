@@ -18,9 +18,7 @@ where
 					crate::Error::new_unsupported_language_feature("functions with arguments"));
 			}
 
-			// Assume the program domain if not specified otherwise
-			let domain = context.input_constant_declaration_domain(&function.declaration)
-				.unwrap_or(crate::Domain::Program);
+			let domain = context.input_constant_declaration_domain(&function.declaration);
 
 			Ok(domain == crate::Domain::Integer)
 		},

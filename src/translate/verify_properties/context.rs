@@ -57,12 +57,13 @@ impl Context
 impl crate::traits::InputConstantDeclarationDomain for Context
 {
 	fn input_constant_declaration_domain(&self,
-		declaration: &std::rc::Rc<foliage::FunctionDeclaration>)
-		-> Option<crate::Domain>
+		declaration: &std::rc::Rc<foliage::FunctionDeclaration>) -> crate::Domain
 	{
 		let input_constant_declaration_domains = self.input_constant_declaration_domains.borrow();
 
+		// Assume the program domain if not specified otherwise
 		input_constant_declaration_domains.get(declaration).map(|x| *x)
+			.unwrap_or(crate::Domain::Program)
 	}
 }
 

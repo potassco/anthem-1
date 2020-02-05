@@ -1,0 +1,11 @@
+tff(type, type, object: $tType).
+tff(type, type, f__integer__: ($int) > object).
+tff(type, type, f__symbolic__: ($i) > object).
+tff(type, type, c__infimum__: object).
+tff(type, type, c__supremum__: object).
+tff(type, type, p__is_integer__: (object) > $o).
+tff(type, type, p__is_symbolic__: (object) > $o).
+tff(type, type, p__less_equal__: (object * object) > $o).
+tff(type, type, p__less__: (object * object) > $o).
+tff(type, type, p__greater_equal__: (object * object) > $o).
+tff(type, type, p__greater__: (object * object) > $o).

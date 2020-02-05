@@ -5,6 +5,7 @@ authors = ["Patrick Lühne <patrick@luehne.de>"]
 edition = "2018"
 
 [dependencies]
+foliage = "0.1"
 log = "0.4"
 pretty_env_logger = "0.4"
 structopt = "0.3"
@@ -12,7 +13,3 @@ structopt = "0.3"
 [dependencies.clingo]
 git = "https://github.com/potassco/clingo-rs"
 rev = "61cc68c0dfef96398db064f0b7fc2e838e7b9204"
-
-[dependencies.foliage]
-git = "ssh://gitea@git.luehne.de/patrick/foliage-rs.git"
-branch = "refactoring"

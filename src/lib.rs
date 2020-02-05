@@ -8,3 +8,4 @@ mod utils;
 
 pub use error::Error;
 pub(crate) use utils::*;
+pub use utils::parse_predicate_declaration;

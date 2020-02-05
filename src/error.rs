@@ -8,6 +8,7 @@ pub enum Kind
 	DecodeIdentifier,
 	Translate,
 	ReadFile(std::path::PathBuf),
+	ParsePredicateDeclaration,
 }
 
 pub struct Error
@@ -62,6 +63,11 @@ impl Error
 	{
 		Self::new(Kind::ReadFile(path)).with(source)
 	}
+
+	pub(crate) fn new_parse_predicate_declaration() -> Self
+	{
+		Self::new(Kind::ParsePredicateDeclaration)
+	}
 }
 
 impl std::fmt::Debug for Error
@@ -79,6 +85,8 @@ impl std::fmt::Debug for Error
 			Kind::DecodeIdentifier => write!(formatter, "could not decode identifier"),
 			Kind::Translate => write!(formatter, "could not translate input program"),
 			Kind::ReadFile(path) => write!(formatter, "could not read file “{}”", path.display()),
+			Kind::ParsePredicateDeclaration => write!(formatter,
+				"could not parse predicate declaration"),
 		}?;
 
 		if let Some(source) = &self.source

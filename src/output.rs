@@ -1,7 +1,7 @@
 pub(crate) mod human_readable;
 pub(crate) mod tptp;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum Format
 {
 	HumanReadable,

@@ -20,6 +20,8 @@ pub(crate) struct Context
 	pub integrity_constraints: std::cell::RefCell<foliage::Formulas>,
 
 	pub input_constant_declaration_domains: std::cell::RefCell<InputConstantDeclarationDomains>,
+	pub input_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
+
 	pub function_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
 	pub predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
 	pub variable_declaration_stack: std::cell::RefCell<foliage::VariableDeclarationStack>,
@@ -38,6 +40,9 @@ impl Context
 
 			input_constant_declaration_domains:
 				std::cell::RefCell::new(InputConstantDeclarationDomains::new()),
+			input_predicate_declarations:
+				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
+
 			function_declarations: std::cell::RefCell::new(foliage::FunctionDeclarations::new()),
 			predicate_declarations: std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
 			variable_declaration_stack:

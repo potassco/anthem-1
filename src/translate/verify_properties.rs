@@ -54,13 +54,21 @@ impl clingo::Logger for Logger
 	}
 }
 
-pub fn translate<P>(program_paths: &[P], output_format: crate::output::Format)
+pub fn translate<P>(program_paths: &[P],
+	input_predicate_declarations: foliage::PredicateDeclarations,
+	output_format: crate::output::Format)
 	-> Result<(), crate::Error>
 where
 	P: AsRef<std::path::Path>
 {
 	let mut statement_handler = StatementHandler::new();
 
+	*statement_handler.context.input_predicate_declarations.borrow_mut()
+		= input_predicate_declarations.clone();
+	*statement_handler.context.predicate_declarations.borrow_mut()
+		= input_predicate_declarations;
+
+	// Read all input programs
 	for program_path in program_paths
 	{
 		let program = std::fs::read_to_string(program_path.as_ref())
@@ -68,6 +76,8 @@ where
 
 		clingo::parse_program_with_logger(&program, &mut statement_handler, &mut Logger, std::u32::MAX)
 			.map_err(|error| crate::Error::new_translate(error))?;
+
+		log::info!("read input program “{}”", program_path.as_ref().display());
 	}
 
 	let context = statement_handler.context;
@@ -147,69 +157,76 @@ where
 
 	let predicate_declarations = context.predicate_declarations.borrow();
 	let completed_definitions = predicate_declarations.iter()
+		// Don’t perform completion for any input predicate
+		.filter(|x| !context.input_predicate_declarations.borrow().contains(*x))
 		.map(|x| (std::rc::Rc::clone(x), completed_definition(x)));
 
 	// Earlier log messages may have assigned IDs to the variable declarations, so reset them
 	context.variable_declaration_ids.borrow_mut().clear();
 
-	match output_format
+	let print_formula = |formula: &foliage::Formula|
 	{
-		crate::output::Format::HumanReadable =>
+		match output_format
 		{
-			let mut section_separator = "";
+			crate::output::Format::HumanReadable => print!("{}",
+				crate::output::human_readable::display_formula(formula, None, &context)),
+			crate::output::Format::TPTP => print!("{}",
+				crate::output::tptp::display_formula(formula, &context)),
+		}
+	};
 
-			if !predicate_declarations.is_empty()
-			{
-				println!("{}% completed definitions", section_separator);
-				section_separator = "\n";
-			}
+	let mut section_separator = "";
 
-			for (predicate_declaration, completed_definition) in completed_definitions
-			{
-				println!("%% completed definition of {}/{}\n{}", predicate_declaration.name,
-					predicate_declaration.arity, crate::output::human_readable::display_formula(
-						&completed_definition, None, &context));
-			}
-
-			if !context.integrity_constraints.borrow().is_empty()
-			{
-				println!("{}% integrity constraints", section_separator);
-			}
-
-			for integrity_constraint in context.integrity_constraints.borrow().iter()
-			{
-				println!("{}", crate::output::human_readable::display_formula(
-					&integrity_constraint, None, &context));
-			}
-		},
-		crate::output::Format::TPTP =>
+	for (i, (predicate_declaration, completed_definition)) in completed_definitions.enumerate()
+	{
+		if i == 0
 		{
-			let mut section_separator = "";
+			println!("{}% completed definitions", section_separator);
+		}
 
-			if !predicate_declarations.is_empty()
-			{
-				println!("{}% completed definitions", section_separator);
-				section_separator = "\n";
-			}
+		println!("%% completed definition of {}/{}", predicate_declaration.name,
+			predicate_declaration.arity);
 
-			for (predicate_declaration, completed_definition) in completed_definitions
-			{
-				println!("tff(completion_{}_{}, axiom, {}).", predicate_declaration.name,
-					predicate_declaration.arity, crate::output::tptp::display_formula(
-						&completed_definition, &context));
-			}
+		if output_format == crate::output::Format::TPTP
+		{
+			print!("tff(completion_{}_{}, axiom, ", predicate_declaration.name,
+				predicate_declaration.arity);
+		}
 
-			if !context.integrity_constraints.borrow().is_empty()
-			{
-				println!("{}% integrity constraints", section_separator);
-			}
+		print_formula(&completed_definition);
 
-			for integrity_constraint in context.integrity_constraints.borrow().iter()
-			{
-				println!("tff(integrity_constraint, axiom, {}).",
-					crate::output::tptp::display_formula(&integrity_constraint, &context));
-			}
-		},
+		if output_format == crate::output::Format::TPTP
+		{
+			print!(").");
+		}
+
+		println!("");
+
+		section_separator = "\n";
+	}
+
+	for (i, integrity_constraint) in context.integrity_constraints.borrow().iter().enumerate()
+	{
+		if i == 0
+		{
+			println!("{}% integrity constraints", section_separator);
+		}
+
+		if output_format == crate::output::Format::TPTP
+		{
+			print!("tff(integrity_constraint, axiom, ");
+		}
+
+		print_formula(&integrity_constraint);
+
+		if output_format == crate::output::Format::TPTP
+		{
+			print!(").");
+		}
+
+		println!("");
+
+		section_separator = "\n";
 	}
 
 	Ok(())

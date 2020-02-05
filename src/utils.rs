@@ -52,11 +52,7 @@ pub fn parse_predicate_declaration(input: &str)
 {
 	let mut parts = input.split("/");
 
-	let name = match parts.next()
-	{
-		Some(name) => name.to_string(),
-		None => return Err(crate::Error::new_parse_predicate_declaration()),
-	};
+	let name = parts.next().ok_or(crate::Error::new_parse_predicate_declaration())?;
 
 	use std::str::FromStr;
 
@@ -64,7 +60,7 @@ pub fn parse_predicate_declaration(input: &str)
 	{
 		Some(arity)
 			=> usize::from_str(arity).map_err(|_| crate::Error::new_parse_predicate_declaration())?,
-		None => return Err(crate::Error::new_parse_predicate_declaration()),
+		None => 0,
 	};
 
 	if parts.next().is_some()
@@ -74,7 +70,7 @@ pub fn parse_predicate_declaration(input: &str)
 
 	Ok(std::rc::Rc::new(foliage::PredicateDeclaration
 	{
-		name,
+		name: name.to_string(),
 		arity,
 	}))
 }

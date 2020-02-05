@@ -15,7 +15,7 @@ enum Command
 		#[structopt(long, default_value = "human-readable")]
 		output_format: anthem::output::Format,
 
-		/// Input predicates (examples: p/0, q/2)
+		/// Input predicates (examples: p, q/2)
 		#[structopt(long, parse(try_from_str = anthem::parse_predicate_declaration))]
 		input_predicates: Vec<std::rc::Rc<foliage::PredicateDeclaration>>,
 

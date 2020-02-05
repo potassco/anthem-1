@@ -24,7 +24,7 @@ pub(crate) struct Context
 
 	pub function_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
 	pub predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
-	pub variable_declaration_stack: std::cell::RefCell<foliage::VariableDeclarationStack>,
+	pub variable_declaration_stack: std::cell::RefCell<crate::VariableDeclarationStack>,
 	pub variable_declaration_domains: std::cell::RefCell<VariableDeclarationDomains>,
 	pub variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
 }
@@ -46,7 +46,7 @@ impl Context
 			function_declarations: std::cell::RefCell::new(foliage::FunctionDeclarations::new()),
 			predicate_declarations: std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
 			variable_declaration_stack:
-				std::cell::RefCell::new(foliage::VariableDeclarationStack::new()),
+				std::cell::RefCell::new(crate::VariableDeclarationStack::new()),
 			variable_declaration_domains:
 				std::cell::RefCell::new(VariableDeclarationDomains::new()),
 			variable_declaration_ids: std::cell::RefCell::new(VariableDeclarationIDs::new()),

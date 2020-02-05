@@ -271,7 +271,7 @@ where
 				write!(format, ")")?;
 			}
 
-			write!(format, ")")
+			Ok(())
 		};
 
 		match &self.formula

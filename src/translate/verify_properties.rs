@@ -175,6 +175,7 @@ where
 
 	let predicate_declarations = context.predicate_declarations.borrow();
 	let function_declarations = context.function_declarations.borrow();
+	let input_constant_declaration_domains = context.input_constant_declaration_domains.borrow();
 	let completed_definitions = predicate_declarations.iter()
 		// Don’t perform completion for any input predicate
 		.filter(|x| !context.input_predicate_declarations.borrow().contains(*x))
@@ -245,6 +246,33 @@ where
 					crate::output::tptp::display_function_declaration(function_declaration,
 						&context));
 			}
+		}
+
+		let symbolic_constants = function_declarations.iter().filter(
+			|x| !input_constant_declaration_domains.contains_key(*x));
+
+		let mut last_symbolic_constant: Option<std::rc::Rc<foliage::FunctionDeclaration>> = None;
+
+		for (i, symbolic_constant) in symbolic_constants.enumerate()
+		{
+			// Order axioms are only necessary with two or more symbolic constants
+			if i == 1
+			{
+				println!("% axioms for order of symbolic constants")
+			}
+
+			if symbolic_constant.arity > 0
+			{
+				return Err(crate::Error::new_logic("unexpected n-ary function declaration"));
+			}
+
+			if let Some(last_symbolic_constant) = last_symbolic_constant
+			{
+				println!("tff(symbolic_constant_order, axiom, p__less__({}, {})).",
+					last_symbolic_constant.name, symbolic_constant.name);
+			}
+
+			last_symbolic_constant = Some(std::rc::Rc::clone(symbolic_constant));
 		}
 	}
 

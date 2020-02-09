@@ -333,6 +333,11 @@ where
 
 fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::Error>
 {
+	if !context.variable_declaration_stack.borrow().is_empty()
+	{
+		return Err(crate::Error::new_logic("variable declaration stack in unexpected state"));
+	}
+
 	let head_type = determine_head_type(rule.head(), context)?;
 
 	match &head_type
@@ -396,7 +401,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 				definition_arguments.push(Box::new(translated_head_term));
 			}
 
-			context.variable_declaration_stack.borrow_mut().pop();
+			context.variable_declaration_stack.borrow_mut().pop()?;
 
 			let free_variable_declarations = std::mem::replace(
 				&mut context.variable_declaration_stack.borrow_mut().free_variable_declarations,

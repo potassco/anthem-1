@@ -51,14 +51,20 @@ impl VariableDeclarationStack
 		variable_declaration
 	}
 
+	pub fn is_empty(&self) -> bool
+	{
+		self.free_variable_declarations.is_empty()
+			&& self.bound_variable_declaration_stack.is_empty()
+	}
+
 	pub fn push(&mut self, bound_variable_declarations: std::rc::Rc<foliage::VariableDeclarations>)
 	{
 		self.bound_variable_declaration_stack.push(bound_variable_declarations);
 	}
 
-	pub fn pop(&mut self)
+	pub fn pop(&mut self) -> Result<(), crate::Error>
 	{
-		// TODO: return error instead
-		self.bound_variable_declaration_stack.pop().expect("bound variable is empty, cannot pop last element");
+		self.bound_variable_declaration_stack.pop().map(|_| ())
+			.ok_or(crate::Error::new_logic("variable stack not in expected state"))
 	}
 }

@@ -117,7 +117,7 @@ where
 			Some(definitions) =>
 			{
 				let or_arguments = definitions.definitions.into_iter()
-					.map(|x| existential_closure(x))
+					.map(|x| crate::existential_closure(x))
 					.collect::<Vec<_>>();
 				let or = foliage::Formula::or(or_arguments);
 
@@ -137,7 +137,7 @@ where
 					formula: Box::new(completed_definition),
 				};
 
-				universal_closure(scoped_formula)
+				crate::universal_closure(scoped_formula)
 			},
 			// This predicate has no definitions, so universally falsify it
 			None =>
@@ -168,7 +168,7 @@ where
 					formula: Box::new(not),
 				};
 
-				universal_closure(scoped_formula)
+				crate::universal_closure(scoped_formula)
 			},
 		}
 	};
@@ -446,7 +446,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 				formula: Box::new(formula),
 			};
 
-			let integrity_constraint = universal_closure(scoped_formula);
+			let integrity_constraint = crate::universal_closure(scoped_formula);
 
 			log::debug!("translated integrity constraint: {}",
 				crate::output::human_readable::display_formula(&integrity_constraint, None,
@@ -458,24 +458,4 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 	}
 
 	Ok(())
-}
-
-fn existential_closure(scoped_formula: crate::ScopedFormula) -> Box<foliage::Formula>
-{
-	match scoped_formula.free_variable_declarations.is_empty()
-	{
-		true => scoped_formula.formula,
-		false => Box::new(foliage::Formula::exists(scoped_formula.free_variable_declarations,
-			scoped_formula.formula)),
-	}
-}
-
-fn universal_closure(scoped_formula: crate::ScopedFormula) -> Box<foliage::Formula>
-{
-	match scoped_formula.free_variable_declarations.is_empty()
-	{
-		true => scoped_formula.formula,
-		false => Box::new(foliage::Formula::for_all(scoped_formula.free_variable_declarations,
-			scoped_formula.formula)),
-	}
 }

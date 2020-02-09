@@ -44,8 +44,25 @@ pub(crate) struct ScopedFormula
 	pub formula: Box<foliage::Formula>,
 }
 
-pub type InputConstantDeclarationDomains
-	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, Domain>;
+pub(crate) fn existential_closure(scoped_formula: crate::ScopedFormula) -> Box<foliage::Formula>
+{
+	match scoped_formula.free_variable_declarations.is_empty()
+	{
+		true => scoped_formula.formula,
+		false => Box::new(foliage::Formula::exists(scoped_formula.free_variable_declarations,
+			scoped_formula.formula)),
+	}
+}
+
+pub(crate) fn universal_closure(scoped_formula: crate::ScopedFormula) -> Box<foliage::Formula>
+{
+	match scoped_formula.free_variable_declarations.is_empty()
+	{
+		true => scoped_formula.formula,
+		false => Box::new(foliage::Formula::for_all(scoped_formula.free_variable_declarations,
+			scoped_formula.formula)),
+	}
+}
 
 pub fn parse_predicate_declaration(input: &str)
 	-> Result<std::rc::Rc<foliage::PredicateDeclaration>, crate::Error>
@@ -74,6 +91,9 @@ pub fn parse_predicate_declaration(input: &str)
 		arity,
 	}))
 }
+
+pub type InputConstantDeclarationDomains
+	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, Domain>;
 
 pub fn parse_constant_declaration(input: &str)
 	-> Result<(std::rc::Rc<foliage::FunctionDeclaration>, crate::Domain), crate::Error>

@@ -1,8 +1,6 @@
 mod arithmetic_terms;
-mod variable_declaration_stack;
 
 pub(crate) use arithmetic_terms::*;
-pub(crate) use variable_declaration_stack::*;
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) enum OperatorNotation

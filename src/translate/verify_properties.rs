@@ -371,7 +371,8 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 			let definitions = definitions.get_mut(&head_atom.predicate_declaration).unwrap();
 
 			let head_atom_parameters = std::rc::Rc::clone(&definitions.head_atom_parameters);
-			context.variable_declaration_stack.borrow_mut().push(head_atom_parameters);
+			let variable_declaration_stack_guard = foliage::VariableDeclarationStack::push(
+				&context.variable_declaration_stack, head_atom_parameters);
 
 			let mut definition_arguments = translate_body(rule.body(), context)?;
 
@@ -401,7 +402,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 				definition_arguments.push(translated_head_term);
 			}
 
-			context.variable_declaration_stack.borrow_mut().pop()?;
+			drop(variable_declaration_stack_guard);
 
 			let free_variable_declarations = std::mem::replace(
 				&mut context.variable_declaration_stack.borrow_mut().free_variable_declarations,

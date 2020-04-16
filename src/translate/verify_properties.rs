@@ -105,7 +105,7 @@ where
 		for definition in definitions.definitions.iter()
 		{
 			log::debug!("definition({}/{}): {}.", predicate_declaration.name, predicate_declaration.arity,
-				crate::output::human_readable::display_formula(&definition.formula, None, &context));
+				foliage::format::display_formula(&definition.formula, &context));
 		}
 	}
 
@@ -122,14 +122,14 @@ where
 				let or = foliage::Formula::or(or_arguments);
 
 				let head_arguments = definitions.head_atom_parameters.iter()
-					.map(|x| Box::new(foliage::Term::variable(x)))
+					.map(|x| foliage::Term::variable(std::rc::Rc::clone(x)))
 					.collect::<Vec<_>>();
 
-				let head_predicate = foliage::Formula::predicate(&predicate_declaration,
-					head_arguments);
+				let head_predicate = foliage::Formula::predicate(
+					std::rc::Rc::clone(predicate_declaration), head_arguments);
 
-				let completed_definition = foliage::Formula::if_and_only_if(
-					Box::new(head_predicate), Box::new(or));
+				let completed_definition =
+					foliage::Formula::if_and_only_if(vec![head_predicate, or]);
 
 				let scoped_formula = crate::ScopedFormula
 				{
@@ -154,11 +154,11 @@ where
 					.collect::<Vec<_>>());
 
 				let head_arguments = head_atom_parameters.iter()
-					.map(|x| Box::new(foliage::Term::variable(x)))
+					.map(|x| foliage::Term::variable(std::rc::Rc::clone(x)))
 					.collect();
 
-				let head_predicate = foliage::Formula::predicate(&predicate_declaration,
-					head_arguments);
+				let head_predicate = foliage::Formula::predicate(
+					std::rc::Rc::clone(predicate_declaration), head_arguments);
 
 				let not = foliage::Formula::not(Box::new(head_predicate));
 
@@ -197,7 +197,7 @@ where
 		match output_format
 		{
 			crate::output::Format::HumanReadable => print!("{}",
-				crate::output::human_readable::display_formula(formula, None, &context)),
+				foliage::format::display_formula(formula, &context)),
 			crate::output::Format::TPTP => print!("{}",
 				crate::output::tptp::display_formula(formula, &context)),
 		}
@@ -380,13 +380,13 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 			if let HeadType::ChoiceWithSingleAtom(_) = head_type
 			{
 				let head_arguments = definitions.head_atom_parameters.iter()
-					.map(|x| Box::new(foliage::Term::variable(x)))
+					.map(|x| foliage::Term::variable(std::rc::Rc::clone(x)))
 					.collect::<Vec<_>>();
 
-				let head_predicate = foliage::Formula::predicate(&head_atom.predicate_declaration,
-					head_arguments);
+				let head_predicate = foliage::Formula::predicate(
+					std::rc::Rc::clone(&head_atom.predicate_declaration), head_arguments);
 
-				definition_arguments.push(Box::new(head_predicate));
+				definition_arguments.push(head_predicate);
 			}
 
 			let mut head_atom_arguments_iterator = head_atom.arguments.iter();
@@ -396,9 +396,9 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 				let head_atom_argument = head_atom_arguments_iterator.next().unwrap();
 
 				let translated_head_term = crate::translate::common::choose_value_in_term(
-					head_atom_argument, head_atom_parameter, context)?;
+					head_atom_argument, std::rc::Rc::clone(head_atom_parameter), context)?;
 
-				definition_arguments.push(Box::new(translated_head_term));
+				definition_arguments.push(translated_head_term);
 			}
 
 			context.variable_declaration_stack.borrow_mut().pop()?;
@@ -410,18 +410,18 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 			let definition = match definition_arguments.len()
 			{
 				1 => definition_arguments.pop().unwrap(),
-				0 => Box::new(foliage::Formula::true_()),
-				_ => Box::new(foliage::Formula::and(definition_arguments)),
+				0 => foliage::Formula::true_(),
+				_ => foliage::Formula::and(definition_arguments),
 			};
 
 			let definition = crate::ScopedFormula
 			{
 				free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
-				formula: definition,
+				formula: Box::new(definition),
 			};
 
 			log::debug!("translated rule with single atom in head: {}",
-				crate::output::human_readable::display_formula(&definition.formula, None, context));
+				foliage::format::display_formula(&definition.formula, context));
 
 			definitions.definitions.push(definition);
 		},
@@ -435,7 +435,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 
 			let formula = match arguments.len()
 			{
-				1 => foliage::Formula::not(arguments.pop().unwrap()),
+				1 => foliage::Formula::not(Box::new(arguments.pop().unwrap())),
 				0 => foliage::Formula::false_(),
 				_ => foliage::Formula::not(Box::new(foliage::Formula::and(arguments))),
 			};
@@ -449,8 +449,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 			let integrity_constraint = crate::universal_closure(scoped_formula);
 
 			log::debug!("translated integrity constraint: {}",
-				crate::output::human_readable::display_formula(&integrity_constraint, None,
-					context));
+				foliage::format::display_formula(&integrity_constraint, context));
 
 			context.integrity_constraints.borrow_mut().push(integrity_constraint);
 		},

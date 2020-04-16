@@ -44,23 +44,23 @@ pub(crate) struct ScopedFormula
 	pub formula: Box<foliage::Formula>,
 }
 
-pub(crate) fn existential_closure(scoped_formula: crate::ScopedFormula) -> Box<foliage::Formula>
+pub(crate) fn existential_closure(scoped_formula: crate::ScopedFormula) -> foliage::Formula
 {
 	match scoped_formula.free_variable_declarations.is_empty()
 	{
-		true => scoped_formula.formula,
-		false => Box::new(foliage::Formula::exists(scoped_formula.free_variable_declarations,
-			scoped_formula.formula)),
+		true => *scoped_formula.formula,
+		false => foliage::Formula::exists(scoped_formula.free_variable_declarations,
+			scoped_formula.formula),
 	}
 }
 
-pub(crate) fn universal_closure(scoped_formula: crate::ScopedFormula) -> Box<foliage::Formula>
+pub(crate) fn universal_closure(scoped_formula: crate::ScopedFormula) -> foliage::Formula
 {
 	match scoped_formula.free_variable_declarations.is_empty()
 	{
-		true => scoped_formula.formula,
-		false => Box::new(foliage::Formula::for_all(scoped_formula.free_variable_declarations,
-			scoped_formula.formula)),
+		true => *scoped_formula.formula,
+		false => foliage::Formula::for_all(scoped_formula.free_variable_declarations,
+			scoped_formula.formula),
 	}
 }
 

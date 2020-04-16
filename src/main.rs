@@ -5,6 +5,7 @@ use structopt::StructOpt as _;
 enum Command
 {
 	#[structopt(about = "Verifies a logic program against a specification")]
+	#[structopt(aliases = &["verify-specification", "verify-spec", "vspec"])]
 	VerifyProgram
 	{
 		/// ASP input program (one or multiple files)

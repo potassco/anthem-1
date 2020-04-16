@@ -456,12 +456,43 @@ where
 
 				write!(format, ")")?;
 			},
-			foliage::Formula::Implies(foliage::Implies{antecedent, implication})
+			foliage::Formula::Implies(foliage::Implies{antecedent, implication, ..})
 				=> write!(format, "({:?} => {:?})", display_formula(antecedent),
 					display_formula(implication))?,
-			foliage::Formula::IfAndOnlyIf(foliage::IfAndOnlyIf{left, right})
-				=> write!(format, "({:?} <=> {:?})", display_formula(left),
-					display_formula(right))?,
+			foliage::Formula::IfAndOnlyIf(arguments) => match arguments.len()
+			{
+				0 => write!(format, "$true")?,
+				_ =>
+				{
+					let mut separator = "";
+					let parentheses_required = arguments.len() > 2;
+
+					let mut argument_iterator = arguments.iter().peekable();
+
+					while let Some(argument) = argument_iterator.next()
+					{
+						if let Some(next_argument) = argument_iterator.peek()
+						{
+							write!(format, "{}", separator)?;
+
+							if parentheses_required
+							{
+								write!(format, "(")?;
+							}
+
+							write!(format, "{:?} <=> {:?}", display_formula(argument),
+								display_formula(next_argument))?;
+
+							if parentheses_required
+							{
+								write!(format, ")")?;
+							}
+
+							separator = " & ";
+						}
+					}
+				},
+			},
 			foliage::Formula::Compare(
 				foliage::Compare{operator: foliage::ComparisonOperator::Less, left, right})
 				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$less",

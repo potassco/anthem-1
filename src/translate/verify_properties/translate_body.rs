@@ -30,10 +30,10 @@ where
 	let parameters = std::rc::Rc::new(parameters);
 
 	let predicate_arguments = parameters.iter().map(
-		|parameter| Box::new(foliage::Term::variable(parameter)))
+		|parameter| foliage::Term::variable(std::rc::Rc::clone(parameter)))
 		.collect::<Vec<_>>();
 
-	let predicate = foliage::Formula::predicate(&predicate_declaration, predicate_arguments);
+	let predicate = foliage::Formula::predicate(predicate_declaration, predicate_arguments);
 
 	let predicate_literal = match sign
 	{
@@ -53,12 +53,11 @@ where
 
 	let mut parameters_iterator = parameters.iter();
 	let mut arguments = function.arguments().iter().map(
-		|x| crate::translate::common::choose_value_in_term(x, &parameters_iterator.next().unwrap(),
-			context)
-			.map(|x| Box::new(x)))
+		|x| crate::translate::common::choose_value_in_term(x,
+			std::rc::Rc::clone(&parameters_iterator.next().unwrap()), context))
 		.collect::<Result<Vec<_>, _>>()?;
 
-	arguments.push(Box::new(predicate_literal));
+	arguments.push(predicate_literal);
 
 	let and = foliage::Formula::and(arguments);
 
@@ -120,12 +119,12 @@ where
 			let parameter_z2 = &parameters_iterator.next().unwrap();
 
 			let choose_z1_in_t1 = crate::translate::common::choose_value_in_term(comparison.left(),
-				parameter_z1, context)?;
+				std::rc::Rc::clone(parameter_z1), context)?;
 			let choose_z2_in_t2 = crate::translate::common::choose_value_in_term(comparison.right(),
-				parameter_z2, context)?;
+				std::rc::Rc::clone(parameter_z2), context)?;
 
-			let variable_1 = foliage::Term::variable(parameter_z1);
-			let variable_2 = foliage::Term::variable(parameter_z2);
+			let variable_1 = foliage::Term::variable(std::rc::Rc::clone(parameter_z1));
+			let variable_2 = foliage::Term::variable(std::rc::Rc::clone(parameter_z2));
 
 			let operator = crate::translate::common::translate_comparison_operator(
 				comparison.comparison_type());
@@ -133,8 +132,8 @@ where
 			let compare_z1_and_z2 = foliage::Formula::compare(operator, Box::new(variable_1),
 				Box::new(variable_2));
 
-			let and = foliage::Formula::and(vec![Box::new(choose_z1_in_t1),
-				Box::new(choose_z2_in_t2), Box::new(compare_z1_and_z2)]);
+			let and =
+				foliage::Formula::and(vec![choose_z1_in_t1, choose_z2_in_t2, compare_z1_and_z2]);
 
 			Ok(foliage::Formula::exists(parameters, Box::new(and)))
 		},
@@ -153,7 +152,6 @@ where
 		+ crate::traits::AssignVariableDeclarationDomain
 {
 	body_literals.iter()
-		.map(|body_literal| translate_body_literal(body_literal, context)
-			.map(|value| Box::new(value)))
+		.map(|body_literal| translate_body_literal(body_literal, context))
 		.collect::<Result<foliage::Formulas, crate::Error>>()
 }

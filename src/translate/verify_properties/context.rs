@@ -208,3 +208,14 @@ impl crate::traits::VariableDeclarationID for Context
 		}
 	}
 }
+
+impl foliage::format::Format for Context
+{
+	fn display_variable_declaration(&self, formatter: &mut std::fmt::Formatter,
+		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
+		-> std::fmt::Result
+	{
+		crate::output::human_readable::display_variable_declaration(self, formatter,
+			variable_declaration)
+	}
+}

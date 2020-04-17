@@ -21,15 +21,3 @@ pub(crate) trait VariableDeclarationID
 	fn variable_declaration_id(&self,
 		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>) -> usize;
 }
-
-pub(crate) trait GetOrCreateFunctionDeclaration
-{
-	fn get_or_create_function_declaration(&self, name: &str, arity: usize)
-		-> std::rc::Rc<foliage::FunctionDeclaration>;
-}
-
-pub(crate) trait GetOrCreatePredicateDeclaration
-{
-	fn get_or_create_predicate_declaration(&self, name: &str, arity: usize)
-		-> std::rc::Rc<foliage::PredicateDeclaration>;
-}

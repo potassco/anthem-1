@@ -12,7 +12,7 @@ pub(crate) fn choose_value_in_term<C>(term: &clingo::ast::Term,
 	variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formula, crate::Error>
 where
-	C: crate::traits::GetOrCreateFunctionDeclaration
+	C: foliage::FindOrCreateFunctionDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
 	match term.term_type()
@@ -50,7 +50,7 @@ where
 					.map_err(|error| crate::Error::new_logic("clingo error").with(error))?;
 
 				let constant_declaration =
-					context.get_or_create_function_declaration(constant_name, 0);
+					context.find_or_create_function_declaration(constant_name, 0);
 				let function = foliage::Term::function(constant_declaration, vec![]);
 
 				Ok(choose_value_in_primitive(Box::new(function), variable_declaration))

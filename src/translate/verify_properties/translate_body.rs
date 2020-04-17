@@ -2,8 +2,8 @@ pub(crate) fn translate_body_term<C>(body_term: &clingo::ast::Term, sign: clingo
 	context: &C, variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formula, crate::Error>
 where
-	C: crate::traits::GetOrCreateFunctionDeclaration
-		+ crate::traits::GetOrCreatePredicateDeclaration
+	C: foliage::FindOrCreateFunctionDeclaration
+		+ foliage::FindOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
 	let function = match body_term.term_type()
@@ -14,7 +14,7 @@ where
 
 	let function_name = function.name().map_err(|error| crate::Error::new_decode_identifier(error))?;
 
-	let predicate_declaration = context.get_or_create_predicate_declaration(function_name,
+	let predicate_declaration = context.find_or_create_predicate_declaration(function_name,
 		function.arguments().len());
 
 	let parameters = function.arguments().iter().map(|_|
@@ -68,8 +68,8 @@ pub(crate) fn translate_body_literal<C>(body_literal: &clingo::ast::BodyLiteral,
 	context: &C, variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formula, crate::Error>
 where
-	C: crate::traits::GetOrCreateFunctionDeclaration
-		+ crate::traits::GetOrCreatePredicateDeclaration
+	C: foliage::FindOrCreateFunctionDeclaration
+		+ foliage::FindOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
 	match body_literal.sign()
@@ -145,8 +145,8 @@ pub(crate) fn translate_body<C>(body_literals: &[clingo::ast::BodyLiteral], cont
 	variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formulas, crate::Error>
 where
-	C: crate::traits::GetOrCreateFunctionDeclaration
-		+ crate::traits::GetOrCreatePredicateDeclaration
+	C: foliage::FindOrCreateFunctionDeclaration
+		+ foliage::FindOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
 	body_literals.iter()

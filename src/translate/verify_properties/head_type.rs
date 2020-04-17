@@ -15,14 +15,14 @@ pub(crate) enum HeadType<'a>
 pub(crate) fn determine_head_type<'a, C>(head_literal: &'a clingo::ast::HeadLiteral, context: &C)
 	-> Result<HeadType<'a>, crate::Error>
 where
-	C: crate::traits::GetOrCreatePredicateDeclaration
+	C: foliage::FindOrCreatePredicateDeclaration
 {
 	let create_head_atom = |function: &'a clingo::ast::Function| -> Result<_, crate::Error>
 	{
 		let function_name = function.name()
 			.map_err(|error| crate::Error::new_decode_identifier(error))?;
 
-		let predicate_declaration = context.get_or_create_predicate_declaration(function_name,
+		let predicate_declaration = context.find_or_create_predicate_declaration(function_name,
 			function.arguments().len());
 
 		Ok(HeadAtom

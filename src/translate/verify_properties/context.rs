@@ -66,9 +66,9 @@ impl crate::traits::InputConstantDeclarationDomain for Context
 	}
 }
 
-impl crate::traits::GetOrCreateFunctionDeclaration for Context
+impl foliage::FindOrCreateFunctionDeclaration for Context
 {
-	fn get_or_create_function_declaration(&self, name: &str, arity: usize)
+	fn find_or_create_function_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<foliage::FunctionDeclaration>
 	{
 		let mut function_declarations = self.function_declarations.borrow_mut();
@@ -92,9 +92,9 @@ impl crate::traits::GetOrCreateFunctionDeclaration for Context
 	}
 }
 
-impl crate::traits::GetOrCreatePredicateDeclaration for Context
+impl foliage::FindOrCreatePredicateDeclaration for Context
 {
-	fn get_or_create_predicate_declaration(&self, name: &str, arity: usize)
+	fn find_or_create_predicate_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<foliage::PredicateDeclaration>
 	{
 		let mut predicate_declarations = self.predicate_declarations.borrow_mut();

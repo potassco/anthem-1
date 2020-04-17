@@ -333,11 +333,6 @@ where
 
 fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::Error>
 {
-	if !context.variable_declaration_stack.borrow().is_empty()
-	{
-		return Err(crate::Error::new_logic("variable declaration stack in unexpected state"));
-	}
-
 	let head_type = determine_head_type(rule.head(), context)?;
 
 	match &head_type
@@ -371,10 +366,14 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 			let definitions = definitions.get_mut(&head_atom.predicate_declaration).unwrap();
 
 			let head_atom_parameters = std::rc::Rc::clone(&definitions.head_atom_parameters);
-			let variable_declaration_stack_guard = foliage::VariableDeclarationStack::push(
-				&context.variable_declaration_stack, head_atom_parameters);
+			let free_variable_declarations = std::cell::RefCell::new(vec![]);
+			let free_layer =
+				foliage::VariableDeclarationStackLayer::Free(free_variable_declarations);
+			let head_atom_parameters_layer = foliage::VariableDeclarationStackLayer::bound(
+				&free_layer, head_atom_parameters);
 
-			let mut definition_arguments = translate_body(rule.body(), context)?;
+			let mut definition_arguments = translate_body(rule.body(), context,
+				&head_atom_parameters_layer)?;
 
 			assert_eq!(definitions.head_atom_parameters.len(), head_atom.arguments.len());
 
@@ -397,16 +396,19 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 				let head_atom_argument = head_atom_arguments_iterator.next().unwrap();
 
 				let translated_head_term = crate::translate::common::choose_value_in_term(
-					head_atom_argument, std::rc::Rc::clone(head_atom_parameter), context)?;
+					head_atom_argument, std::rc::Rc::clone(head_atom_parameter), context,
+					&head_atom_parameters_layer)?;
 
 				definition_arguments.push(translated_head_term);
 			}
 
-			drop(variable_declaration_stack_guard);
-
-			let free_variable_declarations = std::mem::replace(
-				&mut context.variable_declaration_stack.borrow_mut().free_variable_declarations,
-				vec![]);
+			// TODO: refactor
+			let free_variable_declarations = match free_layer
+			{
+				foliage::VariableDeclarationStackLayer::Free(free_variable_declarations)
+					=> free_variable_declarations.into_inner(),
+				_ => unreachable!(),
+			};
 
 			let definition = match definition_arguments.len()
 			{
@@ -428,11 +430,19 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 		},
 		HeadType::IntegrityConstraint =>
 		{
-			let mut arguments = translate_body(rule.body(), context)?;
+			let free_variable_declarations = std::cell::RefCell::new(vec![]);
+			let free_layer =
+				foliage::VariableDeclarationStackLayer::Free(free_variable_declarations);
 
-			let free_variable_declarations = std::mem::replace(
-				&mut context.variable_declaration_stack.borrow_mut().free_variable_declarations,
-				vec![]);
+			let mut arguments = translate_body(rule.body(), context, &free_layer)?;
+
+			// TODO: refactor
+			let free_variable_declarations = match free_layer
+			{
+				foliage::VariableDeclarationStackLayer::Free(free_variable_declarations)
+					=> free_variable_declarations.into_inner(),
+				_ => unreachable!(),
+			};
 
 			let formula = match arguments.len()
 			{

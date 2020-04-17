@@ -33,9 +33,3 @@ pub(crate) trait GetOrCreatePredicateDeclaration
 	fn get_or_create_predicate_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<foliage::PredicateDeclaration>;
 }
-
-pub(crate) trait GetOrCreateVariableDeclaration
-{
-	fn get_or_create_variable_declaration(&self, name: &str)
-		-> std::rc::Rc<foliage::VariableDeclaration>;
-}

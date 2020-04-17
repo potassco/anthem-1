@@ -1,9 +1,8 @@
 pub(crate) fn translate_body_term<C>(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
-	context: &C)
+	context: &C, variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formula, crate::Error>
 where
-	C: crate::traits::GetOrCreateVariableDeclaration
-		+ crate::traits::GetOrCreateFunctionDeclaration
+	C: crate::traits::GetOrCreateFunctionDeclaration
 		+ crate::traits::GetOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
@@ -54,7 +53,8 @@ where
 	let mut parameters_iterator = parameters.iter();
 	let mut arguments = function.arguments().iter().map(
 		|x| crate::translate::common::choose_value_in_term(x,
-			std::rc::Rc::clone(&parameters_iterator.next().unwrap()), context))
+			std::rc::Rc::clone(&parameters_iterator.next().unwrap()), context,
+			variable_declaration_stack))
 		.collect::<Result<Vec<_>, _>>()?;
 
 	arguments.push(predicate_literal);
@@ -65,11 +65,10 @@ where
 }
 
 pub(crate) fn translate_body_literal<C>(body_literal: &clingo::ast::BodyLiteral,
-	context: &C)
+	context: &C, variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formula, crate::Error>
 where
-	C: crate::traits::GetOrCreateVariableDeclaration
-		+ crate::traits::GetOrCreateFunctionDeclaration
+	C: crate::traits::GetOrCreateFunctionDeclaration
 		+ crate::traits::GetOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
@@ -100,7 +99,7 @@ where
 			Ok(foliage::Formula::Boolean(value))
 		},
 		clingo::ast::LiteralType::Symbolic(term) => translate_body_term(term, literal.sign(),
-			context),
+			context, variable_declaration_stack),
 		clingo::ast::LiteralType::Comparison(comparison) =>
 		{
 			let parameters = (0..2).map(|_|
@@ -119,9 +118,9 @@ where
 			let parameter_z2 = &parameters_iterator.next().unwrap();
 
 			let choose_z1_in_t1 = crate::translate::common::choose_value_in_term(comparison.left(),
-				std::rc::Rc::clone(parameter_z1), context)?;
+				std::rc::Rc::clone(parameter_z1), context, variable_declaration_stack)?;
 			let choose_z2_in_t2 = crate::translate::common::choose_value_in_term(comparison.right(),
-				std::rc::Rc::clone(parameter_z2), context)?;
+				std::rc::Rc::clone(parameter_z2), context, variable_declaration_stack)?;
 
 			let variable_1 = foliage::Term::variable(std::rc::Rc::clone(parameter_z1));
 			let variable_2 = foliage::Term::variable(std::rc::Rc::clone(parameter_z2));
@@ -142,16 +141,16 @@ where
 	}
 }
 
-pub(crate) fn translate_body<C>(body_literals: &[clingo::ast::BodyLiteral],
-	context: &C)
+pub(crate) fn translate_body<C>(body_literals: &[clingo::ast::BodyLiteral], context: &C,
+	variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formulas, crate::Error>
 where
-	C: crate::traits::GetOrCreateVariableDeclaration
-		+ crate::traits::GetOrCreateFunctionDeclaration
+	C: crate::traits::GetOrCreateFunctionDeclaration
 		+ crate::traits::GetOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
 	body_literals.iter()
-		.map(|body_literal| translate_body_literal(body_literal, context))
+		.map(|body_literal| translate_body_literal(body_literal, context,
+			variable_declaration_stack))
 		.collect::<Result<foliage::Formulas, crate::Error>>()
 }

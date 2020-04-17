@@ -22,7 +22,6 @@ pub(crate) struct Context
 
 	pub function_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
 	pub predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
-	pub variable_declaration_stack: std::cell::RefCell<foliage::VariableDeclarationStack>,
 	pub variable_declaration_domains: std::cell::RefCell<VariableDeclarationDomains>,
 	pub program_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
 	pub integer_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
@@ -44,8 +43,6 @@ impl Context
 
 			function_declarations: std::cell::RefCell::new(foliage::FunctionDeclarations::new()),
 			predicate_declarations: std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
-			variable_declaration_stack:
-				std::cell::RefCell::new(foliage::VariableDeclarationStack::new()),
 			variable_declaration_domains:
 				std::cell::RefCell::new(VariableDeclarationDomains::new()),
 			program_variable_declaration_ids:
@@ -118,29 +115,6 @@ impl crate::traits::GetOrCreatePredicateDeclaration for Context
 				declaration
 			},
 		}
-	}
-}
-
-impl crate::traits::GetOrCreateVariableDeclaration for Context
-{
-	fn get_or_create_variable_declaration(&self, name: &str)
-		-> std::rc::Rc<foliage::VariableDeclaration>
-	{
-		let mut variable_declaration_stack = self.variable_declaration_stack.borrow_mut();
-
-		// TODO: check correctness
-		if name == "_"
-		{
-			let variable_declaration = std::rc::Rc::new(foliage::VariableDeclaration::new(
-				"_".to_owned()));
-
-			variable_declaration_stack.free_variable_declarations.push(
-				std::rc::Rc::clone(&variable_declaration));
-
-			return variable_declaration;
-		}
-
-		variable_declaration_stack.find_or_create(name)
 	}
 }
 

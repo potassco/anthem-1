@@ -8,11 +8,11 @@ pub(crate) fn choose_value_in_primitive(term: Box<foliage::Term>,
 }
 
 pub(crate) fn choose_value_in_term<C>(term: &clingo::ast::Term,
-	variable_declaration: std::rc::Rc<foliage::VariableDeclaration>, context: &C)
+	variable_declaration: std::rc::Rc<foliage::VariableDeclaration>, context: &C,
+	variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formula, crate::Error>
 where
 	C: crate::traits::GetOrCreateFunctionDeclaration
-		+ crate::traits::GetOrCreateVariableDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain
 {
 	match term.term_type()
@@ -58,8 +58,23 @@ where
 		},
 		clingo::ast::TermType::Variable(variable_name) =>
 		{
-			let other_variable_declaration = context.get_or_create_variable_declaration(
-				variable_name);
+			let other_variable_declaration = match variable_name
+			{
+				// TODO: check
+				// Every occurrence of anonymous variables is treated as if it introduced a fresh
+				// variable declaration
+				"_" => variable_declaration_stack.free_variable_declarations_do_mut(
+					|free_variable_declarations|
+					{
+						let variable_declaration = std::rc::Rc::new(
+							foliage::VariableDeclaration::new("_".to_owned()));
+
+						free_variable_declarations.push(std::rc::Rc::clone(&variable_declaration));
+
+						variable_declaration
+					}),
+				_ => variable_declaration_stack.find_or_create(variable_name),
+			};
 			context.assign_variable_declaration_domain(&other_variable_declaration,
 				crate::Domain::Program);
 			let other_variable = foliage::Term::variable(other_variable_declaration);
@@ -100,10 +115,12 @@ where
 						Box::new(translated_binary_operation));
 
 					let choose_value_from_left_argument = choose_value_in_term(
-						binary_operation.left(), std::rc::Rc::clone(&parameter_1), context)?;
+						binary_operation.left(), std::rc::Rc::clone(&parameter_1), context,
+						variable_declaration_stack)?;
 
 					let choose_value_from_right_argument = choose_value_in_term(
-						binary_operation.right(), std::rc::Rc::clone(&parameter_2), context)?;
+						binary_operation.right(), std::rc::Rc::clone(&parameter_2), context,
+							variable_declaration_stack)?;
 
 					let and = foliage::Formula::And(vec![equals, choose_value_from_left_argument,
 						choose_value_from_right_argument]);
@@ -142,10 +159,10 @@ where
 						Box::new(j_times_q_plus_r));
 
 					let choose_i_in_t1 = choose_value_in_term(binary_operation.left(),
-						std::rc::Rc::clone(parameter_i), context)?;
+						std::rc::Rc::clone(parameter_i), context, variable_declaration_stack)?;
 
 					let choose_i_in_t2 = choose_value_in_term(binary_operation.left(),
-						std::rc::Rc::clone(parameter_j), context)?;
+						std::rc::Rc::clone(parameter_j), context, variable_declaration_stack)?;
 
 					let j_not_equal_to_0 = foliage::Formula::not_equal(
 						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_j))),
@@ -205,7 +222,8 @@ where
 						Box::new(negative_z_prime));
 
 					let choose_z_prime_in_t_prime = choose_value_in_term(unary_operation.argument(),
-						std::rc::Rc::clone(&parameter_z_prime), context)?;
+						std::rc::Rc::clone(&parameter_z_prime), context,
+						variable_declaration_stack)?;
 
 					let and = foliage::Formula::and(vec![equals, choose_z_prime_in_t_prime]);
 
@@ -234,10 +252,10 @@ where
 			let parameter_k = &parameters[2];
 
 			let choose_i_in_t_1 = choose_value_in_term(interval.left(),
-				std::rc::Rc::clone(parameter_i), context)?;
+				std::rc::Rc::clone(parameter_i), context, variable_declaration_stack)?;
 
 			let choose_j_in_t_2 = choose_value_in_term(interval.right(),
-				std::rc::Rc::clone(parameter_j), context)?;
+				std::rc::Rc::clone(parameter_j), context, variable_declaration_stack)?;
 
 			let i_less_than_or_equal_to_k = foliage::Formula::less_or_equal(
 				Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_i))),

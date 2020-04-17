@@ -5,7 +5,7 @@ authors = ["Patrick Lühne <patrick@luehne.de>"]
 edition = "2018"
 
 [dependencies]
-foliage = {git = "https://github.com/pluehne/foliage", branch = "master"}
+foliage = {git = "https://github.com/pluehne/foliage", branch = "parser"}
 log = "0.4"
 pretty_env_logger = "0.4"
 structopt = "0.3"

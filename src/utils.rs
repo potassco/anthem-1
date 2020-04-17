@@ -39,16 +39,16 @@ impl std::fmt::Display for Domain
 pub(crate) struct ScopedFormula
 {
 	pub free_variable_declarations: std::rc::Rc<foliage::VariableDeclarations>,
-	pub formula: Box<foliage::Formula>,
+	pub formula: foliage::Formula,
 }
 
 pub(crate) fn existential_closure(scoped_formula: crate::ScopedFormula) -> foliage::Formula
 {
 	match scoped_formula.free_variable_declarations.is_empty()
 	{
-		true => *scoped_formula.formula,
+		true => scoped_formula.formula,
 		false => foliage::Formula::exists(scoped_formula.free_variable_declarations,
-			scoped_formula.formula),
+			Box::new(scoped_formula.formula)),
 	}
 }
 
@@ -56,9 +56,9 @@ pub(crate) fn universal_closure(scoped_formula: crate::ScopedFormula) -> foliage
 {
 	match scoped_formula.free_variable_declarations.is_empty()
 	{
-		true => *scoped_formula.formula,
+		true => scoped_formula.formula,
 		false => foliage::Formula::for_all(scoped_formula.free_variable_declarations,
-			scoped_formula.formula),
+			Box::new(scoped_formula.formula)),
 	}
 }
 

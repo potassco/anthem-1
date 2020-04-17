@@ -134,7 +134,7 @@ where
 				let scoped_formula = crate::ScopedFormula
 				{
 					free_variable_declarations: definitions.head_atom_parameters,
-					formula: Box::new(completed_definition),
+					formula: completed_definition,
 				};
 
 				crate::universal_closure(scoped_formula)
@@ -165,7 +165,7 @@ where
 				let scoped_formula = crate::ScopedFormula
 				{
 					free_variable_declarations: head_atom_parameters,
-					formula: Box::new(not),
+					formula: not,
 				};
 
 				crate::universal_closure(scoped_formula)
@@ -420,7 +420,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 			let definition = crate::ScopedFormula
 			{
 				free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
-				formula: Box::new(definition),
+				formula: definition,
 			};
 
 			log::debug!("translated rule with single atom in head: {}",
@@ -454,7 +454,7 @@ fn read_rule(rule: &clingo::ast::Rule, context: &Context) -> Result<(), crate::E
 			let scoped_formula = crate::ScopedFormula
 			{
 				free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
-				formula: Box::new(formula),
+				formula,
 			};
 
 			let integrity_constraint = crate::universal_closure(scoped_formula);

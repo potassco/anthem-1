@@ -24,7 +24,7 @@ enum Command
 
 fn main()
 {
-	pretty_env_logger::init();
+	pretty_env_logger::init_custom_env("ANTHEM_LOG");
 
 	let command = Command::from_args();
 
@@ -36,7 +36,7 @@ fn main()
 			specification_path,
 			output_format,
 		}
-			=> anthem::commands::verify_specification::run(&program_path, &specification_path,
+			=> anthem::commands::verify_program::run(&program_path, &specification_path,
 				output_format),
 	}
 }

@@ -6,6 +6,7 @@ pub enum StatementKind
 	Assertion,
 }
 
+#[derive(Copy, Clone, Eq, PartialEq)]
 enum ProofStatus
 {
 	AssumedProven,
@@ -151,10 +152,86 @@ impl Problem
 
 			drop(statements);
 
-			self.display(crate::output::Format::HumanReadable);
+			self.prove_unproven_statements();
 
 			log::info!("finished forward proof");
 		}
+
+		if proof_direction == crate::ProofDirection::Backward
+			|| proof_direction == crate::ProofDirection::Both
+		{
+			log::info!("performing backward proof");
+
+			let mut statements = self.statements.borrow_mut();
+
+			// Initially reset all proof statuses
+			for (_, statements) in statements.iter_mut()
+			{
+				for statement in statements.iter_mut()
+				{
+					match statement.kind
+					{
+						StatementKind::Axiom
+						| StatementKind::Assertion
+							=> statement.proof_status = ProofStatus::AssumedProven,
+						_ => statement.proof_status = ProofStatus::ToProve,
+					}
+				}
+			}
+
+			drop(statements);
+
+			self.prove_unproven_statements();
+
+			log::info!("finished backward proof");
+		}
+	}
+
+	fn prove_unproven_statements(&self) -> Result<(), crate::Error>
+	{
+		while self.statements.borrow()
+			.iter()
+			.find(|section|
+				section.1.iter().find(|x| x.proof_status == ProofStatus::ToProve).is_some())
+			.is_some()
+		{
+			let mut tptp_problem_to_prove_next_statement = "".to_string();
+
+			self.write_tptp_problem_to_prove_next_statement(
+				&mut tptp_problem_to_prove_next_statement)
+				.map_err(|error| crate::Error::new_write_tptp_program(error))?;
+
+			log::info!("proving program:\n{}", &tptp_problem_to_prove_next_statement);
+
+			// TODO: refactor
+			let mut conjecture_found = false;
+
+			for section in self.statements.borrow_mut().iter_mut()
+			{
+				for statement in section.1.iter_mut()
+				{
+					if statement.proof_status == ProofStatus::ToProve
+					{
+						conjecture_found = true;
+						statement.proof_status = ProofStatus::AssumedProven;
+					}
+
+					if conjecture_found
+					{
+						break;
+					}
+				}
+
+				if conjecture_found
+				{
+					break;
+				}
+			}
+
+			log::info!("program proven!");
+		}
+
+		Ok(())
 	}
 
 	fn display(&self, output_format: crate::output::Format)
@@ -306,7 +383,8 @@ impl Problem
 
 				if output_format == crate::output::Format::TPTP
 				{
-					print!("tff({}, <TODO>, ", name);
+					// TODO: add proper statement type
+					print!("tff({}, axiom, ", name);
 				}
 
 				print_formula(&statement.formula);
@@ -319,6 +397,169 @@ impl Problem
 				println!("");
 			}
 		}
+	}
+
+	fn write_tptp_problem_to_prove_next_statement(&self, formatter: &mut String) -> std::fmt::Result
+	{
+		use std::fmt::Write as _;
+		use std::io::Write as _;
+
+		let format_context = FormatContext
+		{
+			program_variable_declaration_ids:
+				std::cell::RefCell::new(VariableDeclarationIDs::new()),
+			integer_variable_declaration_ids:
+				std::cell::RefCell::new(VariableDeclarationIDs::new()),
+			input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
+			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
+		};
+
+		let write_title = |formatter: &mut String, title, section_separator| -> std::fmt::Result
+		{
+			write!(formatter, "{}{}", section_separator, "%".repeat(72))?;
+			write!(formatter, "\n% {}", title)?;
+			writeln!(formatter, "\n{}", "%".repeat(72))
+		};
+
+		let mut section_separator = "";
+
+		write_title(formatter, "anthem types", section_separator)?;
+		section_separator = "\n";
+
+		let tptp_preamble_anthem_types
+			= include_str!("output/tptp/preamble_types.tptp").trim_end();
+		writeln!(formatter, "{}", tptp_preamble_anthem_types)?;
+
+		write_title(formatter, "anthem axioms", section_separator)?;
+
+		let tptp_preamble_anthem_types
+			= include_str!("output/tptp/preamble_axioms.tptp").trim_end();
+		writeln!(formatter, "{}", tptp_preamble_anthem_types)?;
+
+		if !self.predicate_declarations.borrow().is_empty()
+			|| !self.function_declarations.borrow().is_empty()
+		{
+			write_title(formatter, "types", section_separator)?;
+
+			if !self.predicate_declarations.borrow().is_empty()
+			{
+				writeln!(formatter, "% predicate types")?;
+			}
+
+			for predicate_declaration in self.predicate_declarations.borrow().iter()
+			{
+				writeln!(formatter, "tff(type, type, {}).",
+					crate::output::tptp::display_predicate_declaration(predicate_declaration))?;
+			}
+
+			if !self.function_declarations.borrow().is_empty()
+			{
+				writeln!(formatter, "% function types")?;
+			}
+
+			for function_declaration in self.function_declarations.borrow().iter()
+			{
+				writeln!(formatter, "tff(type, type, {}).",
+					crate::output::tptp::display_function_declaration(function_declaration,
+						&format_context))?;
+			}
+		}
+
+		let function_declarations = self.function_declarations.borrow();
+		let symbolic_constants = function_declarations.iter().filter(
+			|x| !self.input_constant_declaration_domains.borrow().contains_key(*x));
+
+		let mut last_symbolic_constant: Option<std::rc::Rc<foliage::FunctionDeclaration>> =
+			None;
+
+		for (i, symbolic_constant) in symbolic_constants.enumerate()
+		{
+			// Order axioms are only necessary with two or more symbolic constants
+			if i == 1
+			{
+				writeln!(formatter, "% axioms for order of symbolic constants")?;
+			}
+
+			if symbolic_constant.arity > 0
+			{
+				// TODO: refactor
+				unimplemented!("n-ary function declarations aren’t supported");
+			}
+
+			if let Some(last_symbolic_constant) = last_symbolic_constant
+			{
+				writeln!(formatter, "tff(symbolic_constant_order, axiom, p__less__({}, {})).",
+					last_symbolic_constant.name, symbolic_constant.name)?;
+			}
+
+			last_symbolic_constant = Some(std::rc::Rc::clone(symbolic_constant));
+		}
+
+		let mut conjecture_found = false;
+
+		for (section_kind, statements) in self.statements.borrow().iter()
+		{
+			if statements.is_empty()
+			{
+				continue;
+			}
+
+			let title = match section_kind
+			{
+				SectionKind::CompletedDefinitions => "completed definitions",
+				SectionKind::IntegrityConstraints => "integrity constraints",
+				SectionKind::Axioms => "axioms",
+				SectionKind::Assumptions => "assumptions",
+				SectionKind::Lemmas => "lemmas",
+				SectionKind::Assertions => "assertions",
+			};
+
+			write_title(formatter, title, section_separator)?;
+			section_separator = "\n";
+
+			let mut i = 0;
+
+			for statement in statements.iter()
+			{
+				// Only prove one statement at a time
+				if conjecture_found && statement.proof_status == ProofStatus::ToProve
+				{
+					continue;
+				}
+
+				if let Some(ref description) = statement.description
+				{
+					writeln!(formatter, "% {}", description)?;
+				}
+
+				let name = match &statement.name
+				{
+					// TODO: refactor
+					Some(name) => name.clone(),
+					None =>
+					{
+						i += 1;
+						format!("statement_{}", i)
+					},
+				};
+
+				let statement_type = match statement.proof_status
+				{
+					ProofStatus::AssumedProven => "axiom",
+					ProofStatus::ToProve =>
+					{
+						conjecture_found = true;
+						"conjecture"
+					},
+				};
+
+				// TODO: add proper statement type
+				writeln!(formatter, "tff({}, {}, {}).", name, statement_type,
+					crate::output::tptp::display_formula(&statement.formula, &format_context))?;
+			}
+		}
+
+		Ok(())
 	}
 }
 

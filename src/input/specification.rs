@@ -245,6 +245,8 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 						crate::Domain::Program
 					};
 
+				log::debug!("domain: {:?}", domain);
+
 				let mut input_constant_declarations =
 					problem.input_constant_declarations.borrow_mut();
 
@@ -253,7 +255,12 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 				let constant_declaration =
 					problem.find_or_create_function_declaration(constant_or_predicate_name, 0);
 
-				input_constant_declarations.insert(constant_declaration);
+				input_constant_declarations.insert(std::rc::Rc::clone(&constant_declaration));
+
+				let mut input_constant_declaration_domains =
+					problem.input_constant_declaration_domains.borrow_mut();
+
+				input_constant_declaration_domains.insert(constant_declaration, domain);
 
 				let mut input_characters = input.chars();
 

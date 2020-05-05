@@ -20,6 +20,7 @@ pub enum Kind
 	UnknownProofDirection(String),
 	UnknownDomainIdentifier(String),
 	VariableNameNotAllowed(String),
+	WriteTPTPProgram,
 }
 
 pub struct Error
@@ -129,6 +130,11 @@ impl Error
 	{
 		Self::new(Kind::VariableNameNotAllowed(variable_name))
 	}
+
+	pub(crate) fn new_write_tptp_program<S: Into<Source>>(source: S) -> Self
+	{
+		Self::new(Kind::WriteTPTPProgram).with(source)
+	}
 }
 
 impl std::fmt::Debug for Error
@@ -168,6 +174,7 @@ impl std::fmt::Debug for Error
 			Kind::VariableNameNotAllowed(ref variable_name) => write!(formatter,
 				"variable name “{}” not allowed (program variables must start with X, Y, or Z and integer variables with I, J, K, L, M, or N)",
 				variable_name),
+			Kind::WriteTPTPProgram => write!(formatter, "error writing TPTP program"),
 		}?;
 
 		if let Some(source) = &self.source

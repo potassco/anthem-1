@@ -1,4 +1,4 @@
-pub(crate) fn display_variable_declaration<C>(context: &C, formatter: &mut std::fmt::Formatter,
+/*pub(crate) fn display_variable_declaration<C>(context: &C, formatter: &mut std::fmt::Formatter,
 	variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
 	-> std::fmt::Result
 where C:
@@ -15,4 +15,4 @@ where C:
 	};
 
 	write!(formatter, "{}{}", prefix, id + 1)
-}
+}*/

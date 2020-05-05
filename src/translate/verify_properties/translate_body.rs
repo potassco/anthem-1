@@ -1,3 +1,4 @@
+// TODO: rename context
 pub(crate) fn translate_body_term<C>(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
 	context: &C, variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
 	-> Result<foliage::Formula, crate::Error>

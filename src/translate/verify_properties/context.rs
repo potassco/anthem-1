@@ -1,4 +1,4 @@
-pub(crate) struct Definitions
+/*pub(crate) struct Definitions
 {
 	pub head_atom_parameters: std::rc::Rc<foliage::VariableDeclarations>,
 	pub definitions: Vec<crate::ScopedFormula>,
@@ -192,4 +192,4 @@ impl foliage::format::Format for Context
 		crate::output::human_readable::display_variable_declaration(self, formatter,
 			variable_declaration)
 	}
-}
+}*/

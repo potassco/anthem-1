@@ -8,8 +8,18 @@ pub enum Kind
 	DecodeIdentifier,
 	Translate,
 	ReadFile(std::path::PathBuf),
+	ExpectedStatement,
+	ExpectedColon,
+	UnknownStatement(String),
+	UnmatchedParenthesis,
+	MissingStatementTerminator,
+	ParseFormula,
+	ExpectedIdentifier,
 	ParsePredicateDeclaration,
-	ParseConstantDeclaration,
+	//ParseConstantDeclaration,
+	UnknownProofDirection(String),
+	UnknownDomainIdentifier(String),
+	VariableNameNotAllowed(String),
 }
 
 pub struct Error
@@ -65,14 +75,59 @@ impl Error
 		Self::new(Kind::ReadFile(path)).with(source)
 	}
 
+	pub(crate) fn new_expected_statement() -> Self
+	{
+		Self::new(Kind::ExpectedStatement)
+	}
+
+	pub(crate) fn new_expected_colon() -> Self
+	{
+		Self::new(Kind::ExpectedColon)
+	}
+
+	pub(crate) fn new_unknown_statement(statement_name: String) -> Self
+	{
+		Self::new(Kind::UnknownStatement(statement_name))
+	}
+
+	pub(crate) fn new_unmatched_parenthesis() -> Self
+	{
+		Self::new(Kind::UnmatchedParenthesis)
+	}
+
+	pub(crate) fn new_missing_statement_terminator() -> Self
+	{
+		Self::new(Kind::MissingStatementTerminator)
+	}
+
+	pub(crate) fn new_parse_formula<S: Into<Source>>(source: S) -> Self
+	{
+		Self::new(Kind::ParseFormula).with(source)
+	}
+
+	pub(crate) fn new_expected_identifier() -> Self
+	{
+		Self::new(Kind::ExpectedIdentifier)
+	}
+
 	pub(crate) fn new_parse_predicate_declaration() -> Self
 	{
 		Self::new(Kind::ParsePredicateDeclaration)
 	}
 
-	pub(crate) fn new_parse_constant_declaration() -> Self
+	pub(crate) fn new_unknown_proof_direction(proof_direction: String) -> Self
 	{
-		Self::new(Kind::ParseConstantDeclaration)
+		Self::new(Kind::UnknownProofDirection(proof_direction))
+	}
+
+	pub(crate) fn new_unknown_domain_identifier(domain_identifier: String) -> Self
+	{
+		Self::new(Kind::UnknownDomainIdentifier(domain_identifier))
+	}
+
+	pub(crate) fn new_variable_name_not_allowed(variable_name: String) -> Self
+	{
+		Self::new(Kind::VariableNameNotAllowed(variable_name))
 	}
 }
 
@@ -91,10 +146,28 @@ impl std::fmt::Debug for Error
 			Kind::DecodeIdentifier => write!(formatter, "could not decode identifier"),
 			Kind::Translate => write!(formatter, "could not translate input program"),
 			Kind::ReadFile(path) => write!(formatter, "could not read file “{}”", path.display()),
+			Kind::ExpectedStatement => write!(formatter,
+				"expected statement (axiom, assert, assume, input, lemma)"),
+			Kind::ExpectedColon => write!(formatter, "expected ‘:’"),
+			Kind::UnknownStatement(ref statement_name) => write!(formatter,
+				"unknown statement “{}” (allowed: axiom, assert, assume, input, lemma)",
+				statement_name),
+			Kind::UnmatchedParenthesis => write!(formatter, "unmatched parenthesis"),
 			Kind::ParsePredicateDeclaration => write!(formatter,
 				"could not parse predicate declaration"),
-			Kind::ParseConstantDeclaration => write!(formatter,
-				"could not parse constant declaration"),
+			Kind::ParseFormula => write!(formatter, "could not parse formula"),
+			Kind::ExpectedIdentifier => write!(formatter, "expected constant or predicate name"),
+			Kind::ParsePredicateDeclaration => write!(formatter,
+				"could not parse predicate declaration"),
+			Kind::MissingStatementTerminator => write!(formatter,
+				"statement not terminated with ‘.’ character"),
+			Kind::UnknownProofDirection(ref proof_direction) => write!(formatter,
+				"unknown proof direction “{}” (allowed: integer, program)", proof_direction),
+			Kind::UnknownDomainIdentifier(ref domain_identifier) => write!(formatter,
+				"unknown domain identifier “{}” (allowed: int, program)", domain_identifier),
+			Kind::VariableNameNotAllowed(ref variable_name) => write!(formatter,
+				"variable name “{}” not allowed (program variables must start with X, Y, or Z and integer variables with I, J, K, L, M, or N)",
+				variable_name),
 		}?;
 
 		if let Some(source) = &self.source

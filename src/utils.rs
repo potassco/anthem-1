@@ -36,6 +36,14 @@ impl std::fmt::Display for Domain
 	}
 }
 
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub enum ProofDirection
+{
+	Forward,
+	Backward,
+	Both,
+}
+
 pub(crate) struct ScopedFormula
 {
 	pub free_variable_declarations: std::rc::Rc<foliage::VariableDeclarations>,
@@ -62,7 +70,7 @@ pub(crate) fn universal_closure(scoped_formula: crate::ScopedFormula) -> foliage
 	}
 }
 
-pub fn parse_predicate_declaration(input: &str)
+/*pub fn parse_predicate_declaration(input: &str)
 	-> Result<std::rc::Rc<foliage::PredicateDeclaration>, crate::Error>
 {
 	let mut parts = input.split("/");
@@ -88,12 +96,12 @@ pub fn parse_predicate_declaration(input: &str)
 		name: name.to_string(),
 		arity,
 	}))
-}
+}*/
 
 pub type InputConstantDeclarationDomains
 	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, Domain>;
 
-pub fn parse_constant_declaration(input: &str)
+/*pub fn parse_constant_declaration(input: &str)
 	-> Result<(std::rc::Rc<foliage::FunctionDeclaration>, crate::Domain), crate::Error>
 {
 	let mut parts = input.split(":");
@@ -123,4 +131,4 @@ pub fn parse_constant_declaration(input: &str)
 	});
 
 	Ok((constant_declaration, domain))
-}
+}*/

@@ -321,6 +321,7 @@ where
 		+ crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
+	// TODO: rename format to formatter
 	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		let display_variable_declaration = |variable_declaration|
@@ -400,7 +401,7 @@ where
 					separator = ", "
 				}
 
-				write!(format, "]: {:?}", display_formula(&exists.argument))?;
+				write!(format, "]: ({:?})", display_formula(&exists.argument))?;
 			},
 			foliage::Formula::ForAll(for_all) =>
 			{
@@ -419,7 +420,7 @@ where
 					separator = ", "
 				}
 
-				write!(format, "]: {:?}", display_formula(&for_all.argument))?;
+				write!(format, "]: ({:?})", display_formula(&for_all.argument))?;
 			},
 			foliage::Formula::Not(argument) => write!(format, "~{:?}", display_formula(argument))?,
 			foliage::Formula::And(arguments) =>
@@ -529,7 +530,17 @@ where
 
 					for argument in &predicate.arguments
 					{
-						write!(format, "{}{:?}", separator, display_term(argument))?;
+						write!(format, "{}", separator)?;
+
+						let is_argument_arithmetic =
+							crate::is_term_arithmetic(argument, self.context)
+								.expect("could not determine whether term is arithmetic");
+
+						match is_argument_arithmetic
+						{
+							true => write!(format, "f__integer__({})", display_term(argument))?,
+							false => write!(format, "{}", display_term(argument))?,
+						}
 
 						separator = ", "
 					}

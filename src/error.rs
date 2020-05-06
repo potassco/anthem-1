@@ -21,6 +21,10 @@ pub enum Kind
 	UnknownDomainIdentifier(String),
 	VariableNameNotAllowed(String),
 	WriteTPTPProgram,
+	RunVampire,
+	// TODO: rename to something Vampire-specific
+	ProveProgram(Option<i32>, String, String),
+	ParseVampireOutput(String, String),
 }
 
 pub struct Error
@@ -135,6 +139,21 @@ impl Error
 	{
 		Self::new(Kind::WriteTPTPProgram).with(source)
 	}
+
+	pub(crate) fn new_run_vampire<S: Into<Source>>(source: S) -> Self
+	{
+		Self::new(Kind::RunVampire).with(source)
+	}
+
+	pub(crate) fn new_prove_program(exit_code: Option<i32>, stdout: String, stderr: String) -> Self
+	{
+		Self::new(Kind::ProveProgram(exit_code, stdout, stderr))
+	}
+
+	pub(crate) fn new_parse_vampire_output(stdout: String, stderr: String) -> Self
+	{
+		Self::new(Kind::ParseVampireOutput(stdout, stderr))
+	}
 }
 
 impl std::fmt::Debug for Error
@@ -175,6 +194,28 @@ impl std::fmt::Debug for Error
 				"variable name “{}” not allowed (program variables must start with X, Y, or Z and integer variables with I, J, K, L, M, or N)",
 				variable_name),
 			Kind::WriteTPTPProgram => write!(formatter, "error writing TPTP program"),
+			Kind::RunVampire => write!(formatter, "could not run Vampire"),
+			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>
+			{
+				let exit_code_output = match exit_code
+				{
+					None => "no exit code".to_string(),
+					Some(exit_code) => format!("exit code: {}", exit_code),
+				};
+
+				write!(formatter,
+					"error proving program ({})\n\
+					==== stdout ===========================================================\n\
+					{}\
+					==== stderr ===========================================================\n\
+					{}", exit_code_output, stdout, stderr)
+			},
+			Kind::ParseVampireOutput(ref stdout, ref stderr) => write!(formatter,
+				"could not parse Vampire output\n\
+				==== stdout ===========================================================\n\
+				{}\
+				==== stderr ===========================================================\n\
+				{}", stdout, stderr),
 		}?;
 
 		if let Some(source) = &self.source

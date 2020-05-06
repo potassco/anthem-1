@@ -1,3 +1,4 @@
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum StatementKind
 {
 	Axiom,
@@ -10,9 +11,12 @@ pub enum StatementKind
 enum ProofStatus
 {
 	AssumedProven,
-	ToProve,
+	ToProveNow,
+	ToProveLater,
+	Ignored,
 }
 
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ProofResult
 {
 	Proven,
@@ -50,7 +54,7 @@ impl Statement
 			name: None,
 			description: None,
 			formula,
-			proof_status: ProofStatus::ToProve,
+			proof_status: ProofStatus::ToProveLater,
 		}
 	}
 
@@ -126,7 +130,7 @@ impl Problem
 		section.push(statement);
 	}
 
-	pub fn prove(&self, proof_direction: crate::ProofDirection)
+	pub fn prove(&self, proof_direction: crate::ProofDirection) -> Result<(), crate::Error>
 	{
 		if proof_direction == crate::ProofDirection::Forward
 			|| proof_direction == crate::ProofDirection::Both
@@ -145,14 +149,16 @@ impl Problem
 						StatementKind::Axiom
 						| StatementKind::Assumption
 							=> statement.proof_status = ProofStatus::AssumedProven,
-						_ => statement.proof_status = ProofStatus::ToProve,
+						StatementKind::Lemma(crate::ProofDirection::Backward)
+							=> statement.proof_status = ProofStatus::Ignored,
+						_ => statement.proof_status = ProofStatus::ToProveLater,
 					}
 				}
 			}
 
 			drop(statements);
 
-			self.prove_unproven_statements();
+			self.prove_unproven_statements()?;
 
 			log::info!("finished forward proof");
 		}
@@ -174,61 +180,111 @@ impl Problem
 						StatementKind::Axiom
 						| StatementKind::Assertion
 							=> statement.proof_status = ProofStatus::AssumedProven,
-						_ => statement.proof_status = ProofStatus::ToProve,
+						StatementKind::Lemma(crate::ProofDirection::Forward)
+							=> statement.proof_status = ProofStatus::Ignored,
+						_ => statement.proof_status = ProofStatus::ToProveLater,
 					}
 				}
 			}
 
 			drop(statements);
 
-			self.prove_unproven_statements();
+			self.prove_unproven_statements()?;
 
 			log::info!("finished backward proof");
 		}
+
+		Ok(())
+	}
+
+	fn next_unproven_statement_do_mut<F, G>(&self, mut functor: F) -> Option<G>
+	where
+		F: FnMut(SectionKind, &mut Statement) -> G,
+	{
+		for section in self.statements.borrow_mut().iter_mut()
+		{
+			for statement in section.1.iter_mut()
+			{
+				if statement.proof_status == ProofStatus::ToProveNow
+					|| statement.proof_status == ProofStatus::ToProveLater
+				{
+					return Some(functor(*section.0, statement));
+				}
+			}
+		}
+
+		None
 	}
 
 	fn prove_unproven_statements(&self) -> Result<(), crate::Error>
 	{
-		while self.statements.borrow()
-			.iter()
-			.find(|section|
-				section.1.iter().find(|x| x.proof_status == ProofStatus::ToProve).is_some())
-			.is_some()
+		loop
 		{
+			match self.next_unproven_statement_do_mut(
+				|section_kind, statement|
+				{
+					statement.proof_status = ProofStatus::ToProveNow;
+
+					let statement_type_output = match section_kind
+					{
+						SectionKind::CompletedDefinitions => "completed definition",
+						SectionKind::IntegrityConstraints => "integrity constraint",
+						SectionKind::Axioms => "axiom",
+						SectionKind::Assumptions => "assumption",
+						SectionKind::Lemmas => "lemma",
+						SectionKind::Assertions => "assertion",
+					};
+
+					println!("verifying {}: {}", statement_type_output, statement.formula);
+				})
+			{
+				Some(_) => (),
+				None => break,
+			}
+
 			let mut tptp_problem_to_prove_next_statement = "".to_string();
 
 			self.write_tptp_problem_to_prove_next_statement(
 				&mut tptp_problem_to_prove_next_statement)
 				.map_err(|error| crate::Error::new_write_tptp_program(error))?;
 
-			log::info!("proving program:\n{}", &tptp_problem_to_prove_next_statement);
+			log::trace!("TPTP program :\n{}", &tptp_problem_to_prove_next_statement);
 
-			// TODO: refactor
-			let mut conjecture_found = false;
+			// TODO: make configurable again
+			let (proof_result, proof_time_seconds) =
+				run_vampire(&tptp_problem_to_prove_next_statement,
+					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "300"]))?;
 
-			for section in self.statements.borrow_mut().iter_mut()
+			match proof_result
 			{
-				for statement in section.1.iter_mut()
+				ProofResult::NotProven =>
 				{
-					if statement.proof_status == ProofStatus::ToProve
-					{
-						conjecture_found = true;
-						statement.proof_status = ProofStatus::AssumedProven;
-					}
+					println!("could not prove statement");
 
-					if conjecture_found
-					{
-						break;
-					}
-				}
-
-				if conjecture_found
+					return Ok(());
+				},
+				ProofResult::Disproven =>
 				{
-					break;
-				}
+					println!("statement disproven");
+
+					return Ok(());
+				},
+				_ => (),
 			}
 
-			log::info!("program proven!");
+			match self.next_unproven_statement_do_mut(
+				|_, statement| statement.proof_status = ProofStatus::AssumedProven)
+			{
+				Some(_) => (),
+				None => unreachable!("could not set the statement to proven"),
+			}
+
+			match proof_time_seconds
+			{
+				None => log::info!("statement proven"),
+				Some(proof_time_seconds) =>
+					log::info!("statement proven in {} seconds", proof_time_seconds),
+			}
 		}
 
 		Ok(())
@@ -402,7 +458,6 @@ impl Problem
 	fn write_tptp_problem_to_prove_next_statement(&self, formatter: &mut String) -> std::fmt::Result
 	{
 		use std::fmt::Write as _;
-		use std::io::Write as _;
 
 		let format_context = FormatContext
 		{
@@ -495,8 +550,6 @@ impl Problem
 			last_symbolic_constant = Some(std::rc::Rc::clone(symbolic_constant));
 		}
 
-		let mut conjecture_found = false;
-
 		for (section_kind, statements) in self.statements.borrow().iter()
 		{
 			if statements.is_empty()
@@ -521,12 +574,6 @@ impl Problem
 
 			for statement in statements.iter()
 			{
-				// Only prove one statement at a time
-				if conjecture_found && statement.proof_status == ProofStatus::ToProve
-				{
-					continue;
-				}
-
 				if let Some(ref description) = statement.description
 				{
 					writeln!(formatter, "% {}", description)?;
@@ -546,11 +593,11 @@ impl Problem
 				let statement_type = match statement.proof_status
 				{
 					ProofStatus::AssumedProven => "axiom",
-					ProofStatus::ToProve =>
-					{
-						conjecture_found = true;
-						"conjecture"
-					},
+					ProofStatus::ToProveNow => "conjecture",
+					// Skip statements that will be proven later
+					ProofStatus::ToProveLater => continue,
+					// Skip statements that are not part of this proof
+					ProofStatus::Ignored => continue,
 				};
 
 				// TODO: add proper statement type
@@ -740,4 +787,72 @@ impl<'a, 'b> foliage::format::Format for FormatContext<'a, 'b>
 
 		write!(formatter, "{}{}", prefix, id + 1)
 	}
+}
+
+fn run_vampire<I, S>(input: &str, arguments: Option<I>)
+	-> Result<(ProofResult, Option<f32>), crate::Error>
+where
+	I: IntoIterator<Item = S>, S: AsRef<std::ffi::OsStr>,
+{
+	let mut vampire = std::process::Command::new("vampire");
+
+	let vampire = match arguments
+	{
+		Some(arguments) => vampire.args(arguments),
+		None => &mut vampire,
+	};
+
+	let mut vampire = vampire
+		.stdin(std::process::Stdio::piped())
+		.stdout(std::process::Stdio::piped())
+		.stderr(std::process::Stdio::piped())
+		.spawn()
+		.map_err(|error| crate::Error::new_run_vampire(error))?;
+
+	{
+		use std::io::Write as _;
+
+		let vampire_stdin = vampire.stdin.as_mut().unwrap();
+		vampire_stdin.write_all(input.as_bytes())
+			.map_err(|error| crate::Error::new_run_vampire(error))?;
+	}
+
+	let output = vampire.wait_with_output()
+		.map_err(|error| crate::Error::new_run_vampire(error))?;
+
+	let stdout = std::str::from_utf8(&output.stdout)
+		.map_err(|error| crate::Error::new_run_vampire(error))?;
+
+	let stderr = std::str::from_utf8(&output.stderr)
+		.map_err(|error| crate::Error::new_run_vampire(error))?;
+
+	if !output.status.success()
+	{
+		let proof_not_found_regex = regex::Regex::new(r"% \(\d+\)Proof not found in time").unwrap();
+
+		if proof_not_found_regex.is_match(stdout)
+		{
+			return Ok((ProofResult::NotProven, None));
+		}
+
+		return Err(crate::Error::new_prove_program(output.status.code(), stdout.to_string(),
+			stderr.to_string()));
+	}
+
+	let proof_time_regex = regex::Regex::new(r"% \(\d+\)Success in time (\d+(?:\.\d+)?) s").unwrap();
+
+	let proof_time = proof_time_regex.captures(stdout)
+		.map(|captures| captures.get(1).unwrap().as_str().parse::<f32>().ok())
+		.unwrap_or(None);
+
+	let refutation_regex = regex::Regex::new(r"% \(\d+\)Termination reason: Refutation").unwrap();
+
+	if refutation_regex.is_match(stdout)
+	{
+		return Ok((ProofResult::Proven, proof_time));
+	}
+
+	// TODO: support disproven result
+
+	Err(crate::Error::new_parse_vampire_output(stdout.to_string(), stderr.to_string()))
 }

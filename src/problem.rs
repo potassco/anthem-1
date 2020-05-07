@@ -136,7 +136,7 @@ impl Problem
 		if proof_direction == crate::ProofDirection::Forward
 			|| proof_direction == crate::ProofDirection::Both
 		{
-			log::info!("performing forward proof");
+			println!("performing forward proof");
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -162,13 +162,13 @@ impl Problem
 
 			self.prove_unproven_statements()?;
 
-			log::info!("finished forward proof");
+			println!("finished forward proof");
 		}
 
 		if proof_direction == crate::ProofDirection::Backward
 			|| proof_direction == crate::ProofDirection::Both
 		{
-			log::info!("performing backward proof");
+			println!("performing backward proof");
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -194,7 +194,7 @@ impl Problem
 
 			self.prove_unproven_statements()?;
 
-			log::info!("finished backward proof");
+			println!("finished backward proof");
 		}
 
 		Ok(())
@@ -221,6 +221,16 @@ impl Problem
 
 	fn prove_unproven_statements(&self) -> Result<(), crate::Error>
 	{
+		let format_context = FormatContext
+		{
+			program_variable_declaration_ids:
+				std::cell::RefCell::new(VariableDeclarationIDs::new()),
+			integer_variable_declaration_ids:
+				std::cell::RefCell::new(VariableDeclarationIDs::new()),
+			input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
+			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
+		};
+
 		loop
 		{
 			match self.next_unproven_statement_do_mut(
@@ -238,7 +248,8 @@ impl Problem
 						SectionKind::Assertions => "assertion",
 					};
 
-					println!("verifying {}: {}", statement_type_output, statement.formula);
+					println!("- verifying {}: {}", statement_type_output,
+						foliage::format::display_formula(&statement.formula, &format_context));
 				})
 			{
 				Some(_) => (),
@@ -262,13 +273,13 @@ impl Problem
 			{
 				ProofResult::NotProven =>
 				{
-					println!("could not prove statement");
+					println!("  → could not prove statement");
 
 					return Ok(());
 				},
 				ProofResult::Disproven =>
 				{
-					println!("statement disproven");
+					println!("  → statement disproven");
 
 					return Ok(());
 				},
@@ -284,9 +295,9 @@ impl Problem
 
 			match proof_time_seconds
 			{
-				None => log::info!("statement proven"),
+				None => println!("  → statement proven"),
 				Some(proof_time_seconds) =>
-					log::info!("statement proven in {} seconds", proof_time_seconds),
+					println!("  → statement proven in {} seconds", proof_time_seconds),
 			}
 		}
 

@@ -155,6 +155,12 @@ impl<'p> Translator<'p>
 
 		for predicate_declaration in self.problem.predicate_declarations.borrow().iter()
 		{
+			// Don’t perform completion for input predicates
+			if self.problem.input_predicate_declarations.borrow().contains(predicate_declaration)
+			{
+				continue;
+			}
+
 			let completed_definition =
 				completed_definition(predicate_declaration, &mut self.definitions, self.problem);
 

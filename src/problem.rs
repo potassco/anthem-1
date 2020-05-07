@@ -133,6 +133,17 @@ impl Problem
 
 	pub fn prove(&self, proof_direction: crate::ProofDirection) -> Result<(), crate::Error>
 	{
+		// TODO: refactor
+		let format_context = FormatContext
+		{
+			program_variable_declaration_ids:
+				std::cell::RefCell::new(VariableDeclarationIDs::new()),
+			integer_variable_declaration_ids:
+				std::cell::RefCell::new(VariableDeclarationIDs::new()),
+			input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
+			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
+		};
+
 		if proof_direction == crate::ProofDirection::Forward
 			|| proof_direction == crate::ProofDirection::Both
 		{
@@ -141,7 +152,7 @@ impl Problem
 			let mut statements = self.statements.borrow_mut();
 
 			// Initially reset all proof statuses
-			for (_, statements) in statements.iter_mut()
+			for (section_kind, statements) in statements.iter_mut()
 			{
 				for statement in statements.iter_mut()
 				{
@@ -149,10 +160,34 @@ impl Problem
 					{
 						StatementKind::Axiom
 						| StatementKind::Assumption
-						| StatementKind::Program
-							=> statement.proof_status = ProofStatus::AssumedProven,
-						StatementKind::Lemma(crate::ProofDirection::Backward)
-							=> statement.proof_status = ProofStatus::Ignored,
+						| StatementKind::Program =>
+						{
+							// TODO: avoid code duplication
+							let statement_type_output = match section_kind
+							{
+								SectionKind::CompletedDefinitions => "completed definition",
+								SectionKind::IntegrityConstraints => "integrity constraint",
+								SectionKind::Axioms => "axiom",
+								SectionKind::Assumptions => "assumption",
+								SectionKind::Lemmas => "lemma",
+								SectionKind::Assertions => "assertion",
+							};
+
+							// TODO: refactor
+							match statement.kind
+							{
+								StatementKind::Program => println!("  - {}: {}",
+									statement_type_output,
+									foliage::format::display_formula(&statement.formula,
+										&format_context)),
+								_ => println!("  - {}: {}", statement_type_output,
+									statement.formula),
+							}
+
+							statement.proof_status = ProofStatus::AssumedProven;
+						},
+						StatementKind::Lemma(crate::ProofDirection::Backward) =>
+							statement.proof_status = ProofStatus::Ignored,
 						_ => statement.proof_status = ProofStatus::ToProveLater,
 					}
 				}
@@ -173,7 +208,7 @@ impl Problem
 			let mut statements = self.statements.borrow_mut();
 
 			// Initially reset all proof statuses
-			for (_, statements) in statements.iter_mut()
+			for (section_kind, statements) in statements.iter_mut()
 			{
 				for statement in statements.iter_mut()
 				{
@@ -181,10 +216,34 @@ impl Problem
 					{
 						StatementKind::Axiom
 						| StatementKind::Assumption
-						| StatementKind::Assertion
-							=> statement.proof_status = ProofStatus::AssumedProven,
-						StatementKind::Lemma(crate::ProofDirection::Forward)
-							=> statement.proof_status = ProofStatus::Ignored,
+						| StatementKind::Assertion =>
+						{
+							// TODO: avoid code duplication
+							let statement_type_output = match section_kind
+							{
+								SectionKind::CompletedDefinitions => "completed definition",
+								SectionKind::IntegrityConstraints => "integrity constraint",
+								SectionKind::Axioms => "axiom",
+								SectionKind::Assumptions => "assumption",
+								SectionKind::Lemmas => "lemma",
+								SectionKind::Assertions => "assertion",
+							};
+
+							// TODO: refactor
+							match statement.kind
+							{
+								StatementKind::Program => println!("  - {}: {}",
+									statement_type_output,
+									foliage::format::display_formula(&statement.formula,
+										&format_context)),
+								_ => println!("  - {}: {}", statement_type_output,
+									statement.formula),
+							}
+
+							statement.proof_status = ProofStatus::AssumedProven;
+						},
+						StatementKind::Lemma(crate::ProofDirection::Forward) =>
+							statement.proof_status = ProofStatus::Ignored,
 						_ => statement.proof_status = ProofStatus::ToProveLater,
 					}
 				}
@@ -248,8 +307,14 @@ impl Problem
 						SectionKind::Assertions => "assertion",
 					};
 
-					println!("- verifying {}: {}", statement_type_output,
-						foliage::format::display_formula(&statement.formula, &format_context));
+					match statement.kind
+					{
+						StatementKind::Program => println!("  - verifying {}: {}",
+							statement_type_output,
+							foliage::format::display_formula(&statement.formula, &format_context)),
+						_ => println!("  - verifying {}: {}", statement_type_output,
+							statement.formula),
+					}
 				})
 			{
 				Some(_) => (),
@@ -262,7 +327,7 @@ impl Problem
 				&mut tptp_problem_to_prove_next_statement)
 				.map_err(|error| crate::Error::new_write_tptp_program(error))?;
 
-			log::trace!("TPTP program :\n{}", &tptp_problem_to_prove_next_statement);
+			log::trace!("TPTP program:\n{}", &tptp_problem_to_prove_next_statement);
 
 			// TODO: make configurable again
 			let (proof_result, proof_time_seconds) =
@@ -273,13 +338,13 @@ impl Problem
 			{
 				ProofResult::NotProven =>
 				{
-					println!("  → could not prove statement");
+					println!("    → could not prove statement");
 
 					return Ok(());
 				},
 				ProofResult::Disproven =>
 				{
-					println!("  → statement disproven");
+					println!("    → statement disproven");
 
 					return Ok(());
 				},
@@ -295,9 +360,9 @@ impl Problem
 
 			match proof_time_seconds
 			{
-				None => println!("  → statement proven"),
+				None => println!("    → statement proven"),
 				Some(proof_time_seconds) =>
-					println!("  → statement proven in {} seconds", proof_time_seconds),
+					println!("    → statement proven in {} seconds", proof_time_seconds),
 			}
 		}
 

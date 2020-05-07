@@ -159,7 +159,7 @@ impl<'p> Translator<'p>
 				completed_definition(predicate_declaration, &mut self.definitions, self.problem);
 
 			let statement = crate::problem::Statement::new(
-				crate::problem::StatementKind::Assumption, completed_definition)
+				crate::problem::StatementKind::Program, completed_definition)
 				.with_name(format!("completed_definition_{}_{}", predicate_declaration.name,
 					predicate_declaration.arity))
 				.with_description(format!("completed definition of {}/{}",
@@ -315,7 +315,7 @@ impl<'p> Translator<'p>
 				*/
 
 				let statement = crate::problem::Statement::new(
-					crate::problem::StatementKind::Assumption, integrity_constraint)
+					crate::problem::StatementKind::Program, integrity_constraint)
 					.with_name("integrity_constraint".to_string())
 					.with_description("integrity constraint".to_string());
 

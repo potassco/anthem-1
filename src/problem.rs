@@ -2,6 +2,7 @@
 pub enum StatementKind
 {
 	Axiom,
+	Program,
 	Assumption,
 	Lemma(crate::ProofDirection),
 	Assertion,
@@ -148,6 +149,7 @@ impl Problem
 					{
 						StatementKind::Axiom
 						| StatementKind::Assumption
+						| StatementKind::Program
 							=> statement.proof_status = ProofStatus::AssumedProven,
 						StatementKind::Lemma(crate::ProofDirection::Backward)
 							=> statement.proof_status = ProofStatus::Ignored,
@@ -178,6 +180,7 @@ impl Problem
 					match statement.kind
 					{
 						StatementKind::Axiom
+						| StatementKind::Assumption
 						| StatementKind::Assertion
 							=> statement.proof_status = ProofStatus::AssumedProven,
 						StatementKind::Lemma(crate::ProofDirection::Forward)

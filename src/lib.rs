@@ -12,4 +12,4 @@ mod utils;
 pub use error::Error;
 pub use problem::Problem;
 pub(crate) use utils::*;
-pub use utils::{Domain, InputConstantDeclarationDomains};
+pub use utils::{Domain, InputConstantDeclarationDomains, ProofDirection};

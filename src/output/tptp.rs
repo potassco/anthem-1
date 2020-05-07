@@ -340,8 +340,7 @@ where
 			let is_right_term_arithmetic = crate::is_term_arithmetic(right, self.context)
 				.expect("could not determine whether term is arithmetic");
 
-			match (!is_left_term_arithmetic && !is_right_term_arithmetic,
-				auxiliary_predicate_name)
+			match (!is_left_term_arithmetic || !is_right_term_arithmetic, auxiliary_predicate_name)
 			{
 				(true, Some(auxiliary_predicate_name)) =>
 				{

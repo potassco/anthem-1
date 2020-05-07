@@ -16,9 +16,9 @@ enum Command
 		/// Specification file path
 		specification_path: std::path::PathBuf,
 
-		/// Output format (human-readable, tptp)
-		#[structopt(long, default_value = "human-readable")]
-		output_format: anthem::output::Format,
+		/// Proof direction (forward, backward, both)
+		#[structopt(long, default_value = "forward")]
+		proof_direction: anthem::ProofDirection,
 	}
 }
 
@@ -34,9 +34,9 @@ fn main()
 		{
 			program_path,
 			specification_path,
-			output_format,
+			proof_direction,
 		}
 			=> anthem::commands::verify_program::run(&program_path, &specification_path,
-				output_format),
+				proof_direction),
 	}
 }

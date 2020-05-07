@@ -1,4 +1,4 @@
-pub fn run<P>(program_path: P, specification_path: P, output_format: crate::output::Format)
+pub fn run<P>(program_path: P, specification_path: P, proof_direction: crate::ProofDirection)
 where
 	P: AsRef<std::path::Path>
 {
@@ -43,7 +43,7 @@ where
 		}
 	}
 
-	match problem.prove(crate::ProofDirection::Both)
+	match problem.prove(proof_direction)
 	{
 		Ok(()) => (),
 		Err(error) =>

@@ -105,6 +105,7 @@ pub(crate) struct ScopedFormula
 	pub formula: foliage::Formula,
 }
 
+// Move to separate utils file
 pub(crate) fn existential_closure(scoped_formula: crate::ScopedFormula) -> foliage::Formula
 {
 	match scoped_formula.free_variable_declarations.is_empty()

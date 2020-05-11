@@ -470,10 +470,10 @@ where
 				0 => write!(formatter, "$true")?,
 				_ =>
 				{
-					let mut separator = "";
 					let parentheses_required = arguments.len() > 2;
 
 					let mut argument_iterator = arguments.iter().peekable();
+					let mut separator = "";
 
 					while let Some(argument) = argument_iterator.next()
 					{

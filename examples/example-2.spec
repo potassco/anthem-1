@@ -1,7 +1,7 @@
 input: n -> integer.
 
 axiom: forall N1, N2, N3 (N1 > N2 and N3 > 0 -> N1 * N3 > N2 * N3).
-axiom: p(0) and forall N (N >= 0 and p(N) -> p(N + 1)).
+axiom: (p(0) and forall N (N >= 0 and p(N) -> p(N + 1))) -> (forall N p(N)).
 
 assume: n >= 0.
 

@@ -85,8 +85,8 @@ where
 	Ok(())
 }
 
-fn closed_formula<'i, D>(input: &'i str, declarations: &D)
-	-> Result<(crate::ScopedFormula, &'i str), crate::Error>
+fn open_formula<'i, D>(input: &'i str, declarations: &D)
+	-> Result<(foliage::OpenFormula, &'i str), crate::Error>
 where
 	D: foliage::FindOrCreateFunctionDeclaration
 		+ foliage::FindOrCreatePredicateDeclaration
@@ -103,19 +103,18 @@ where
 	remaining_input_characters.next();
 	let remaining_input = remaining_input_characters.as_str();
 
-	let closed_formula = foliage::parse::formula(formula_input, declarations)
+	let open_formula = foliage::parse::formula(formula_input, declarations)
 		.map_err(|error| crate::Error::new_parse_formula(error))?;
 
-	formula_assign_variable_declaration_domains(&closed_formula.formula, declarations)?;
+	formula_assign_variable_declaration_domains(&open_formula.formula, declarations)?;
 
-	// TODO: get rid of ScopedFormula
-	let scoped_formula = crate::ScopedFormula
+	let open_formula = foliage::OpenFormula
 	{
-		free_variable_declarations: closed_formula.free_variable_declarations,
-		formula: closed_formula.formula,
+		free_variable_declarations: open_formula.free_variable_declarations,
+		formula: open_formula.formula,
 	};
 
-	Ok((scoped_formula, remaining_input))
+	Ok((open_formula, remaining_input))
 }
 
 // TODO: rename
@@ -126,15 +125,15 @@ where
 		+ foliage::FindOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain,
 {
-	let (closed_formula, input) = closed_formula(input, declarations)?;
+	let (open_formula, input) = open_formula(input, declarations)?;
 
-	if !closed_formula.free_variable_declarations.is_empty()
+	if !open_formula.free_variable_declarations.is_empty()
 	{
 		// TODO: improve
 		panic!("formula may not contain free variables");
 	}
 
-	Ok((closed_formula.formula, input))
+	Ok((open_formula.formula, input))
 }
 
 fn formula_statement_body<'i>(input: &'i str, problem: &crate::Problem)

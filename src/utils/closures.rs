@@ -1,19 +1,19 @@
-pub(crate) fn existential_closure(scoped_formula: crate::ScopedFormula) -> foliage::Formula
+pub(crate) fn existential_closure(open_formula: foliage::OpenFormula) -> foliage::Formula
 {
-	match scoped_formula.free_variable_declarations.is_empty()
+	match open_formula.free_variable_declarations.is_empty()
 	{
-		true => scoped_formula.formula,
-		false => foliage::Formula::exists(scoped_formula.free_variable_declarations,
-			Box::new(scoped_formula.formula)),
+		true => open_formula.formula,
+		false => foliage::Formula::exists(open_formula.free_variable_declarations,
+			Box::new(open_formula.formula)),
 	}
 }
 
-pub(crate) fn universal_closure(scoped_formula: crate::ScopedFormula) -> foliage::Formula
+pub(crate) fn universal_closure(open_formula: foliage::OpenFormula) -> foliage::Formula
 {
-	match scoped_formula.free_variable_declarations.is_empty()
+	match open_formula.free_variable_declarations.is_empty()
 	{
-		true => scoped_formula.formula,
-		false => foliage::Formula::for_all(scoped_formula.free_variable_declarations,
-			Box::new(scoped_formula.formula)),
+		true => open_formula.formula,
+		false => foliage::Formula::for_all(open_formula.free_variable_declarations,
+			Box::new(open_formula.formula)),
 	}
 }

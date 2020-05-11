@@ -8,7 +8,7 @@ use crate::traits::AssignVariableDeclarationDomain as _;
 struct PredicateDefinitions
 {
 	pub parameters: std::rc::Rc<foliage::VariableDeclarations>,
-	pub definitions: Vec<crate::ScopedFormula>,
+	pub definitions: Vec<foliage::OpenFormula>,
 }
 
 type Definitions =
@@ -99,13 +99,13 @@ impl<'p> Translator<'p>
 					let completed_definition =
 						foliage::Formula::if_and_only_if(vec![head_predicate, or]);
 
-					let scoped_formula = crate::ScopedFormula
+					let open_formula = foliage::OpenFormula
 					{
 						free_variable_declarations: predicate_definitions.parameters,
 						formula: completed_definition,
 					};
 
-					crate::universal_closure(scoped_formula)
+					crate::universal_closure(open_formula)
 				},
 				// This predicate has no definitions, so universally falsify it
 				None =>
@@ -130,13 +130,13 @@ impl<'p> Translator<'p>
 
 					let not = foliage::Formula::not(Box::new(head_predicate));
 
-					let scoped_formula = crate::ScopedFormula
+					let open_formula = foliage::OpenFormula
 					{
 						free_variable_declarations: parameters,
 						formula: not,
 					};
 
-					crate::universal_closure(scoped_formula)
+					crate::universal_closure(open_formula)
 				},
 			}
 		};
@@ -255,7 +255,7 @@ impl<'p> Translator<'p>
 					_ => foliage::Formula::and(definition_arguments),
 				};
 
-				let definition = crate::ScopedFormula
+				let definition = foliage::OpenFormula
 				{
 					free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
 					formula: definition,
@@ -286,13 +286,13 @@ impl<'p> Translator<'p>
 					_ => foliage::Formula::not(Box::new(foliage::Formula::and(arguments))),
 				};
 
-				let scoped_formula = crate::ScopedFormula
+				let open_formula = foliage::OpenFormula
 				{
 					free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
 					formula,
 				};
 
-				let integrity_constraint = crate::universal_closure(scoped_formula);
+				let integrity_constraint = crate::universal_closure(open_formula);
 
 				let statement = crate::problem::Statement::new(
 					crate::problem::StatementKind::Program, integrity_constraint)

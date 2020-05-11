@@ -37,9 +37,3 @@ impl std::fmt::Display for Domain
 		write!(formatter, "{:?}", self)
 	}
 }
-
-pub(crate) struct ScopedFormula
-{
-	pub free_variable_declarations: std::rc::Rc<foliage::VariableDeclarations>,
-	pub formula: foliage::Formula,
-}

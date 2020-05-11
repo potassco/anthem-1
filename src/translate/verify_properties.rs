@@ -76,18 +76,6 @@ impl<'p> Translator<'p>
 
 		log::info!("read input program “{}”", program_path.as_ref().display());
 
-		// TODO: reimplement
-		/*
-		for (predicate_declaration, predicate_definitions) in self.definitions.iter()
-		{
-			for definition in predicate_definitions.definitions.iter()
-			{
-				log::debug!("definition({}/{}): {}.", predicate_declaration.name,
-					predicate_declaration.arity,
-					foliage::format::display_formula(&definition.formula, self.problem));
-			}
-		}*/
-
 		let completed_definition = |predicate_declaration, definitions: &mut Definitions,
 			problem: &crate::Problem|
 		{
@@ -273,13 +261,6 @@ impl<'p> Translator<'p>
 					formula: definition,
 				};
 
-				// TODO: refactor
-				// TODO: reimplement
-				/*
-				log::debug!("translated rule with single atom in head: {}",
-					foliage::format::display_formula(&definition.formula, self.problem));
-				*/
-
 				predicate_definitions.definitions.push(definition);
 			},
 			HeadType::IntegrityConstraint =>
@@ -312,13 +293,6 @@ impl<'p> Translator<'p>
 				};
 
 				let integrity_constraint = crate::universal_closure(scoped_formula);
-
-				// TODO: refactor
-				// TODO: reimplement
-				/*
-				log::debug!("translated integrity constraint: {}",
-					foliage::format::display_formula(&integrity_constraint, self.problem));
-				*/
 
 				let statement = crate::problem::Statement::new(
 					crate::problem::StatementKind::Program, integrity_constraint)

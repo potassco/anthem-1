@@ -13,7 +13,7 @@ pub(crate) fn display_domain(domain: crate::Domain) -> DomainDisplay
 
 impl std::fmt::Debug for DomainDisplay
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		let domain_name = match self.domain
 		{
@@ -21,15 +21,15 @@ impl std::fmt::Debug for DomainDisplay
 			crate::Domain::Program => "object",
 		};
 
-		write!(format, "{}", domain_name)
+		write!(formatter, "{}", domain_name)
 	}
 }
 
 impl std::fmt::Display for DomainDisplay
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{:?}", &self)
+		write!(formatter, "{:?}", &self)
 	}
 }
 
@@ -58,9 +58,9 @@ impl<'a, 'b, C> std::fmt::Debug for FunctionDeclarationDisplay<'a, 'b, C>
 where
 	C: crate::traits::InputConstantDeclarationDomain
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{}:", self.function_declaration.name)?;
+		write!(formatter, "{}:", self.function_declaration.name)?;
 
 		let domain = self.context.input_constant_declaration_domain(self.function_declaration);
 		let domain_identifier = match domain
@@ -73,18 +73,18 @@ where
 
 		if self.function_declaration.arity > 0
 		{
-			write!(format, " (")?;
+			write!(formatter, " (")?;
 
 			for _ in 0..self.function_declaration.arity
 			{
-				write!(format, "{}object", separator)?;
+				write!(formatter, "{}object", separator)?;
 				separator = " * ";
 			}
 
-			write!(format, ") >")?;
+			write!(formatter, ") >")?;
 		}
 
-		write!(format, " {}", domain_identifier)
+		write!(formatter, " {}", domain_identifier)
 	}
 }
 
@@ -92,9 +92,9 @@ impl<'a, 'b, C> std::fmt::Display for FunctionDeclarationDisplay<'a, 'b, C>
 where
 	C: crate::traits::InputConstantDeclarationDomain
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{:?}", &self)
+		write!(formatter, "{:?}", &self)
 	}
 }
 
@@ -109,34 +109,34 @@ pub(crate) fn display_predicate_declaration<'a>(
 
 impl<'a> std::fmt::Debug for PredicateDeclarationDisplay<'a>
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{}:", self.0.name)?;
+		write!(formatter, "{}:", self.0.name)?;
 
 		let mut separator = "";
 
 		if self.0.arity > 0
 		{
-			write!(format, " (")?;
+			write!(formatter, " (")?;
 
 			for _ in 0..self.0.arity
 			{
-				write!(format, "{}object", separator)?;
+				write!(formatter, "{}object", separator)?;
 				separator = " * ";
 			}
 
-			write!(format, ") >")?;
+			write!(formatter, ") >")?;
 		}
 
-		write!(format, " $o")
+		write!(formatter, " $o")
 	}
 }
 
 impl<'a> std::fmt::Display for PredicateDeclarationDisplay<'a>
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{:?}", &self)
+		write!(formatter, "{:?}", &self)
 	}
 }
 
@@ -168,7 +168,7 @@ where
 	C: crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		let id = self.context.variable_declaration_id(self.variable_declaration);
 		let domain = self.context.variable_declaration_domain(self.variable_declaration)
@@ -180,7 +180,7 @@ where
 			crate::Domain::Program => "X",
 		};
 
-		write!(format, "{}{}", prefix, id + 1)
+		write!(formatter, "{}{}", prefix, id + 1)
 	}
 }
 
@@ -189,9 +189,9 @@ where
 	C: crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{:?}", &self)
+		write!(formatter, "{:?}", &self)
 	}
 }
 
@@ -219,7 +219,7 @@ where
 	C: crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		let display_variable_declaration = |variable_declaration|
 			display_variable_declaration(variable_declaration, self.context);
@@ -227,21 +227,23 @@ where
 
 		match &self.term
 		{
-			foliage::Term::Boolean(true) => write!(format, "$true"),
-			foliage::Term::Boolean(false) => write!(format, "$false"),
-			foliage::Term::SpecialInteger(foliage::SpecialInteger::Infimum) => write!(format, "c__infimum__"),
-			foliage::Term::SpecialInteger(foliage::SpecialInteger::Supremum) => write!(format, "c__supremum__"),
+			foliage::Term::Boolean(true) => write!(formatter, "$true"),
+			foliage::Term::Boolean(false) => write!(formatter, "$false"),
+			foliage::Term::SpecialInteger(foliage::SpecialInteger::Infimum) =>
+				write!(formatter, "c__infimum__"),
+			foliage::Term::SpecialInteger(foliage::SpecialInteger::Supremum) =>
+				write!(formatter, "c__supremum__"),
 			foliage::Term::Integer(value) => match value.is_negative()
 			{
-				true => write!(format, "$uminus({})", -value),
-				false => write!(format, "{}", value),
+				true => write!(formatter, "$uminus({})", -value),
+				false => write!(formatter, "{}", value),
 			},
 			foliage::Term::String(_) => panic!("strings not supported in TPTP"),
 			foliage::Term::Variable(variable) =>
-				write!(format, "{:?}", display_variable_declaration(&variable.declaration)),
+				write!(formatter, "{:?}", display_variable_declaration(&variable.declaration)),
 			foliage::Term::Function(function) =>
 			{
-				write!(format, "{}", function.declaration.name)?;
+				write!(formatter, "{}", function.declaration.name)?;
 
 				assert!(function.declaration.arity == function.arguments.len(),
 					"function has a different number of arguments than declared (expected {}, got {})",
@@ -249,38 +251,47 @@ where
 
 				if function.arguments.len() > 0
 				{
-					write!(format, "{}(", function.declaration.name)?;
+					write!(formatter, "{}(", function.declaration.name)?;
 
 					let mut separator = "";
 
 					for argument in &function.arguments
 					{
-						write!(format, "{}{:?}", separator, display_term(&argument))?;
+						write!(formatter, "{}{:?}", separator, display_term(&argument))?;
 
 						separator = ", ";
 					}
 
-					write!(format, ")")?;
+					write!(formatter, ")")?;
 				}
 
 				Ok(())
 			},
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{operator: foliage::BinaryOperator::Add, left, right})
-				=> write!(format, "$sum({:?}, {:?})", display_term(left), display_term(right)),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{operator: foliage::BinaryOperator::Subtract, left, right})
-				=> write!(format, "$difference({:?}, {:?})", display_term(left), display_term(right)),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{operator: foliage::BinaryOperator::Multiply, left, right})
-				=> write!(format, "$product({:?}, {:?})", display_term(left), display_term(right)),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{operator: foliage::BinaryOperator::Divide, ..})
-				=> panic!("division not supported with TPTP output"),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{operator: foliage::BinaryOperator::Modulo, ..})
-				=> panic!("modulo not supported with TPTP output"),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{operator: foliage::BinaryOperator::Exponentiate, ..})
-				=> panic!("exponentiation not supported with TPTP output"),
-			foliage::Term::UnaryOperation(foliage::UnaryOperation{operator: foliage::UnaryOperator::Negative, argument})
-				=> write!(format, "$uminus({:?})", display_term(argument)),
-			foliage::Term::UnaryOperation(foliage::UnaryOperation{operator: foliage::UnaryOperator::AbsoluteValue, ..})
-				=> panic!("absolute value not supported with TPTP output"),
+			foliage::Term::BinaryOperation(foliage::BinaryOperation{
+				operator: foliage::BinaryOperator::Add, left, right}) =>
+				write!(formatter, "$sum({:?}, {:?})", display_term(left), display_term(right)),
+			foliage::Term::BinaryOperation(foliage::BinaryOperation{
+				operator: foliage::BinaryOperator::Subtract, left, right}) =>
+				write!(formatter, "$difference({:?}, {:?})", display_term(left),
+					display_term(right)),
+			foliage::Term::BinaryOperation(foliage::BinaryOperation{
+				operator: foliage::BinaryOperator::Multiply, left, right}) =>
+				write!(formatter, "$product({:?}, {:?})", display_term(left), display_term(right)),
+			foliage::Term::BinaryOperation(foliage::BinaryOperation{
+				operator: foliage::BinaryOperator::Divide, ..}) =>
+				panic!("division not supported with TPTP output"),
+			foliage::Term::BinaryOperation(foliage::BinaryOperation{
+				operator: foliage::BinaryOperator::Modulo, ..}) =>
+				panic!("modulo not supported with TPTP output"),
+			foliage::Term::BinaryOperation(foliage::BinaryOperation{
+				operator: foliage::BinaryOperator::Exponentiate, ..}) =>
+				panic!("exponentiation not supported with TPTP output"),
+			foliage::Term::UnaryOperation(foliage::UnaryOperation{
+				operator: foliage::UnaryOperator::Negative, argument}) =>
+				write!(formatter, "$uminus({:?})", display_term(argument)),
+			foliage::Term::UnaryOperation(foliage::UnaryOperation{
+				operator: foliage::UnaryOperator::AbsoluteValue, ..}) =>
+				panic!("absolute value not supported with TPTP output"),
 		}
 	}
 }
@@ -290,9 +301,9 @@ where
 	C: crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{:?}", self)
+		write!(formatter, "{:?}", self)
 	}
 }
 
@@ -321,8 +332,7 @@ where
 		+ crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
-	// TODO: rename format to formatter
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
 		let display_variable_declaration = |variable_declaration|
 			display_variable_declaration(variable_declaration, self.context);
@@ -352,30 +362,30 @@ where
 
 			if notation == crate::OperatorNotation::Prefix
 			{
-				write!(format, "{}(", operation_identifier)?;
+				write!(formatter, "{}(", operation_identifier)?;
 			}
 
 			match is_left_term_arithmetic && !is_right_term_arithmetic
 			{
-				true => write!(format, "f__integer__({})", display_term(left))?,
-				false => write!(format, "{}", display_term(left))?,
+				true => write!(formatter, "f__integer__({})", display_term(left))?,
+				false => write!(formatter, "{}", display_term(left))?,
 			}
 
 			match notation
 			{
-				crate::OperatorNotation::Prefix => write!(format, ", ")?,
-				crate::OperatorNotation::Infix => write!(format, " {} ", operation_identifier)?,
+				crate::OperatorNotation::Prefix => write!(formatter, ", ")?,
+				crate::OperatorNotation::Infix => write!(formatter, " {} ", operation_identifier)?,
 			}
 
 			match is_right_term_arithmetic && !is_left_term_arithmetic
 			{
-				true => write!(format, "f__integer__({})", display_term(right))?,
-				false => write!(format, "{}", display_term(right))?,
+				true => write!(formatter, "f__integer__({})", display_term(right))?,
+				false => write!(formatter, "{}", display_term(right))?,
 			}
 
 			if notation == crate::OperatorNotation::Prefix
 			{
-				write!(format, ")")?;
+				write!(formatter, ")")?;
 			}
 
 			Ok(())
@@ -385,7 +395,7 @@ where
 		{
 			foliage::Formula::Exists(exists) =>
 			{
-				write!(format, "?[")?;
+				write!(formatter, "?[")?;
 
 				let mut separator = "";
 
@@ -394,17 +404,17 @@ where
 					let parameter_domain = self.context.variable_declaration_domain(parameter)
 						.expect("unspecified variable domain");
 
-					write!(format, "{}{:?}: {}", separator, display_variable_declaration(parameter),
-						display_domain(parameter_domain))?;
+					write!(formatter, "{}{:?}: {}", separator,
+						display_variable_declaration(parameter), display_domain(parameter_domain))?;
 
 					separator = ", "
 				}
 
-				write!(format, "]: ({:?})", display_formula(&exists.argument))?;
+				write!(formatter, "]: ({:?})", display_formula(&exists.argument))?;
 			},
 			foliage::Formula::ForAll(for_all) =>
 			{
-				write!(format, "![")?;
+				write!(formatter, "![")?;
 
 				let mut separator = "";
 
@@ -413,18 +423,19 @@ where
 					let parameter_domain = self.context.variable_declaration_domain(parameter)
 						.expect("unspecified variable domain");
 
-					write!(format, "{}{:?}: {}", separator, display_variable_declaration(parameter),
-						display_domain(parameter_domain))?;
+					write!(formatter, "{}{:?}: {}", separator,
+						display_variable_declaration(parameter), display_domain(parameter_domain))?;
 
 					separator = ", "
 				}
 
-				write!(format, "]: ({:?})", display_formula(&for_all.argument))?;
+				write!(formatter, "]: ({:?})", display_formula(&for_all.argument))?;
 			},
-			foliage::Formula::Not(argument) => write!(format, "~{:?}", display_formula(argument))?,
+			foliage::Formula::Not(argument) =>
+				write!(formatter, "~{:?}", display_formula(argument))?,
 			foliage::Formula::And(arguments) =>
 			{
-				write!(format, "(")?;
+				write!(formatter, "(")?;
 
 				let mut separator = "";
 
@@ -432,16 +443,16 @@ where
 
 				for argument in arguments
 				{
-					write!(format, "{}{:?}", separator, display_formula(argument))?;
+					write!(formatter, "{}{:?}", separator, display_formula(argument))?;
 
 					separator = " & "
 				}
 
-				write!(format, ")")?;
+				write!(formatter, ")")?;
 			},
 			foliage::Formula::Or(arguments) =>
 			{
-				write!(format, "(")?;
+				write!(formatter, "(")?;
 
 				let mut separator = "";
 
@@ -449,19 +460,19 @@ where
 
 				for argument in arguments
 				{
-					write!(format, "{}{:?}", separator, display_formula(argument))?;
+					write!(formatter, "{}{:?}", separator, display_formula(argument))?;
 
 					separator = " | "
 				}
 
-				write!(format, ")")?;
+				write!(formatter, ")")?;
 			},
 			foliage::Formula::Implies(foliage::Implies{antecedent, implication, ..})
-				=> write!(format, "({:?} => {:?})", display_formula(antecedent),
+				=> write!(formatter, "({:?} => {:?})", display_formula(antecedent),
 					display_formula(implication))?,
 			foliage::Formula::IfAndOnlyIf(arguments) => match arguments.len()
 			{
-				0 => write!(format, "$true")?,
+				0 => write!(formatter, "$true")?,
 				_ =>
 				{
 					let mut separator = "";
@@ -473,19 +484,19 @@ where
 					{
 						if let Some(next_argument) = argument_iterator.peek()
 						{
-							write!(format, "{}", separator)?;
+							write!(formatter, "{}", separator)?;
 
 							if parentheses_required
 							{
-								write!(format, "(")?;
+								write!(formatter, "(")?;
 							}
 
-							write!(format, "{:?} <=> {:?}", display_formula(argument),
+							write!(formatter, "{:?} <=> {:?}", display_formula(argument),
 								display_formula(next_argument))?;
 
 							if parentheses_required
 							{
-								write!(format, ")")?;
+								write!(formatter, ")")?;
 							}
 
 							separator = " & ";
@@ -515,21 +526,21 @@ where
 			foliage::Formula::Compare(
 				foliage::Compare{operator: foliage::ComparisonOperator::NotEqual, left, right})
 				=> display_compare(left, right, crate::OperatorNotation::Infix, "!=", None)?,
-			foliage::Formula::Boolean(true) => write!(format, "$true")?,
-			foliage::Formula::Boolean(false) => write!(format, "$false")?,
+			foliage::Formula::Boolean(true) => write!(formatter, "$true")?,
+			foliage::Formula::Boolean(false) => write!(formatter, "$false")?,
 			foliage::Formula::Predicate(predicate) =>
 			{
-				write!(format, "{}", predicate.declaration.name)?;
+				write!(formatter, "{}", predicate.declaration.name)?;
 
 				if !predicate.arguments.is_empty()
 				{
-					write!(format, "(")?;
+					write!(formatter, "(")?;
 
 					let mut separator = "";
 
 					for argument in &predicate.arguments
 					{
-						write!(format, "{}", separator)?;
+						write!(formatter, "{}", separator)?;
 
 						let is_argument_arithmetic =
 							crate::is_term_arithmetic(argument, self.context)
@@ -537,14 +548,14 @@ where
 
 						match is_argument_arithmetic
 						{
-							true => write!(format, "f__integer__({})", display_term(argument))?,
-							false => write!(format, "{}", display_term(argument))?,
+							true => write!(formatter, "f__integer__({})", display_term(argument))?,
+							false => write!(formatter, "{}", display_term(argument))?,
 						}
 
 						separator = ", "
 					}
 
-					write!(format, ")")?;
+					write!(formatter, ")")?;
 				}
 			},
 		}
@@ -559,8 +570,8 @@ where
 		+ crate::traits::VariableDeclarationDomain
 		+ crate::traits::VariableDeclarationID
 {
-	fn fmt(&self, format: &mut std::fmt::Formatter) -> std::fmt::Result
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(format, "{:?}", self)
+		write!(formatter, "{:?}", self)
 	}
 }

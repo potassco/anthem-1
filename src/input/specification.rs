@@ -118,6 +118,7 @@ where
 	Ok((scoped_formula, remaining_input))
 }
 
+// TODO: rename
 fn variable_free_formula<'i, D>(input: &'i str, declarations: &D)
 	-> Result<(foliage::Formula, &'i str), crate::Error>
 where

@@ -117,8 +117,7 @@ where
 	Ok((open_formula, remaining_input))
 }
 
-// TODO: rename
-fn variable_free_formula<'i, D>(input: &'i str, declarations: &D)
+fn formula<'i, D>(input: &'i str, declarations: &D)
 	-> Result<(foliage::Formula, &'i str), crate::Error>
 where
 	D: foliage::FindOrCreateFunctionDeclaration
@@ -151,7 +150,7 @@ fn formula_statement_body<'i>(input: &'i str, problem: &crate::Problem)
 
 	let input = remaining_input;
 
-	variable_free_formula(input, problem)
+	formula(input, problem)
 }
 
 fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)

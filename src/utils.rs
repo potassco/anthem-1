@@ -43,6 +43,3 @@ pub(crate) struct ScopedFormula
 	pub free_variable_declarations: std::rc::Rc<foliage::VariableDeclarations>,
 	pub formula: foliage::Formula,
 }
-
-pub type InputConstantDeclarationDomains
-	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, Domain>;

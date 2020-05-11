@@ -43,11 +43,14 @@ pub struct Statement
 type VariableDeclarationIDs
 	= std::collections::BTreeMap::<std::rc::Rc<foliage::VariableDeclaration>, usize>;
 
+type InputConstantDeclarationDomains
+	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, crate::Domain>;
+
 struct FormatContext<'a, 'b>
 {
 	pub program_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
 	pub integer_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
-	pub input_constant_declaration_domains: &'a crate::InputConstantDeclarationDomains,
+	pub input_constant_declaration_domains: &'a InputConstantDeclarationDomains,
 	pub variable_declaration_domains: &'b VariableDeclarationDomains,
 }
 
@@ -89,8 +92,7 @@ pub struct Problem
 	statements: std::cell::RefCell<std::collections::BTreeMap<SectionKind, Vec<Statement>>>,
 
 	pub input_constant_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
-	pub input_constant_declaration_domains:
-		std::cell::RefCell<crate::InputConstantDeclarationDomains>,
+	pub input_constant_declaration_domains: std::cell::RefCell<InputConstantDeclarationDomains>,
 	pub input_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
 	// TODO: clean up as variable declarations are dropped
 	variable_declaration_domains: std::cell::RefCell<VariableDeclarationDomains>,
@@ -110,7 +112,7 @@ impl Problem
 			input_constant_declarations:
 				std::cell::RefCell::new(foliage::FunctionDeclarations::new()),
 			input_constant_declaration_domains:
-				std::cell::RefCell::new(crate::InputConstantDeclarationDomains::new()),
+				std::cell::RefCell::new(InputConstantDeclarationDomains::new()),
 			input_predicate_declarations:
 				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
 			variable_declaration_domains:

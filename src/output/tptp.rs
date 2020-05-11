@@ -385,9 +385,11 @@ where
 			Ok(())
 		};
 
+		use foliage::*;
+
 		match &self.formula
 		{
-			foliage::Formula::Exists(exists) =>
+			Formula::Exists(exists) =>
 			{
 				write!(formatter, "?[")?;
 
@@ -406,7 +408,7 @@ where
 
 				write!(formatter, "]: ({:?})", display_formula(&exists.argument))?;
 			},
-			foliage::Formula::ForAll(for_all) =>
+			Formula::ForAll(for_all) =>
 			{
 				write!(formatter, "![")?;
 
@@ -425,9 +427,8 @@ where
 
 				write!(formatter, "]: ({:?})", display_formula(&for_all.argument))?;
 			},
-			foliage::Formula::Not(argument) =>
-				write!(formatter, "~{:?}", display_formula(argument))?,
-			foliage::Formula::And(arguments) =>
+			Formula::Not(argument) => write!(formatter, "~{:?}", display_formula(argument))?,
+			Formula::And(arguments) =>
 			{
 				write!(formatter, "(")?;
 
@@ -444,7 +445,7 @@ where
 
 				write!(formatter, ")")?;
 			},
-			foliage::Formula::Or(arguments) =>
+			Formula::Or(arguments) =>
 			{
 				write!(formatter, "(")?;
 
@@ -461,10 +462,10 @@ where
 
 				write!(formatter, ")")?;
 			},
-			foliage::Formula::Implies(foliage::Implies{antecedent, implication, ..})
-				=> write!(formatter, "({:?} => {:?})", display_formula(antecedent),
+			Formula::Implies(Implies{antecedent, implication, ..}) =>
+				write!(formatter, "({:?} => {:?})", display_formula(antecedent),
 					display_formula(implication))?,
-			foliage::Formula::IfAndOnlyIf(arguments) => match arguments.len()
+			Formula::IfAndOnlyIf(arguments) => match arguments.len()
 			{
 				0 => write!(formatter, "$true")?,
 				_ =>
@@ -498,31 +499,25 @@ where
 					}
 				},
 			},
-			foliage::Formula::Compare(
-				foliage::Compare{operator: foliage::ComparisonOperator::Less, left, right})
-				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$less",
+			Formula::Compare(Compare{operator: ComparisonOperator::Less, left, right}) =>
+				display_compare(left, right, crate::OperatorNotation::Prefix, "$less",
 					Some("p__less__"))?,
-			foliage::Formula::Compare(
-				foliage::Compare{operator: foliage::ComparisonOperator::LessOrEqual, left, right})
-				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$lesseq",
+			Formula::Compare(Compare{operator: ComparisonOperator::LessOrEqual, left, right}) =>
+				display_compare(left, right, crate::OperatorNotation::Prefix, "$lesseq",
 					Some("p__less_equal__"))?,
-			foliage::Formula::Compare(
-				foliage::Compare{operator: foliage::ComparisonOperator::Greater, left, right})
-				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$greater",
+			Formula::Compare(Compare{operator: ComparisonOperator::Greater, left, right}) =>
+				display_compare(left, right, crate::OperatorNotation::Prefix, "$greater",
 					Some("p__greater__"))?,
-			foliage::Formula::Compare(
-				foliage::Compare{operator: foliage::ComparisonOperator::GreaterOrEqual, left, right})
-				=> display_compare(left, right, crate::OperatorNotation::Prefix, "$greatereq",
+			Formula::Compare(Compare{operator: ComparisonOperator::GreaterOrEqual, left, right}) =>
+				display_compare(left, right, crate::OperatorNotation::Prefix, "$greatereq",
 					Some("p__greater_equal__"))?,
-			foliage::Formula::Compare(
-				foliage::Compare{operator: foliage::ComparisonOperator::Equal, left, right})
-				=> display_compare(left, right, crate::OperatorNotation::Infix, "=", None)?,
-			foliage::Formula::Compare(
-				foliage::Compare{operator: foliage::ComparisonOperator::NotEqual, left, right})
-				=> display_compare(left, right, crate::OperatorNotation::Infix, "!=", None)?,
-			foliage::Formula::Boolean(true) => write!(formatter, "$true")?,
-			foliage::Formula::Boolean(false) => write!(formatter, "$false")?,
-			foliage::Formula::Predicate(predicate) =>
+			Formula::Compare(Compare{operator: ComparisonOperator::Equal, left, right}) =>
+				display_compare(left, right, crate::OperatorNotation::Infix, "=", None)?,
+			Formula::Compare(Compare{operator: ComparisonOperator::NotEqual, left, right}) =>
+				display_compare(left, right, crate::OperatorNotation::Infix, "!=", None)?,
+			Formula::Boolean(true) => write!(formatter, "$true")?,
+			Formula::Boolean(false) => write!(formatter, "$false")?,
+			Formula::Predicate(predicate) =>
 			{
 				write!(formatter, "{}", predicate.declaration.name)?;
 

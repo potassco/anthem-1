@@ -349,15 +349,15 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 							foliage::parse::tokens::identifier(input)
 						{
 							Some(("forward", remaining_input)) =>
-								(crate::ProofDirection::Forward, remaining_input),
+								(crate::problem::ProofDirection::Forward, remaining_input),
 							Some(("backward", remaining_input)) =>
-								(crate::ProofDirection::Backward, remaining_input),
+								(crate::problem::ProofDirection::Backward, remaining_input),
 							Some(("both", remaining_input)) =>
-								(crate::ProofDirection::Both, remaining_input),
+								(crate::problem::ProofDirection::Both, remaining_input),
 							Some((identifier, _)) =>
 								return Err(crate::Error::new_unknown_proof_direction(
 									identifier.to_string())),
-							None => (crate::ProofDirection::Both, input),
+							None => (crate::problem::ProofDirection::Both, input),
 						};
 
 						input = remaining_input.trim_start();
@@ -374,7 +374,7 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 						(proof_direction, input)
 					},
 					Some(_)
-					| None => (crate::ProofDirection::Both, remaining_input),
+					| None => (crate::problem::ProofDirection::Both, remaining_input),
 				};
 
 				input = remaining_input;

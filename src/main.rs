@@ -18,7 +18,7 @@ enum Command
 
 		/// Proof direction (forward, backward, both)
 		#[structopt(long, default_value = "forward")]
-		proof_direction: anthem::ProofDirection,
+		proof_direction: anthem::problem::ProofDirection,
 	}
 }
 

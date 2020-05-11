@@ -1,4 +1,5 @@
-pub fn run<P>(program_path: P, specification_path: P, proof_direction: crate::ProofDirection)
+pub fn run<P>(program_path: P, specification_path: P, proof_direction:
+	crate::problem::ProofDirection)
 where
 	P: AsRef<std::path::Path>
 {

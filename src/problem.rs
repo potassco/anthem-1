@@ -1,5 +1,7 @@
+mod proof_direction;
 mod section_kind;
 
+pub use proof_direction::ProofDirection;
 pub use section_kind::SectionKind;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -8,7 +10,7 @@ pub enum StatementKind
 	Axiom,
 	Program,
 	Assumption,
-	Lemma(crate::ProofDirection),
+	Lemma(ProofDirection),
 	Assertion,
 }
 
@@ -124,10 +126,10 @@ impl Problem
 		section.push(statement);
 	}
 
-	pub fn prove(&self, proof_direction: crate::ProofDirection) -> Result<(), crate::Error>
+	pub fn prove(&self, proof_direction: ProofDirection) -> Result<(), crate::Error>
 	{
-		if proof_direction == crate::ProofDirection::Forward
-			|| proof_direction == crate::ProofDirection::Both
+		if proof_direction == ProofDirection::Forward
+			|| proof_direction == ProofDirection::Both
 		{
 			println!("performing forward proof");
 
@@ -144,7 +146,7 @@ impl Problem
 						| StatementKind::Assumption
 						| StatementKind::Program =>
 							statement.proof_status = ProofStatus::AssumedProven,
-						StatementKind::Lemma(crate::ProofDirection::Backward) =>
+						StatementKind::Lemma(ProofDirection::Backward) =>
 							statement.proof_status = ProofStatus::Ignored,
 						_ => statement.proof_status = ProofStatus::ToProveLater,
 					}
@@ -158,8 +160,8 @@ impl Problem
 			println!("finished forward proof");
 		}
 
-		if proof_direction == crate::ProofDirection::Backward
-			|| proof_direction == crate::ProofDirection::Both
+		if proof_direction == ProofDirection::Backward
+			|| proof_direction == ProofDirection::Both
 		{
 			println!("performing backward proof");
 
@@ -176,7 +178,7 @@ impl Problem
 						| StatementKind::Assumption
 						| StatementKind::Assertion =>
 							statement.proof_status = ProofStatus::AssumedProven,
-						StatementKind::Lemma(crate::ProofDirection::Forward) =>
+						StatementKind::Lemma(ProofDirection::Forward) =>
 							statement.proof_status = ProofStatus::Ignored,
 						_ => statement.proof_status = ProofStatus::ToProveLater,
 					}

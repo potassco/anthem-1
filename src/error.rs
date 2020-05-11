@@ -178,8 +178,6 @@ impl std::fmt::Debug for Error
 				"unknown statement “{}” (allowed: axiom, assert, assume, input, lemma)",
 				statement_name),
 			Kind::UnmatchedParenthesis => write!(formatter, "unmatched parenthesis"),
-			Kind::ParsePredicateDeclaration => write!(formatter,
-				"could not parse predicate declaration"),
 			Kind::ParseFormula => write!(formatter, "could not parse formula"),
 			Kind::ExpectedIdentifier => write!(formatter, "expected constant or predicate name"),
 			Kind::ParsePredicateDeclaration => write!(formatter,

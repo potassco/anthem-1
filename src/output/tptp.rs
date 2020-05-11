@@ -225,23 +225,23 @@ where
 			display_variable_declaration(variable_declaration, self.context);
 		let display_term = |term| display_term(term, self.context);
 
+		use foliage::*;
+
 		match &self.term
 		{
-			foliage::Term::Boolean(true) => write!(formatter, "$true"),
-			foliage::Term::Boolean(false) => write!(formatter, "$false"),
-			foliage::Term::SpecialInteger(foliage::SpecialInteger::Infimum) =>
-				write!(formatter, "c__infimum__"),
-			foliage::Term::SpecialInteger(foliage::SpecialInteger::Supremum) =>
-				write!(formatter, "c__supremum__"),
-			foliage::Term::Integer(value) => match value.is_negative()
+			Term::Boolean(true) => write!(formatter, "$true"),
+			Term::Boolean(false) => write!(formatter, "$false"),
+			Term::SpecialInteger(SpecialInteger::Infimum) => write!(formatter, "c__infimum__"),
+			Term::SpecialInteger(SpecialInteger::Supremum) => write!(formatter, "c__supremum__"),
+			Term::Integer(value) => match value.is_negative()
 			{
 				true => write!(formatter, "$uminus({})", -value),
 				false => write!(formatter, "{}", value),
 			},
-			foliage::Term::String(_) => panic!("strings not supported in TPTP"),
-			foliage::Term::Variable(variable) =>
+			Term::String(_) => panic!("strings not supported in TPTP"),
+			Term::Variable(variable) =>
 				write!(formatter, "{:?}", display_variable_declaration(&variable.declaration)),
-			foliage::Term::Function(function) =>
+			Term::Function(function) =>
 			{
 				write!(formatter, "{}", function.declaration.name)?;
 
@@ -267,30 +267,24 @@ where
 
 				Ok(())
 			},
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{
-				operator: foliage::BinaryOperator::Add, left, right}) =>
+			Term::BinaryOperation(BinaryOperation{operator: BinaryOperator::Add, left, right}) =>
 				write!(formatter, "$sum({:?}, {:?})", display_term(left), display_term(right)),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{
-				operator: foliage::BinaryOperator::Subtract, left, right}) =>
+			Term::BinaryOperation(BinaryOperation{operator: BinaryOperator::Subtract, left, right})
+				=>
 				write!(formatter, "$difference({:?}, {:?})", display_term(left),
 					display_term(right)),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{
-				operator: foliage::BinaryOperator::Multiply, left, right}) =>
+			Term::BinaryOperation(BinaryOperation{operator: BinaryOperator::Multiply, left, right})
+				=>
 				write!(formatter, "$product({:?}, {:?})", display_term(left), display_term(right)),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{
-				operator: foliage::BinaryOperator::Divide, ..}) =>
+			Term::BinaryOperation(BinaryOperation{operator: BinaryOperator::Divide, ..}) =>
 				panic!("division not supported with TPTP output"),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{
-				operator: foliage::BinaryOperator::Modulo, ..}) =>
+			Term::BinaryOperation(BinaryOperation{operator: BinaryOperator::Modulo, ..}) =>
 				panic!("modulo not supported with TPTP output"),
-			foliage::Term::BinaryOperation(foliage::BinaryOperation{
-				operator: foliage::BinaryOperator::Exponentiate, ..}) =>
+			Term::BinaryOperation(BinaryOperation{operator: BinaryOperator::Exponentiate, ..}) =>
 				panic!("exponentiation not supported with TPTP output"),
-			foliage::Term::UnaryOperation(foliage::UnaryOperation{
-				operator: foliage::UnaryOperator::Negative, argument}) =>
+			Term::UnaryOperation(UnaryOperation{operator: UnaryOperator::Negative, argument}) =>
 				write!(formatter, "$uminus({:?})", display_term(argument)),
-			foliage::Term::UnaryOperation(foliage::UnaryOperation{
-				operator: foliage::UnaryOperator::AbsoluteValue, ..}) =>
+			Term::UnaryOperation(UnaryOperation{operator: UnaryOperator::AbsoluteValue, ..}) =>
 				panic!("absolute value not supported with TPTP output"),
 		}
 	}

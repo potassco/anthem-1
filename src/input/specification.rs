@@ -31,8 +31,7 @@ where
 				| Some('L')
 				| Some('M')
 				| Some('N') => crate::Domain::Integer,
-				// TODO: improve error handling
-				Some(other) => return Err(
+				Some(_) => return Err(
 					crate::Error::new_variable_name_not_allowed(variable.declaration.name.clone())),
 				None => unreachable!(),
 			};

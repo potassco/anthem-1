@@ -25,6 +25,4 @@ lemma(forward): forall N (N >= 0 and p(N + 1) -> p(N)).
 lemma(forward): not p(n + 1).
 lemma(forward): forall N1, N2 (N2 > N1 and N1 >= 0 and p(N2) -> p(N1)).
 
-lemma(forward): forall N (N >= 0 -> p(N)).
-
 lemma(forward): forall N2, N3 (q(N2) and N3 > N2 -> not q(N3)).

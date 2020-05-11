@@ -1,3 +1,7 @@
+mod section_kind;
+
+pub use section_kind::SectionKind;
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum StatementKind
 {
@@ -72,17 +76,6 @@ impl Statement
 	}
 }
 
-#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
-pub enum SectionKind
-{
-	CompletedDefinitions,
-	IntegrityConstraints,
-	Axioms,
-	Assumptions,
-	Lemmas,
-	Assertions,
-}
-
 type VariableDeclarationDomains
 	= std::collections::BTreeMap<std::rc::Rc<foliage::VariableDeclaration>, crate::Domain>;
 
@@ -133,17 +126,6 @@ impl Problem
 
 	pub fn prove(&self, proof_direction: crate::ProofDirection) -> Result<(), crate::Error>
 	{
-		// TODO: refactor
-		let format_context = FormatContext
-		{
-			program_variable_declaration_ids:
-				std::cell::RefCell::new(VariableDeclarationIDs::new()),
-			integer_variable_declaration_ids:
-				std::cell::RefCell::new(VariableDeclarationIDs::new()),
-			input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
-			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
-		};
-
 		if proof_direction == crate::ProofDirection::Forward
 			|| proof_direction == crate::ProofDirection::Both
 		{
@@ -152,7 +134,7 @@ impl Problem
 			let mut statements = self.statements.borrow_mut();
 
 			// Initially reset all proof statuses
-			for (section_kind, statements) in statements.iter_mut()
+			for (_, statements) in statements.iter_mut()
 			{
 				for statement in statements.iter_mut()
 				{
@@ -161,31 +143,7 @@ impl Problem
 						StatementKind::Axiom
 						| StatementKind::Assumption
 						| StatementKind::Program =>
-						{
-							// TODO: avoid code duplication
-							let statement_type_output = match section_kind
-							{
-								SectionKind::CompletedDefinitions => "completed definition",
-								SectionKind::IntegrityConstraints => "integrity constraint",
-								SectionKind::Axioms => "axiom",
-								SectionKind::Assumptions => "assumption",
-								SectionKind::Lemmas => "lemma",
-								SectionKind::Assertions => "assertion",
-							};
-
-							// TODO: refactor
-							match statement.kind
-							{
-								StatementKind::Program => println!("  - {}: {}",
-									statement_type_output,
-									foliage::format::display_formula(&statement.formula,
-										&format_context)),
-								_ => println!("  - {}: {}", statement_type_output,
-									statement.formula),
-							}
-
-							statement.proof_status = ProofStatus::AssumedProven;
-						},
+							statement.proof_status = ProofStatus::AssumedProven,
 						StatementKind::Lemma(crate::ProofDirection::Backward) =>
 							statement.proof_status = ProofStatus::Ignored,
 						_ => statement.proof_status = ProofStatus::ToProveLater,
@@ -208,7 +166,7 @@ impl Problem
 			let mut statements = self.statements.borrow_mut();
 
 			// Initially reset all proof statuses
-			for (section_kind, statements) in statements.iter_mut()
+			for (_, statements) in statements.iter_mut()
 			{
 				for statement in statements.iter_mut()
 				{
@@ -217,31 +175,7 @@ impl Problem
 						StatementKind::Axiom
 						| StatementKind::Assumption
 						| StatementKind::Assertion =>
-						{
-							// TODO: avoid code duplication
-							let statement_type_output = match section_kind
-							{
-								SectionKind::CompletedDefinitions => "completed definition",
-								SectionKind::IntegrityConstraints => "integrity constraint",
-								SectionKind::Axioms => "axiom",
-								SectionKind::Assumptions => "assumption",
-								SectionKind::Lemmas => "lemma",
-								SectionKind::Assertions => "assertion",
-							};
-
-							// TODO: refactor
-							match statement.kind
-							{
-								StatementKind::Program => println!("  - {}: {}",
-									statement_type_output,
-									foliage::format::display_formula(&statement.formula,
-										&format_context)),
-								_ => println!("  - {}: {}", statement_type_output,
-									statement.formula),
-							}
-
-							statement.proof_status = ProofStatus::AssumedProven;
-						},
+							statement.proof_status = ProofStatus::AssumedProven,
 						StatementKind::Lemma(crate::ProofDirection::Forward) =>
 							statement.proof_status = ProofStatus::Ignored,
 						_ => statement.proof_status = ProofStatus::ToProveLater,
@@ -290,6 +224,36 @@ impl Problem
 			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
 		};
 
+		let display_statement = |section_kind, statement: &Statement, format_context|
+		{
+			let proof_status_output = match statement.proof_status
+			{
+				ProofStatus::AssumedProven => "",
+				ProofStatus::ToProveNow => "verifying ",
+				ProofStatus::ToProveLater => "not yet verifying ",
+				ProofStatus::Ignored => "ignoring ",
+			};
+
+			match statement.kind
+			{
+				StatementKind::Program =>
+					println!("  - {}{}: {}", proof_status_output, section_kind,
+						foliage::format::display_formula(&statement.formula, format_context)),
+				_ =>
+					println!("  - {}{}: {}", proof_status_output, section_kind, statement.formula),
+			}
+		};
+
+		// Show all statements that are assumed to be proven
+		for (section_kind, statements) in self.statements.borrow_mut().iter_mut()
+		{
+			for statement in statements.iter_mut()
+				.filter(|statement| statement.proof_status == ProofStatus::AssumedProven)
+			{
+				display_statement(*section_kind, statement, &format_context);
+			}
+		}
+
 		loop
 		{
 			match self.next_unproven_statement_do_mut(
@@ -297,27 +261,11 @@ impl Problem
 				{
 					statement.proof_status = ProofStatus::ToProveNow;
 
-					let statement_type_output = match section_kind
-					{
-						SectionKind::CompletedDefinitions => "completed definition",
-						SectionKind::IntegrityConstraints => "integrity constraint",
-						SectionKind::Axioms => "axiom",
-						SectionKind::Assumptions => "assumption",
-						SectionKind::Lemmas => "lemma",
-						SectionKind::Assertions => "assertion",
-					};
-
-					match statement.kind
-					{
-						StatementKind::Program => println!("  - verifying {}: {}",
-							statement_type_output,
-							foliage::format::display_formula(&statement.formula, &format_context)),
-						_ => println!("  - verifying {}: {}", statement_type_output,
-							statement.formula),
-					}
+					display_statement(section_kind, statement, &format_context);
 				})
 			{
 				Some(_) => (),
+				// If there are no more unproven statements left, we’re done
 				None => break,
 			}
 

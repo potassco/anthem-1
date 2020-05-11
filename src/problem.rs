@@ -133,7 +133,7 @@ impl Problem
 		if proof_direction == ProofDirection::Forward
 			|| proof_direction == ProofDirection::Both
 		{
-			println!("performing forward proof");
+			println!("Verifying assertions from completed definitions");
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -159,13 +159,19 @@ impl Problem
 
 			self.prove_unproven_statements()?;
 
-			println!("finished forward proof");
+			print_step_title("Finished proof");
+			println!("");
+		}
+
+		if proof_direction == ProofDirection::Both
+		{
+			println!("");
 		}
 
 		if proof_direction == ProofDirection::Backward
 			|| proof_direction == ProofDirection::Both
 		{
-			println!("performing backward proof");
+			println!("Verifying completed definitions from assertions");
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -191,7 +197,8 @@ impl Problem
 
 			self.prove_unproven_statements()?;
 
-			println!("finished backward proof");
+			print_step_title("Finished proof");
+			println!("");
 		}
 
 		Ok(())
@@ -228,23 +235,25 @@ impl Problem
 			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
 		};
 
-		let display_statement = |section_kind, statement: &Statement, format_context|
+		let display_statement = |section_kind: SectionKind, statement: &Statement, format_context|
 		{
-			let proof_status_output = match statement.proof_status
+			let step_title = match statement.proof_status
 			{
-				ProofStatus::AssumedProven => "",
-				ProofStatus::ToProveNow => "verifying ",
-				ProofStatus::ToProveLater => "not yet verifying ",
-				ProofStatus::Ignored => "ignoring ",
+				ProofStatus::AssumedProven => format!("{}", section_kind.display_capitalized()),
+				ProofStatus::ToProveNow => format!("Verifying {}", section_kind),
+				ProofStatus::ToProveLater => format!("Skipping {}", section_kind),
+				ProofStatus::Ignored => format!("Ignoring {}", section_kind),
 			};
+
+			print_step_title(&step_title);
 
 			match statement.kind
 			{
 				StatementKind::Program =>
-					println!("  - {}{}: {}", proof_status_output, section_kind,
+					println!("{}",
 						foliage::format::display_formula(&statement.formula, format_context)),
 				_ =>
-					println!("  - {}{}: {}", proof_status_output, section_kind, statement.formula),
+					println!("{}", statement.formula),
 			}
 		};
 
@@ -290,13 +299,15 @@ impl Problem
 			{
 				ProofResult::NotProven =>
 				{
-					println!("    → could not prove statement");
+					print_step_title("");
+					println!("⌛ could not prove statement");
 
 					return Ok(());
 				},
 				ProofResult::Disproven =>
 				{
-					println!("    → statement disproven");
+					print_step_title("");
+					println!("× statement disproven");
 
 					return Ok(());
 				},
@@ -312,9 +323,16 @@ impl Problem
 
 			match proof_time_seconds
 			{
-				None => println!("    → statement proven"),
+				None =>
+				{
+					print_step_title("");
+					println!("✓ statement proven");
+				},
 				Some(proof_time_seconds) =>
-					println!("    → statement proven in {} seconds", proof_time_seconds),
+				{
+					print_step_title("");
+					println!("✓ statement proven in {} seconds", proof_time_seconds);
+				},
 			}
 		}
 
@@ -653,6 +671,13 @@ impl<'a, 'b> foliage::format::Format for FormatContext<'a, 'b>
 
 		write!(formatter, "{}{}", prefix, id + 1)
 	}
+}
+
+fn print_step_title(title: &str)
+{
+	let longest_possible_key = "Verifying completed definition";
+
+	print!("{:>title_width$} ", title, title_width = longest_possible_key.chars().count())
 }
 
 fn run_vampire<I, S>(input: &str, arguments: Option<I>)

@@ -16,7 +16,7 @@ type Definitions =
 
 pub(crate) struct Translator<'p>
 {
-	problem: &'p mut crate::Problem,// TODO: refactor
+	problem: &'p mut crate::Problem,
 	definitions: Definitions,
 }
 

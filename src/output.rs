@@ -1,4 +1,3 @@
-pub(crate) mod human_readable;
 pub(crate) mod tptp;
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]

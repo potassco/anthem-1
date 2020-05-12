@@ -270,6 +270,7 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 		// Parse input constant specifiers
 		else
 		{
+			// TODO: detect conflicting domain specifiers (for example: n -> program, n -> integer)
 			let (domain, remaining_input) = match domain_specifier(input)?
 			{
 				(Some(domain), remaining_input) => (domain, remaining_input),

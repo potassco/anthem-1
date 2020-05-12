@@ -153,6 +153,39 @@ fn formula_statement_body<'i>(input: &'i str, problem: &crate::Problem)
 	formula(input, problem)
 }
 
+fn domain_specifier<'i>(input: &'i str)
+	-> Result<(Option<crate::Domain>, &'i str), crate::Error>
+{
+	let original_input = input;
+	let input = input.trim_start();
+
+	if input.starts_with("->")
+	{
+		let mut input_characters = input.chars();
+		input_characters.next();
+		input_characters.next();
+
+		let input = input_characters.as_str().trim_start();
+
+		let (identifier, remaining_input) =
+			foliage::parse::tokens::identifier(input)
+				.ok_or_else(|| crate::Error::new_expected_identifier())?;
+
+		let input = remaining_input;
+
+		match identifier
+		{
+			"integer" => Ok((Some(crate::Domain::Integer), input)),
+			"program" => Ok((Some(crate::Domain::Program), input)),
+			_ => return Err(crate::Error::new_unknown_domain_identifier(identifier.to_string())),
+		}
+	}
+	else
+	{
+		Ok((None, original_input))
+	}
+}
+
 fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 	-> Result<&'i str, crate::Error>
 {
@@ -215,35 +248,13 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 			Some(_)
 			| None =>
 			{
-				let domain =
-					if input.starts_with("->")
-					{
-						let mut input_characters = input.chars();
-						input_characters.next();
-						input_characters.next();
+				let (domain, remaining_input) = match domain_specifier(input)?
+				{
+					(Some(domain), remaining_input) => (domain, remaining_input),
+					(None, remaining_input) => (crate::Domain::Program, remaining_input),
+				};
 
-						input = input_characters.as_str().trim_start();
-
-						let (identifier, remaining_input) =
-							foliage::parse::tokens::identifier(input)
-								.ok_or_else(|| crate::Error::new_expected_identifier())?;
-
-						input = remaining_input;
-
-						match identifier
-						{
-							"integer" => crate::Domain::Integer,
-							"program" => crate::Domain::Program,
-							_ => return Err(crate::Error::new_unknown_domain_identifier(
-								identifier.to_string())),
-						}
-					}
-					else
-					{
-						crate::Domain::Program
-					};
-
-				log::debug!("domain: {:?}", domain);
+				input = remaining_input;
 
 				let mut input_constant_declarations =
 					problem.input_constant_declarations.borrow_mut();

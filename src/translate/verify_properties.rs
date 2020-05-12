@@ -64,7 +64,7 @@ impl<'p> Translator<'p>
 
 	pub fn translate<P>(&mut self, program_path: P) -> Result<(), crate::Error>
 	where
-		P: AsRef<std::path::Path>
+		P: AsRef<std::path::Path>,
 	{
 		// Read input program
 		let program = std::fs::read_to_string(program_path.as_ref())

@@ -139,7 +139,7 @@ where
 fn formula_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 	-> Result<(foliage::Formula, &'i str), crate::Error>
 {
-	input = input.trim_start();
+	input = foliage::parse::tokens::trim_start(input);
 
 	let mut input_characters = input.chars();
 
@@ -156,7 +156,7 @@ fn domain_specifier<'i>(mut input: &'i str)
 	-> Result<(Option<crate::Domain>, &'i str), crate::Error>
 {
 	let original_input = input;
-	input = input.trim_start();
+	input = foliage::parse::tokens::trim_start(input);
 
 	if input.starts_with("->")
 	{
@@ -164,7 +164,7 @@ fn domain_specifier<'i>(mut input: &'i str)
 		input_characters.next();
 		input_characters.next();
 
-		input = input_characters.as_str().trim_start();
+		input = foliage::parse::tokens::trim_start(input_characters.as_str());
 
 		let (identifier, remaining_input) =
 			foliage::parse::tokens::identifier(input)
@@ -189,13 +189,13 @@ fn predicate_arity_specifier<'i>(mut input: &'i str)
 	-> Result<(Option<usize>, &'i str), crate::Error>
 {
 	let original_input = input;
-	input = input.trim_start();
+	input = foliage::parse::tokens::trim_start(input);
 
 	let mut input_characters = input.chars();
 
 	if input_characters.next() == Some('/')
 	{
-		input = input_characters.as_str().trim_start();
+		input = foliage::parse::tokens::trim_start(input_characters.as_str());
 
 		let (arity, remaining_input) = foliage::parse::tokens::number(input)
 			.map_err(|error| crate::Error::new_parse_predicate_declaration().with(error))?
@@ -213,7 +213,7 @@ fn predicate_arity_specifier<'i>(mut input: &'i str)
 
 fn expect_statement_terminator<'i>(mut input: &'i str) -> Result<&'i str, crate::Error>
 {
-	input = input.trim_start();
+	input = foliage::parse::tokens::trim_start(input);
 
 	let mut input_characters = input.chars();
 
@@ -230,7 +230,7 @@ fn expect_statement_terminator<'i>(mut input: &'i str) -> Result<&'i str, crate:
 fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 	-> Result<&'i str, crate::Error>
 {
-	input = input.trim_start();
+	input = foliage::parse::tokens::trim_start(input);
 
 	let mut input_characters = input.chars();
 
@@ -244,13 +244,13 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 
 	loop
 	{
-		input = input.trim_start();
+		input = foliage::parse::tokens::trim_start(input);
 
 		let (constant_or_predicate_name, remaining_input) =
 			foliage::parse::tokens::identifier(input)
 				.ok_or_else(|| crate::Error::new_expected_identifier())?;
 
-		input = remaining_input.trim_start();
+		input = foliage::parse::tokens::trim_start(remaining_input);
 
 		// Parse input predicate specifiers
 		if let (Some(arity), remaining_input) = predicate_arity_specifier(input)?
@@ -309,7 +309,7 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 fn output_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 	-> Result<&'i str, crate::Error>
 {
-	input = input.trim_start();
+	input = foliage::parse::tokens::trim_start(input);
 
 	let mut input_characters = input.chars();
 
@@ -323,13 +323,13 @@ fn output_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 
 	loop
 	{
-		input = input.trim_start();
+		input = foliage::parse::tokens::trim_start(input);
 
 		let (constant_or_predicate_name, remaining_input) =
 			foliage::parse::tokens::identifier(input)
 				.ok_or_else(|| crate::Error::new_expected_identifier())?;
 
-		input = remaining_input.trim_start();
+		input = foliage::parse::tokens::trim_start(remaining_input);
 
 		// Only accept output predicate specifiers
 		if let (Some(arity), remaining_input) = predicate_arity_specifier(input)?
@@ -368,7 +368,7 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 {
 	loop
 	{
-		input = input.trim_start();
+		input = foliage::parse::tokens::trim_start(input);
 
 		if input.is_empty()
 		{
@@ -411,7 +411,7 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 			},
 			"lemma" =>
 			{
-				input = input.trim_start();
+				input = foliage::parse::tokens::trim_start(input);
 
 				let mut input_characters = input.chars();
 
@@ -420,7 +420,7 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 					Some('(') =>
 					{
 						// TODO: refactor
-						input = input_characters.as_str().trim_start();
+						input = foliage::parse::tokens::trim_start(input_characters.as_str());
 
 						let (proof_direction, remaining_input) = match
 							foliage::parse::tokens::identifier(input)
@@ -437,7 +437,7 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 							None => (crate::problem::ProofDirection::Both, input),
 						};
 
-						input = remaining_input.trim_start();
+						input = foliage::parse::tokens::trim_start(remaining_input);
 
 						let mut input_characters = input.chars();
 

@@ -97,6 +97,7 @@ pub struct Problem
 	pub input_constant_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
 	pub input_constant_declaration_domains: std::cell::RefCell<InputConstantDeclarationDomains>,
 	pub input_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
+	pub output_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
 	// TODO: clean up as variable declarations are dropped
 	variable_declaration_domains: std::cell::RefCell<VariableDeclarationDomains>,
 
@@ -119,6 +120,8 @@ impl Problem
 			input_constant_declaration_domains:
 				std::cell::RefCell::new(InputConstantDeclarationDomains::new()),
 			input_predicate_declarations:
+				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
+			output_predicate_declarations:
 				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
 			variable_declaration_domains:
 				std::cell::RefCell::new(VariableDeclarationDomains::new()),

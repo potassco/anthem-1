@@ -306,6 +306,63 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 	expect_statement_terminator(input)
 }
 
+fn output_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
+	-> Result<&'i str, crate::Error>
+{
+	input = input.trim_start();
+
+	let mut input_characters = input.chars();
+
+	let remaining_input = match input_characters.next()
+	{
+		Some(':') => input_characters.as_str(),
+		_ => return Err(crate::Error::new_expected_colon()),
+	};
+
+	input = remaining_input;
+
+	loop
+	{
+		input = input.trim_start();
+
+		let (constant_or_predicate_name, remaining_input) =
+			foliage::parse::tokens::identifier(input)
+				.ok_or_else(|| crate::Error::new_expected_identifier())?;
+
+		input = remaining_input.trim_start();
+
+		// Only accept output predicate specifiers
+		if let (Some(arity), remaining_input) = predicate_arity_specifier(input)?
+		{
+			input = remaining_input;
+
+			let mut output_predicate_declarations =
+				problem.output_predicate_declarations.borrow_mut();
+
+			use foliage::FindOrCreatePredicateDeclaration as _;
+
+			let predicate_declaration =
+				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity);
+
+			output_predicate_declarations.insert(predicate_declaration);
+		}
+		else
+		{
+			return Err(crate::Error::new_expected_predicate_specifier());
+		}
+
+		let mut input_characters = input.chars();
+
+		match input_characters.next()
+		{
+			Some(',') => input = input_characters.as_str(),
+			_ => break,
+		}
+	}
+
+	expect_statement_terminator(input)
+}
+
 pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 	-> Result<(), crate::Error>
 {
@@ -424,6 +481,7 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 				continue;
 			},
 			"input" => input = input_statement_body(input, problem)?,
+			"output" => input = output_statement_body(input, problem)?,
 			identifier => return Err(crate::Error::new_unknown_statement(identifier.to_string())),
 		}
 	}

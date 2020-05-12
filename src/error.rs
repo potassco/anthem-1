@@ -15,6 +15,7 @@ pub enum Kind
 	MissingStatementTerminator,
 	ParseFormula,
 	ExpectedIdentifier,
+	ExpectedPredicateSpecifier,
 	ParsePredicateDeclaration,
 	//ParseConstantDeclaration,
 	UnknownProofDirection(String),
@@ -116,6 +117,11 @@ impl Error
 		Self::new(Kind::ExpectedIdentifier)
 	}
 
+	pub(crate) fn new_expected_predicate_specifier() -> Self
+	{
+		Self::new(Kind::ExpectedPredicateSpecifier)
+	}
+
 	pub(crate) fn new_parse_predicate_declaration() -> Self
 	{
 		Self::new(Kind::ParsePredicateDeclaration)
@@ -187,8 +193,11 @@ impl std::fmt::Debug for Error
 			Kind::UnmatchedParenthesis => write!(formatter, "unmatched parenthesis"),
 			Kind::ParseFormula => write!(formatter, "could not parse formula"),
 			Kind::ExpectedIdentifier => write!(formatter, "expected constant or predicate name"),
+			Kind::ExpectedPredicateSpecifier =>
+				write!(formatter, "expected predicate specifier (examples: p/0, q/2)"),
 			Kind::ParsePredicateDeclaration => write!(formatter,
 				"could not parse predicate declaration"),
+			// TODO: rename to ExpectedStatementTerminator
 			Kind::MissingStatementTerminator => write!(formatter,
 				"statement not terminated with ‘.’ character"),
 			Kind::UnknownProofDirection(ref proof_direction) => write!(formatter,

@@ -1,10 +1,14 @@
+# Perform the proofs under the assumption that n is a nonnegative integer input constant
 input: n -> integer.
+assume: n >= 0.
+
+# p/1 is an auxiliary predicate, so replace all occurrences of p/1 with its completed definition
 output: q/1.
 
 axiom: forall N1, N2, N3 (N1 > N2 and N3 > 0 -> N1 * N3 > N2 * N3).
+# Induction principle instantiated for p.
+# This axiom is necessary because we use Vampire without higher-order reasoning
 axiom: (p(0) and forall N (N >= 0 and p(N) -> p(N + 1))) -> (forall N p(N)).
-
-assume: n >= 0.
 
 assert: exists N (forall X (q(X) <-> X = N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) > n).
 

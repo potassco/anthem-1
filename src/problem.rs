@@ -480,6 +480,7 @@ impl Problem
 		let mut last_symbolic_constant: Option<std::rc::Rc<foliage::FunctionDeclaration>> =
 			None;
 
+		// TODO: put in axioms section
 		for (i, symbolic_constant) in symbolic_constants.enumerate()
 		{
 			// Order axioms are only necessary with two or more symbolic constants

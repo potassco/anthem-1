@@ -20,6 +20,7 @@ pub enum Kind
 	UnknownProofDirection(String),
 	UnknownDomainIdentifier(String),
 	VariableNameNotAllowed(String),
+	FormulaNotClosed(std::rc::Rc<foliage::VariableDeclarations>),
 	WriteTPTPProgram,
 	RunVampire,
 	// TODO: rename to something Vampire-specific
@@ -135,6 +136,12 @@ impl Error
 		Self::new(Kind::VariableNameNotAllowed(variable_name))
 	}
 
+	pub(crate) fn new_formula_not_closed(free_variables: std::rc::Rc<foliage::VariableDeclarations>)
+		-> Self
+	{
+		Self::new(Kind::FormulaNotClosed(free_variables))
+	}
+
 	pub(crate) fn new_write_tptp_program<S: Into<Source>>(source: S) -> Self
 	{
 		Self::new(Kind::WriteTPTPProgram).with(source)
@@ -192,6 +199,17 @@ impl std::fmt::Debug for Error
 				"variable name “{}” not allowed (program variables must start with X, Y, or Z and integer variables with I, J, K, L, M, or N)",
 				variable_name),
 			Kind::WriteTPTPProgram => write!(formatter, "error writing TPTP program"),
+			Kind::FormulaNotClosed(free_variable_declarations) =>
+			{
+				let free_variable_names = free_variable_declarations
+					.iter()
+					.map(|variable_declaration| &variable_declaration.name);
+
+				let free_variable_names_output = itertools::join(free_variable_names, ", ");
+
+				write!(formatter, "formula may not contain free variables (free variables in this formula: {})",
+					free_variable_names_output)
+			},
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>
 			{

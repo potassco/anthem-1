@@ -117,38 +117,37 @@ where
 	Ok((open_formula, remaining_input))
 }
 
-fn formula<'i, D>(input: &'i str, declarations: &D)
+fn formula<'i, D>(mut input: &'i str, declarations: &D)
 	-> Result<(foliage::Formula, &'i str), crate::Error>
 where
 	D: foliage::FindOrCreateFunctionDeclaration
 		+ foliage::FindOrCreatePredicateDeclaration
 		+ crate::traits::AssignVariableDeclarationDomain,
 {
-	let (open_formula, input) = open_formula(input, declarations)?;
+	let (open_formula, remaining_input) = open_formula(input, declarations)?;
+
+	input = remaining_input;
 
 	if !open_formula.free_variable_declarations.is_empty()
 	{
-		// TODO: improve
-		panic!("formula may not contain free variables");
+		return Err(crate::Error::new_formula_not_closed(open_formula.free_variable_declarations));
 	}
 
 	Ok((open_formula.formula, input))
 }
 
-fn formula_statement_body<'i>(input: &'i str, problem: &crate::Problem)
+fn formula_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 	-> Result<(foliage::Formula, &'i str), crate::Error>
 {
-	let input = input.trim_start();
+	input = input.trim_start();
 
 	let mut input_characters = input.chars();
 
-	let remaining_input = match input_characters.next()
+	input = match input_characters.next()
 	{
 		Some(':') => input_characters.as_str(),
 		_ => return Err(crate::Error::new_expected_colon()),
 	};
-
-	let input = remaining_input;
 
 	formula(input, problem)
 }

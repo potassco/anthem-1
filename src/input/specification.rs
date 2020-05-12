@@ -212,6 +212,22 @@ fn predicate_arity_specifier<'i>(mut input: &'i str)
 	}
 }
 
+fn expect_statement_terminator<'i>(mut input: &'i str) -> Result<&'i str, crate::Error>
+{
+	input = input.trim_start();
+
+	let mut input_characters = input.chars();
+
+	if input_characters.next() != Some('.')
+	{
+		return Err(crate::Error::new_missing_statement_terminator())
+	}
+
+	input = input_characters.as_str();
+
+	Ok(input)
+}
+
 fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 	-> Result<&'i str, crate::Error>
 {
@@ -288,18 +304,7 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 		}
 	}
 
-	input = input.trim_start();
-
-	let mut input_characters = input.chars();
-
-	if input_characters.next() != Some('.')
-	{
-		return Err(crate::Error::new_missing_statement_terminator())
-	}
-
-	input = input_characters.as_str();
-
-	Ok(input)
+	expect_statement_terminator(input)
 }
 
 pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)

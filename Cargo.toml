@@ -5,11 +5,13 @@ authors = ["Patrick Lühne <patrick@luehne.de>"]
 edition = "2018"
 
 [dependencies]
+atty = "0.2"
 foliage = {git = "https://github.com/pluehne/foliage", branch = "parser-new"}
 log = "0.4"
 pretty_env_logger = "0.4"
 regex = "1"
 structopt = "0.3"
+termcolor = "1.1"
 
 [dependencies.clingo]
 git = "https://github.com/potassco/clingo-rs"

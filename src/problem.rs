@@ -18,6 +18,9 @@ pub enum StatementKind
 enum ProofStatus
 {
 	AssumedProven,
+	Proven,
+	NotProven,
+	Disproven,
 	ToProveNow,
 	ToProveLater,
 	Ignored,
@@ -96,6 +99,8 @@ pub struct Problem
 	pub input_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
 	// TODO: clean up as variable declarations are dropped
 	variable_declaration_domains: std::cell::RefCell<VariableDeclarationDomains>,
+
+	shell: std::cell::RefCell<crate::output::Shell>,
 }
 
 impl Problem
@@ -117,6 +122,8 @@ impl Problem
 				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
 			variable_declaration_domains:
 				std::cell::RefCell::new(VariableDeclarationDomains::new()),
+
+			shell: std::cell::RefCell::new(crate::output::Shell::from_stdout()),
 		}
 	}
 
@@ -128,12 +135,25 @@ impl Problem
 		section.push(statement);
 	}
 
+	fn print_step_title(&self, step_title: &str, color: &termcolor::ColorSpec)
+	{
+		let longest_possible_key = "    Finished";
+
+		self.shell.borrow_mut().print(
+			&format!("{:>step_title_width$} ", step_title,
+				step_title_width = longest_possible_key.chars().count()),
+			color);
+	}
+
 	pub fn prove(&self, proof_direction: ProofDirection) -> Result<(), crate::Error>
 	{
 		if proof_direction == ProofDirection::Forward
 			|| proof_direction == ProofDirection::Both
 		{
-			println!("Verifying assertions from completed definitions");
+			self.print_step_title("Started",
+				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)));
+			self.shell.borrow_mut().println(&"verification of assertions from completed definitions",
+				&termcolor::ColorSpec::new());
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -157,10 +177,20 @@ impl Problem
 
 			drop(statements);
 
-			self.prove_unproven_statements()?;
+			let proof_result = self.prove_unproven_statements()?;
 
-			print_step_title("Finished proof");
-			println!("");
+			let mut step_title_color = termcolor::ColorSpec::new();
+			step_title_color.set_bold(true);
+
+			match proof_result
+			{
+				ProofResult::Proven => step_title_color.set_fg(Some(termcolor::Color::Green)),
+				ProofResult::NotProven => step_title_color.set_fg(Some(termcolor::Color::Yellow)),
+				ProofResult::Disproven => step_title_color.set_fg(Some(termcolor::Color::Red)),
+			};
+
+			self.print_step_title("Finished", &step_title_color);
+			println!("verification of assertions from completed definitions");
 		}
 
 		if proof_direction == ProofDirection::Both
@@ -171,7 +201,10 @@ impl Problem
 		if proof_direction == ProofDirection::Backward
 			|| proof_direction == ProofDirection::Both
 		{
-			println!("Verifying completed definitions from assertions");
+			self.print_step_title("Started",
+				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)));
+			self.shell.borrow_mut().println(&"verification of completed definitions from assertions",
+				&termcolor::ColorSpec::new());
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -195,10 +228,20 @@ impl Problem
 
 			drop(statements);
 
-			self.prove_unproven_statements()?;
+			let proof_result = self.prove_unproven_statements()?;
 
-			print_step_title("Finished proof");
-			println!("");
+			let mut step_title_color = termcolor::ColorSpec::new();
+			step_title_color.set_bold(true);
+
+			match proof_result
+			{
+				ProofResult::Proven => step_title_color.set_fg(Some(termcolor::Color::Green)),
+				ProofResult::NotProven => step_title_color.set_fg(Some(termcolor::Color::Yellow)),
+				ProofResult::Disproven => step_title_color.set_fg(Some(termcolor::Color::Red)),
+			};
+
+			self.print_step_title("Finished", &step_title_color);
+			println!("verification of completed definitions from assertions");
 		}
 
 		Ok(())
@@ -223,7 +266,7 @@ impl Problem
 		None
 	}
 
-	fn prove_unproven_statements(&self) -> Result<(), crate::Error>
+	fn prove_unproven_statements(&self) -> Result<ProofResult, crate::Error>
 	{
 		let format_context = FormatContext
 		{
@@ -239,21 +282,39 @@ impl Problem
 		{
 			let step_title = match statement.proof_status
 			{
-				ProofStatus::AssumedProven => format!("{}", section_kind.display_capitalized()),
-				ProofStatus::ToProveNow => format!("Verifying {}", section_kind),
-				ProofStatus::ToProveLater => format!("Skipping {}", section_kind),
-				ProofStatus::Ignored => format!("Ignoring {}", section_kind),
+				ProofStatus::AssumedProven => format!("Established"),
+				ProofStatus::Proven => format!("Verified"),
+				ProofStatus::NotProven
+				| ProofStatus::Disproven
+				| ProofStatus::ToProveNow => format!("Verifying"),
+				ProofStatus::ToProveLater => format!("Skipped"),
+				ProofStatus::Ignored => format!("Ignored"),
 			};
 
-			print_step_title(&step_title);
+			let mut step_title_color = termcolor::ColorSpec::new();
+			step_title_color.set_bold(true);
+
+			match statement.proof_status
+			{
+				ProofStatus::AssumedProven
+				| ProofStatus::Proven => step_title_color.set_fg(Some(termcolor::Color::Green)),
+				ProofStatus::NotProven => step_title_color.set_fg(Some(termcolor::Color::Yellow)),
+				ProofStatus::Disproven => step_title_color.set_fg(Some(termcolor::Color::Red)),
+				_ => step_title_color.set_fg(Some(termcolor::Color::Cyan)),
+			};
+
+			self.print_step_title(&step_title, &step_title_color);
+
+			self.shell.borrow_mut().print(&format!("{}: ", section_kind),
+				&termcolor::ColorSpec::new());
 
 			match statement.kind
 			{
 				StatementKind::Program =>
-					println!("{}",
+					print!("{}",
 						foliage::format::display_formula(&statement.formula, format_context)),
 				_ =>
-					println!("{}", statement.formula),
+					print!("{}", statement.formula),
 			}
 		};
 
@@ -264,6 +325,7 @@ impl Problem
 				.filter(|statement| statement.proof_status == ProofStatus::AssumedProven)
 			{
 				display_statement(*section_kind, statement, &format_context);
+				println!("");
 			}
 		}
 
@@ -274,7 +336,12 @@ impl Problem
 				{
 					statement.proof_status = ProofStatus::ToProveNow;
 
+					print!("\x1b[s");
 					display_statement(section_kind, statement, &format_context);
+					print!("\x1b[u");
+
+					use std::io::Write as _;
+					std::io::stdout().flush();
 				})
 			{
 				Some(_) => (),
@@ -293,50 +360,49 @@ impl Problem
 			// TODO: make configurable again
 			let (proof_result, proof_time_seconds) =
 				run_vampire(&tptp_problem_to_prove_next_statement,
-					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "300"]))?;
-
-			match proof_result
-			{
-				ProofResult::NotProven =>
-				{
-					print_step_title("");
-					println!("⌛ could not prove statement");
-
-					return Ok(());
-				},
-				ProofResult::Disproven =>
-				{
-					print_step_title("");
-					println!("× statement disproven");
-
-					return Ok(());
-				},
-				_ => (),
-			}
+					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "15"]))?;
 
 			match self.next_unproven_statement_do_mut(
-				|_, statement| statement.proof_status = ProofStatus::AssumedProven)
+				|section_kind, statement|
+				{
+					statement.proof_status = match proof_result
+					{
+						ProofResult::Proven => ProofStatus::Proven,
+						ProofResult::NotProven => ProofStatus::NotProven,
+						ProofResult::Disproven => ProofStatus::Disproven,
+					};
+
+					self.shell.borrow_mut().erase_line();
+
+					display_statement(section_kind, statement, &format_context);
+
+					match proof_result
+					{
+						ProofResult::Proven => (),
+						ProofResult::NotProven => print!(" (not proven)"),
+						ProofResult::Disproven => print!(" (disproven)"),
+					}
+
+					if let Some(proof_time_seconds) = proof_time_seconds
+					{
+						self.shell.borrow_mut().print(&format!(" in {} seconds", proof_time_seconds),
+							termcolor::ColorSpec::new().set_fg(Some(termcolor::Color::Black)).set_intense(true));
+					}
+				})
 			{
 				Some(_) => (),
-				None => unreachable!("could not set the statement to proven"),
+				None => unreachable!(),
 			}
 
-			match proof_time_seconds
+			self.shell.borrow_mut().println(&"", &termcolor::ColorSpec::new());
+
+			if proof_result != ProofResult::Proven
 			{
-				None =>
-				{
-					print_step_title("");
-					println!("✓ statement proven");
-				},
-				Some(proof_time_seconds) =>
-				{
-					print_step_title("");
-					println!("✓ statement proven in {} seconds", proof_time_seconds);
-				},
+				return Ok(proof_result);
 			}
 		}
 
-		Ok(())
+		Ok(ProofResult::Proven)
 	}
 
 	fn write_tptp_problem_to_prove_next_statement(&self, formatter: &mut String) -> std::fmt::Result
@@ -476,7 +542,10 @@ impl Problem
 
 				let statement_type = match statement.proof_status
 				{
-					ProofStatus::AssumedProven => "axiom",
+					ProofStatus::AssumedProven
+					| ProofStatus::Proven => "axiom",
+					ProofStatus::NotProven
+					| ProofStatus::Disproven => unreachable!(),
 					ProofStatus::ToProveNow => "conjecture",
 					// Skip statements that will be proven later
 					ProofStatus::ToProveLater => continue,
@@ -671,13 +740,6 @@ impl<'a, 'b> foliage::format::Format for FormatContext<'a, 'b>
 
 		write!(formatter, "{}{}", prefix, id + 1)
 	}
-}
-
-fn print_step_title(title: &str)
-{
-	let longest_possible_key = "Verifying completed definition";
-
-	print!("{:>title_width$} ", title, title_width = longest_possible_key.chars().count())
 }
 
 fn run_vampire<I, S>(input: &str, arguments: Option<I>)

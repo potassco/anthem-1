@@ -153,11 +153,11 @@ fn formula_statement_body<'i>(input: &'i str, problem: &crate::Problem)
 	formula(input, problem)
 }
 
-fn domain_specifier<'i>(input: &'i str)
+fn domain_specifier<'i>(mut input: &'i str)
 	-> Result<(Option<crate::Domain>, &'i str), crate::Error>
 {
 	let original_input = input;
-	let input = input.trim_start();
+	input = input.trim_start();
 
 	if input.starts_with("->")
 	{
@@ -165,13 +165,13 @@ fn domain_specifier<'i>(input: &'i str)
 		input_characters.next();
 		input_characters.next();
 
-		let input = input_characters.as_str().trim_start();
+		input = input_characters.as_str().trim_start();
 
 		let (identifier, remaining_input) =
 			foliage::parse::tokens::identifier(input)
 				.ok_or_else(|| crate::Error::new_expected_identifier())?;
 
-		let input = remaining_input;
+		input = remaining_input;
 
 		match identifier
 		{
@@ -179,6 +179,32 @@ fn domain_specifier<'i>(input: &'i str)
 			"program" => Ok((Some(crate::Domain::Program), input)),
 			_ => return Err(crate::Error::new_unknown_domain_identifier(identifier.to_string())),
 		}
+	}
+	else
+	{
+		Ok((None, original_input))
+	}
+}
+
+fn predicate_arity_specifier<'i>(mut input: &'i str)
+	-> Result<(Option<usize>, &'i str), crate::Error>
+{
+	let original_input = input;
+	input = input.trim_start();
+
+	let mut input_characters = input.chars();
+
+	if input_characters.next() == Some('/')
+	{
+		input = input_characters.as_str().trim_start();
+
+		let (arity, remaining_input) = foliage::parse::tokens::number(input)
+			.map_err(|error| crate::Error::new_parse_predicate_declaration().with(error))?
+			.ok_or_else(|| crate::Error::new_parse_predicate_declaration())?;
+
+		input = remaining_input;
+
+		Ok((Some(arity), input))
 	}
 	else
 	{
@@ -211,74 +237,54 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 
 		input = remaining_input.trim_start();
 
+		// Parse input predicate specifiers
+		if let (Some(arity), remaining_input) = predicate_arity_specifier(input)?
+		{
+			input = remaining_input;
+
+			let mut input_predicate_declarations =
+				problem.input_predicate_declarations.borrow_mut();
+
+			use foliage::FindOrCreatePredicateDeclaration as _;
+
+			let predicate_declaration =
+				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity);
+
+			input_predicate_declarations.insert(predicate_declaration);
+		}
+		// Parse input constant specifiers
+		else
+		{
+			let (domain, remaining_input) = match domain_specifier(input)?
+			{
+				(Some(domain), remaining_input) => (domain, remaining_input),
+				(None, remaining_input) => (crate::Domain::Program, remaining_input),
+			};
+
+			input = remaining_input;
+
+			let mut input_constant_declarations =
+				problem.input_constant_declarations.borrow_mut();
+
+			use foliage::FindOrCreateFunctionDeclaration as _;
+
+			let constant_declaration =
+				problem.find_or_create_function_declaration(constant_or_predicate_name, 0);
+
+			input_constant_declarations.insert(std::rc::Rc::clone(&constant_declaration));
+
+			let mut input_constant_declaration_domains =
+				problem.input_constant_declaration_domains.borrow_mut();
+
+			input_constant_declaration_domains.insert(constant_declaration, domain);
+		}
+
 		let mut input_characters = input.chars();
 
 		match input_characters.next()
 		{
-			// Parse input predicate specifiers
-			Some('/') =>
-			{
-				input = input_characters.as_str().trim_start();
-
-				let (arity, remaining_input) = foliage::parse::tokens::number(input)
-					.map_err(|error| crate::Error::new_parse_predicate_declaration().with(error))?
-					.ok_or_else(|| crate::Error::new_parse_predicate_declaration())?;
-
-				input = remaining_input.trim_start();
-
-				let mut input_predicate_declarations =
-					problem.input_predicate_declarations.borrow_mut();
-
-				use foliage::FindOrCreatePredicateDeclaration;
-
-				let predicate_declaration =
-					problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity);
-
-				input_predicate_declarations.insert(predicate_declaration);
-
-				let mut input_characters = input.chars();
-
-				match input_characters.next()
-				{
-					Some(',') => input = input_characters.as_str(),
-					_ => break,
-				}
-			},
-			// Parse input constant specifiers
-			Some(_)
-			| None =>
-			{
-				let (domain, remaining_input) = match domain_specifier(input)?
-				{
-					(Some(domain), remaining_input) => (domain, remaining_input),
-					(None, remaining_input) => (crate::Domain::Program, remaining_input),
-				};
-
-				input = remaining_input;
-
-				let mut input_constant_declarations =
-					problem.input_constant_declarations.borrow_mut();
-
-				use foliage::FindOrCreateFunctionDeclaration;
-
-				let constant_declaration =
-					problem.find_or_create_function_declaration(constant_or_predicate_name, 0);
-
-				input_constant_declarations.insert(std::rc::Rc::clone(&constant_declaration));
-
-				let mut input_constant_declaration_domains =
-					problem.input_constant_declaration_domains.borrow_mut();
-
-				input_constant_declaration_domains.insert(constant_declaration, domain);
-
-				let mut input_characters = input.chars();
-
-				match input_characters.next()
-				{
-					Some(',') => input = input_characters.as_str(),
-					_ => break,
-				}
-			}
+			Some(',') => input = input_characters.as_str(),
+			_ => break,
 		}
 	}
 

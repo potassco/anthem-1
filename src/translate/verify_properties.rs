@@ -141,48 +141,19 @@ impl<'p> Translator<'p>
 			}
 		};
 
-		// TODO: refactor
-		let predicate_declarations = self.problem.predicate_declarations.borrow();
-		let input_predicate_declarations = self.problem.input_predicate_declarations.borrow();
-		let mut definitions = &mut self.definitions;
-		let problem = &self.problem;
-
-		let completed_definitions = predicate_declarations.iter()
-			.filter_map(
-				|predicate_declaration|
-				{
-					// Don’t perform completion for input predicates
-					if input_predicate_declarations.contains(predicate_declaration)
-					{
-						return None;
-					}
-
-					let completed_definition = completed_definition(predicate_declaration,
-						&mut definitions, problem);
-
-					Some((std::rc::Rc::clone(predicate_declaration), completed_definition))
-				})
-			.collect::<std::collections::BTreeMap<_, _>>();
-
-		// Replace occurrences of hidden predicates with their completed definitions
-		let output_predicate_declarations = self.problem.output_predicate_declarations.borrow();
-
-		// If no output statements are present, don’t hide any predicates by default
-		if !output_predicate_declarations.is_empty()
+		for predicate_declaration in self.problem.predicate_declarations.borrow().iter()
 		{
-			let hidden_predicate_declarations =
-				predicate_declarations.difference(&output_predicate_declarations);
-
-			for hidden_predicate_declaration in hidden_predicate_declarations
+			// Don’t perform completion for input predicates
+			if self.problem.input_predicate_declarations.borrow().contains(predicate_declaration)
 			{
-				log::debug!("hidden: {}", hidden_predicate_declaration);
+				continue;
 			}
-		}
 
-		for (predicate_declaration, completed_definition) in completed_definitions.into_iter()
-		{
 			let statement_kind = crate::problem::StatementKind::CompletedDefinition(
 				std::rc::Rc::clone(&predicate_declaration));
+
+			let completed_definition = completed_definition(predicate_declaration,
+				&mut self.definitions, self.problem);
 
 			let statement = crate::problem::Statement::new(statement_kind, completed_definition)
 				.with_name(format!("completed_definition_{}_{}", predicate_declaration.name,

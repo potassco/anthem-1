@@ -4,11 +4,12 @@ mod section_kind;
 pub use proof_direction::ProofDirection;
 pub use section_kind::SectionKind;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum StatementKind
 {
 	Axiom,
-	Program,
+	CompletedDefinition(std::rc::Rc<foliage::PredicateDeclaration>),
+	IntegrityConstraint,
 	Assumption,
 	Lemma(ProofDirection),
 	Assertion,
@@ -155,7 +156,7 @@ impl Problem
 		{
 			self.print_step_title("Started",
 				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)));
-			self.shell.borrow_mut().println(&"verification of assertions from completed definitions",
+			self.shell.borrow_mut().println(&"verification of assertions from translated program",
 				&termcolor::ColorSpec::new());
 
 			let mut statements = self.statements.borrow_mut();
@@ -169,7 +170,8 @@ impl Problem
 					{
 						StatementKind::Axiom
 						| StatementKind::Assumption
-						| StatementKind::Program =>
+						| StatementKind::CompletedDefinition(_)
+						| StatementKind::IntegrityConstraint =>
 							statement.proof_status = ProofStatus::AssumedProven,
 						StatementKind::Lemma(ProofDirection::Backward) =>
 							statement.proof_status = ProofStatus::Ignored,
@@ -193,7 +195,7 @@ impl Problem
 			};
 
 			self.print_step_title("Finished", &step_title_color);
-			println!("verification of assertions from completed definitions");
+			println!("verification of assertions from translated program");
 		}
 
 		if proof_direction == ProofDirection::Both
@@ -206,7 +208,7 @@ impl Problem
 		{
 			self.print_step_title("Started",
 				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)));
-			self.shell.borrow_mut().println(&"verification of completed definitions from assertions",
+			self.shell.borrow_mut().println(&"verification of translated program from assertions",
 				&termcolor::ColorSpec::new());
 
 			let mut statements = self.statements.borrow_mut();
@@ -244,7 +246,7 @@ impl Problem
 			};
 
 			self.print_step_title("Finished", &step_title_color);
-			println!("verification of completed definitions from assertions");
+			println!("verification of translated program from assertions");
 		}
 
 		Ok(())
@@ -313,7 +315,8 @@ impl Problem
 
 			match statement.kind
 			{
-				StatementKind::Program =>
+				StatementKind::CompletedDefinition(_)
+				| StatementKind::IntegrityConstraint =>
 					print!("{}",
 						foliage::format::display_formula(&statement.formula, format_context)),
 				_ =>

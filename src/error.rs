@@ -22,6 +22,9 @@ pub enum Kind
 	UnknownDomainIdentifier(String),
 	VariableNameNotAllowed(String),
 	FormulaNotClosed(std::rc::Rc<foliage::VariableDeclarations>),
+	NoCompletedDefinitionFound(std::rc::Rc<foliage::PredicateDeclaration>),
+	CannotHidePredicate(std::rc::Rc<foliage::PredicateDeclaration>,
+		std::rc::Rc<foliage::PredicateDeclaration>),
 	WriteTPTPProgram,
 	RunVampire,
 	// TODO: rename to something Vampire-specific
@@ -148,6 +151,21 @@ impl Error
 		Self::new(Kind::FormulaNotClosed(free_variables))
 	}
 
+	pub(crate) fn new_no_completed_definition_found(
+		predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>)
+		-> Self
+	{
+		Self::new(Kind::NoCompletedDefinitionFound(predicate_declaration))
+	}
+
+	pub(crate) fn new_cannot_hide_predicate(
+		predicate_declaration_1: std::rc::Rc<foliage::PredicateDeclaration>,
+		predicate_declaration_2: std::rc::Rc<foliage::PredicateDeclaration>)
+		-> Self
+	{
+		Self::new(Kind::CannotHidePredicate(predicate_declaration_1, predicate_declaration_2))
+	}
+
 	pub(crate) fn new_write_tptp_program<S: Into<Source>>(source: S) -> Self
 	{
 		Self::new(Kind::WriteTPTPProgram).with(source)
@@ -219,6 +237,11 @@ impl std::fmt::Debug for Error
 				write!(formatter, "formula may not contain free variables (free variables in this formula: {})",
 					free_variable_names_output)
 			},
+			Kind::NoCompletedDefinitionFound(ref predicate_declaration) =>
+				write!(formatter, "no completed definition found for {}", predicate_declaration),
+			Kind::CannotHidePredicate(ref predicate_declaration_1, ref predicate_declaration_2) =>
+				write!(formatter, "cannot hide predicate {} because it depends on {}",
+					predicate_declaration_1, predicate_declaration_2),
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>
 			{

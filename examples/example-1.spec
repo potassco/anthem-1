@@ -1,3 +1,5 @@
+input: p/1.
+
 assert:
 	forall N
 	(

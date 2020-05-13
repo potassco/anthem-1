@@ -20,6 +20,9 @@ type VariableDeclarationIDs
 type InputConstantDeclarationDomains
 	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, crate::Domain>;
 
+type VariableDeclarationDomains
+	= std::collections::BTreeMap<std::rc::Rc<foliage::VariableDeclaration>, crate::Domain>;
+
 struct FormatContext<'a, 'b>
 {
 	pub program_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
@@ -27,9 +30,6 @@ struct FormatContext<'a, 'b>
 	pub input_constant_declaration_domains: &'a InputConstantDeclarationDomains,
 	pub variable_declaration_domains: &'b VariableDeclarationDomains,
 }
-
-type VariableDeclarationDomains
-	= std::collections::BTreeMap<std::rc::Rc<foliage::VariableDeclaration>, crate::Domain>;
 
 pub struct Problem
 {
@@ -80,6 +80,64 @@ impl Problem
 		let section = statements.entry(section_kind).or_insert(vec![]);
 
 		section.push(statement);
+	}
+
+	pub(crate) fn restrict_to_output_predicates(&mut self) -> Result<(), crate::Error>
+	{
+		let predicate_declarations = self.predicate_declarations.borrow();
+		let input_predicate_declarations = self.input_predicate_declarations.borrow();
+		let output_predicate_declarations = self.output_predicate_declarations.borrow();
+
+		// If no output statements were provided, show all predicates by default
+		if output_predicate_declarations.is_empty()
+		{
+			return Ok(());
+		}
+
+		let hidden_predicate_declarations =
+			predicate_declarations.iter().filter(|x| !output_predicate_declarations.contains(*x)
+				&& !input_predicate_declarations.contains(*x));
+
+		let mut statements = self.statements.borrow_mut();
+
+		for hidden_predicate_declaration in hidden_predicate_declarations
+		{
+			let matches_completed_definition =
+				|(_, statement): &(_, &Statement)| match statement.kind
+				{
+					StatementKind::CompletedDefinition(ref predicate_declaration) =>
+						predicate_declaration == hidden_predicate_declaration,
+					_ => false,
+				};
+
+			let completed_definitions = match statements.get_mut(&SectionKind::CompletedDefinitions)
+			{
+				Some(completed_definitions) => completed_definitions,
+				None => return Ok(()),
+			};
+
+			let completed_definition = match completed_definitions.iter().enumerate()
+				.find(matches_completed_definition)
+			{
+				Some((completed_definition_index, _)) =>
+					completed_definitions.remove(completed_definition_index).formula,
+				None => return Err(crate::Error::new_no_completed_definition_found(
+					std::rc::Rc::clone(hidden_predicate_declaration))),
+			};
+
+			drop(completed_definitions);
+
+			for (_, statements) in statements.iter_mut()
+			{
+				for statement in statements.iter_mut()
+				{
+					crate::utils::replace_predicate_in_formula_with_completed_definition(
+						&mut statement.formula, &completed_definition, self)?;
+				}
+			}
+		}
+
+		Ok(())
 	}
 
 	fn print_step_title(&self, step_title: &str, color: &termcolor::ColorSpec)
@@ -216,17 +274,7 @@ impl Problem
 
 	fn prove_unproven_statements(&self) -> Result<ProofResult, crate::Error>
 	{
-		let format_context = FormatContext
-		{
-			program_variable_declaration_ids:
-				std::cell::RefCell::new(VariableDeclarationIDs::new()),
-			integer_variable_declaration_ids:
-				std::cell::RefCell::new(VariableDeclarationIDs::new()),
-			input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
-			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
-		};
-
-		let display_statement = |statement: &Statement, format_context|
+		let display_statement = |statement: &Statement|
 		{
 			let step_title = match statement.proof_status
 			{
@@ -256,15 +304,17 @@ impl Problem
 			self.shell.borrow_mut().print(&format!("{}: ", statement.kind),
 				&termcolor::ColorSpec::new());
 
-			match statement.kind
+			let format_context = FormatContext
 			{
-				StatementKind::CompletedDefinition(_)
-				| StatementKind::IntegrityConstraint =>
-					print!("{}",
-						foliage::format::display_formula(&statement.formula, format_context)),
-				_ =>
-					print!("{}", statement.formula),
-			}
+				program_variable_declaration_ids:
+					std::cell::RefCell::new(VariableDeclarationIDs::new()),
+				integer_variable_declaration_ids:
+					std::cell::RefCell::new(VariableDeclarationIDs::new()),
+				input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
+				variable_declaration_domains: &self.variable_declaration_domains.borrow(),
+			};
+
+			print!("{}", foliage::format::display_formula(&statement.formula, &format_context));
 		};
 
 		// Show all statements that are assumed to be proven
@@ -273,7 +323,7 @@ impl Problem
 			for statement in statements.iter_mut()
 				.filter(|statement| statement.proof_status == ProofStatus::AssumedProven)
 			{
-				display_statement(statement, &format_context);
+				display_statement(statement);
 				println!("");
 			}
 		}
@@ -286,7 +336,7 @@ impl Problem
 					statement.proof_status = ProofStatus::ToProveNow;
 
 					print!("\x1b[s");
-					display_statement(statement, &format_context);
+					display_statement(statement);
 					print!("\x1b[u");
 
 					use std::io::Write as _;
@@ -309,7 +359,7 @@ impl Problem
 			// TODO: make configurable again
 			let (proof_result, proof_time_seconds) =
 				run_vampire(&tptp_problem_to_prove_next_statement,
-					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "15"]))?;
+					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "300"]))?;
 
 			match self.next_unproven_statement_do_mut(
 				|statement|
@@ -323,7 +373,7 @@ impl Problem
 
 					self.shell.borrow_mut().erase_line();
 
-					display_statement(statement, &format_context);
+					display_statement(statement);
 
 					match proof_result
 					{
@@ -588,6 +638,22 @@ impl crate::traits::AssignVariableDeclarationDomain for Problem
 					.insert(std::rc::Rc::clone(variable_declaration).into(), domain);
 			},
 		}
+	}
+}
+
+impl crate::traits::VariableDeclarationDomain for Problem
+{
+	fn variable_declaration_domain(&self,
+		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
+		-> Option<crate::Domain>
+	{
+		self.variable_declaration_domains.borrow().iter().find_map(
+			|(x, domain)|
+			match x == variable_declaration
+			{
+				true => Some(*domain),
+				false => None,
+			})
 	}
 }
 

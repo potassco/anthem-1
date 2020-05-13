@@ -44,6 +44,16 @@ where
 		}
 	}
 
+	match problem.restrict_to_output_predicates()
+	{
+		Ok(_) => (),
+		Err(error) =>
+		{
+			log::error!("could not restrict problem to output predicates: {}", error);
+			std::process::exit(1)
+		}
+	}
+
 	match problem.prove(proof_direction)
 	{
 		Ok(()) => (),

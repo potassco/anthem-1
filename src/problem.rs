@@ -1,31 +1,10 @@
 mod proof_direction;
 mod section_kind;
+mod statement;
 
 pub use proof_direction::ProofDirection;
-pub use section_kind::SectionKind;
-
-#[derive(Eq, PartialEq)]
-pub enum StatementKind
-{
-	Axiom,
-	CompletedDefinition(std::rc::Rc<foliage::PredicateDeclaration>),
-	IntegrityConstraint,
-	Assumption,
-	Lemma(ProofDirection),
-	Assertion,
-}
-
-#[derive(Copy, Clone, Eq, PartialEq)]
-enum ProofStatus
-{
-	AssumedProven,
-	Proven,
-	NotProven,
-	Disproven,
-	ToProveNow,
-	ToProveLater,
-	Ignored,
-}
+pub(crate) use section_kind::SectionKind;
+pub(crate) use statement::{ProofStatus, Statement, StatementKind};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ProofResult
@@ -33,15 +12,6 @@ pub enum ProofResult
 	Proven,
 	NotProven,
 	Disproven,
-}
-
-pub struct Statement
-{
-	kind: StatementKind,
-	name: Option<String>,
-	description: Option<String>,
-	formula: foliage::Formula,
-	proof_status: ProofStatus,
 }
 
 type VariableDeclarationIDs
@@ -56,33 +26,6 @@ struct FormatContext<'a, 'b>
 	pub integer_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
 	pub input_constant_declaration_domains: &'a InputConstantDeclarationDomains,
 	pub variable_declaration_domains: &'b VariableDeclarationDomains,
-}
-
-impl Statement
-{
-	pub fn new(kind: StatementKind, formula: foliage::Formula) -> Self
-	{
-		Self
-		{
-			kind,
-			name: None,
-			description: None,
-			formula,
-			proof_status: ProofStatus::ToProveLater,
-		}
-	}
-
-	pub fn with_name(mut self, name: String) -> Self
-	{
-		self.name = Some(name);
-		self
-	}
-
-	pub fn with_description(mut self, description: String) -> Self
-	{
-		self.description = Some(description);
-		self
-	}
 }
 
 type VariableDeclarationDomains
@@ -131,7 +74,7 @@ impl Problem
 		}
 	}
 
-	pub fn add_statement(&self, section_kind: SectionKind, statement: Statement)
+	pub(crate) fn add_statement(&self, section_kind: SectionKind, statement: Statement)
 	{
 		let mut statements = self.statements.borrow_mut();
 		let section = statements.entry(section_kind).or_insert(vec![]);
@@ -254,7 +197,7 @@ impl Problem
 
 	fn next_unproven_statement_do_mut<F, G>(&self, mut functor: F) -> Option<G>
 	where
-		F: FnMut(SectionKind, &mut Statement) -> G,
+		F: FnMut(&mut Statement) -> G,
 	{
 		for section in self.statements.borrow_mut().iter_mut()
 		{
@@ -263,7 +206,7 @@ impl Problem
 				if statement.proof_status == ProofStatus::ToProveNow
 					|| statement.proof_status == ProofStatus::ToProveLater
 				{
-					return Some(functor(*section.0, statement));
+					return Some(functor(statement));
 				}
 			}
 		}
@@ -283,7 +226,7 @@ impl Problem
 			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
 		};
 
-		let display_statement = |section_kind: SectionKind, statement: &Statement, format_context|
+		let display_statement = |statement: &Statement, format_context|
 		{
 			let step_title = match statement.proof_status
 			{
@@ -310,7 +253,7 @@ impl Problem
 
 			self.print_step_title(&step_title, &step_title_color);
 
-			self.shell.borrow_mut().print(&format!("{}: ", section_kind),
+			self.shell.borrow_mut().print(&format!("{}: ", statement.kind),
 				&termcolor::ColorSpec::new());
 
 			match statement.kind
@@ -325,12 +268,12 @@ impl Problem
 		};
 
 		// Show all statements that are assumed to be proven
-		for (section_kind, statements) in self.statements.borrow_mut().iter_mut()
+		for (_, statements) in self.statements.borrow_mut().iter_mut()
 		{
 			for statement in statements.iter_mut()
 				.filter(|statement| statement.proof_status == ProofStatus::AssumedProven)
 			{
-				display_statement(*section_kind, statement, &format_context);
+				display_statement(statement, &format_context);
 				println!("");
 			}
 		}
@@ -338,12 +281,12 @@ impl Problem
 		loop
 		{
 			match self.next_unproven_statement_do_mut(
-				|section_kind, statement|
+				|statement|
 				{
 					statement.proof_status = ProofStatus::ToProveNow;
 
 					print!("\x1b[s");
-					display_statement(section_kind, statement, &format_context);
+					display_statement(statement, &format_context);
 					print!("\x1b[u");
 
 					use std::io::Write as _;
@@ -369,7 +312,7 @@ impl Problem
 					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "15"]))?;
 
 			match self.next_unproven_statement_do_mut(
-				|section_kind, statement|
+				|statement|
 				{
 					statement.proof_status = match proof_result
 					{
@@ -380,7 +323,7 @@ impl Problem
 
 					self.shell.borrow_mut().erase_line();
 
-					display_statement(section_kind, statement, &format_context);
+					display_statement(statement, &format_context);
 
 					match proof_result
 					{
@@ -531,9 +474,9 @@ impl Problem
 
 			for statement in statements.iter()
 			{
-				if let Some(ref description) = statement.description
+				if let StatementKind::CompletedDefinition(_) = statement.kind
 				{
-					writeln!(formatter, "% {}", description)?;
+					writeln!(formatter, "% {}", statement.kind)?;
 				}
 
 				let name = match &statement.name

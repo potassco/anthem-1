@@ -1,3 +1,4 @@
+// TODO: remove if possible
 #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub enum SectionKind
 {

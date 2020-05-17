@@ -23,8 +23,7 @@ pub enum Kind
 	VariableNameNotAllowed(String),
 	FormulaNotClosed(std::rc::Rc<foliage::VariableDeclarations>),
 	NoCompletedDefinitionFound(std::rc::Rc<foliage::PredicateDeclaration>),
-	CannotHidePredicate(std::rc::Rc<foliage::PredicateDeclaration>,
-		std::rc::Rc<foliage::PredicateDeclaration>),
+	CannotHidePredicate(std::rc::Rc<foliage::PredicateDeclaration>),
 	WriteTPTPProgram,
 	RunVampire,
 	// TODO: rename to something Vampire-specific
@@ -159,11 +158,10 @@ impl Error
 	}
 
 	pub(crate) fn new_cannot_hide_predicate(
-		predicate_declaration_1: std::rc::Rc<foliage::PredicateDeclaration>,
-		predicate_declaration_2: std::rc::Rc<foliage::PredicateDeclaration>)
+		predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>)
 		-> Self
 	{
-		Self::new(Kind::CannotHidePredicate(predicate_declaration_1, predicate_declaration_2))
+		Self::new(Kind::CannotHidePredicate(predicate_declaration))
 	}
 
 	pub(crate) fn new_write_tptp_program<S: Into<Source>>(source: S) -> Self
@@ -239,9 +237,10 @@ impl std::fmt::Debug for Error
 			},
 			Kind::NoCompletedDefinitionFound(ref predicate_declaration) =>
 				write!(formatter, "no completed definition found for {}", predicate_declaration),
-			Kind::CannotHidePredicate(ref predicate_declaration_1, ref predicate_declaration_2) =>
-				write!(formatter, "cannot hide predicate {} because it depends on {}",
-					predicate_declaration_1, predicate_declaration_2),
+			Kind::CannotHidePredicate(ref predicate_declaration) =>
+				write!(formatter,
+					"cannot hide predicate {} (the completed definition transitively depends on itself)",
+					predicate_declaration),
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>
 			{

@@ -2,7 +2,26 @@ fn formula_contains_predicate(formula: &foliage::Formula,
 	predicate_declaration: &foliage::PredicateDeclaration)
 	-> bool
 {
-	unimplemented!()
+	use foliage::Formula;
+
+	match formula
+	{
+		Formula::And(arguments)
+		| Formula::IfAndOnlyIf(arguments)
+		| Formula::Or(arguments) =>
+			arguments.iter().any(
+				|argument| formula_contains_predicate(argument, predicate_declaration)),
+		Formula::Boolean(_)
+		| Formula::Compare(_) => false,
+		Formula::Exists(quantified_expression)
+		| Formula::ForAll(quantified_expression) =>
+			formula_contains_predicate(&quantified_expression.argument, predicate_declaration),
+		Formula::Implies(implies) =>
+			formula_contains_predicate(&implies.antecedent, predicate_declaration)
+			|| formula_contains_predicate(&implies.implication, predicate_declaration),
+		Formula::Not(argument) => formula_contains_predicate(argument, predicate_declaration),
+		Formula::Predicate(predicate) => &*predicate.declaration == predicate_declaration,
+	}
 }
 
 fn replace_predicate_in_formula<D>(formula: &mut foliage::Formula,
@@ -113,12 +132,12 @@ where
 	// Predicates can only be substituted by their completed definitions if there is no cycle.
 	// For example, if the completed definition of p/1 references q/1 and vice versa, neither can
 	// be replaced with the completed definition of the other
-	/*if formula_contains_predicate(completed_definition, predicate_declaration)
+	if formula_contains_predicate(completed_definition, &completed_definition_predicate.declaration)
+		&& formula_contains_predicate(formula, &completed_definition_predicate.declaration)
 	{
-		return Err(crate::Error::new())
-	}*/
-
-	// TODO: detect cycles and warn accordingly
+		return Err(crate::Error::new_cannot_hide_predicate(
+			std::rc::Rc::clone(&completed_definition_predicate.declaration)));
+	}
 
 	replace_predicate_in_formula(formula, completed_definition_predicate, completed_definition,
 		declarations);

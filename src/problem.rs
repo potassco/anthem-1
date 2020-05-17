@@ -475,8 +475,7 @@ impl Problem
 		let symbolic_constants = function_declarations.iter().filter(
 			|x| !self.input_constant_declaration_domains.borrow().contains_key(*x));
 
-		let mut last_symbolic_constant: Option<std::rc::Rc<foliage::FunctionDeclaration>> =
-			None;
+		let mut last_symbolic_constant: Option<std::rc::Rc<foliage::FunctionDeclaration>> = None;
 
 		// TODO: put in axioms section
 		for (i, symbolic_constant) in symbolic_constants.enumerate()

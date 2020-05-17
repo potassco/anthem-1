@@ -451,6 +451,7 @@ impl Problem
 			}
 
 			for predicate_declaration in self.predicate_declarations.borrow().iter()
+				.filter(|x| !(x.name.starts_with("p__") || x.name.ends_with("__")))
 			{
 				writeln!(formatter, "tff(type, type, {}).",
 					crate::output::tptp::display_predicate_declaration(predicate_declaration))?;
@@ -462,6 +463,7 @@ impl Problem
 			}
 
 			for function_declaration in self.function_declarations.borrow().iter()
+				.filter(|x| !(x.name.starts_with("f__") || x.name.ends_with("__")))
 			{
 				writeln!(formatter, "tff(type, type, {}).",
 					crate::output::tptp::display_function_declaration(function_declaration,

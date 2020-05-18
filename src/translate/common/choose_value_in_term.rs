@@ -155,13 +155,13 @@ where
 						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_r))));
 
 					let i_equals_j_times_q_plus_r = foliage::Formula::equal(
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_j))),
+						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_i))),
 						Box::new(j_times_q_plus_r));
 
 					let choose_i_in_t1 = choose_value_in_term(binary_operation.left(),
 						std::rc::Rc::clone(parameter_i), context, variable_declaration_stack)?;
 
-					let choose_i_in_t2 = choose_value_in_term(binary_operation.left(),
+					let choose_j_in_t2 = choose_value_in_term(binary_operation.right(),
 						std::rc::Rc::clone(parameter_j), context, variable_declaration_stack)?;
 
 					let j_not_equal_to_0 = foliage::Formula::not_equal(
@@ -193,7 +193,7 @@ where
 					};
 
 					let and = foliage::Formula::and(vec![i_equals_j_times_q_plus_r, choose_i_in_t1,
-						choose_i_in_t2, j_not_equal_to_0, r_greater_or_equal_to_0, r_less_than_q,
+						choose_j_in_t2, j_not_equal_to_0, r_greater_or_equal_to_0, r_less_than_q,
 						last_argument]);
 
 					Ok(foliage::Formula::exists(parameters, Box::new(and)))

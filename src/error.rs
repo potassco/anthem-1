@@ -24,6 +24,7 @@ pub enum Kind
 	FormulaNotClosed(std::rc::Rc<foliage::VariableDeclarations>),
 	NoCompletedDefinitionFound(std::rc::Rc<foliage::PredicateDeclaration>),
 	CannotHidePredicate(std::rc::Rc<foliage::PredicateDeclaration>),
+	PredicateShouldNotOccurInSpecification(std::rc::Rc<foliage::PredicateDeclaration>),
 	WriteTPTPProgram,
 	RunVampire,
 	// TODO: rename to something Vampire-specific
@@ -164,6 +165,13 @@ impl Error
 		Self::new(Kind::CannotHidePredicate(predicate_declaration))
 	}
 
+	pub(crate) fn new_predicate_should_not_occur_in_specification(
+		predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>)
+		-> Self
+	{
+		Self::new(Kind::PredicateShouldNotOccurInSpecification(predicate_declaration))
+	}
+
 	pub(crate) fn new_write_tptp_program<S: Into<Source>>(source: S) -> Self
 	{
 		Self::new(Kind::WriteTPTPProgram).with(source)
@@ -240,6 +248,10 @@ impl std::fmt::Debug for Error
 			Kind::CannotHidePredicate(ref predicate_declaration) =>
 				write!(formatter,
 					"cannot hide predicate {} (the completed definition transitively depends on itself)",
+					predicate_declaration),
+			Kind::PredicateShouldNotOccurInSpecification(ref predicate_declaration) =>
+				write!(formatter,
+					"predicate {} should not occur in specification (it is not declared as an input or output predicate)",
 					predicate_declaration),
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>

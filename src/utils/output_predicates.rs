@@ -1,4 +1,4 @@
-fn formula_contains_predicate(formula: &foliage::Formula,
+pub(crate) fn formula_contains_predicate(formula: &foliage::Formula,
 	predicate_declaration: &foliage::PredicateDeclaration)
 	-> bool
 {

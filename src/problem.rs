@@ -82,6 +82,54 @@ impl Problem
 		section.push(statement);
 	}
 
+	pub(crate) fn check_that_only_input_and_output_predicates_are_used(&self)
+		-> Result<(), crate::Error>
+	{
+		let predicate_declarations = self.predicate_declarations.borrow();
+		let input_predicate_declarations = self.input_predicate_declarations.borrow();
+		let output_predicate_declarations = self.output_predicate_declarations.borrow();
+
+		if output_predicate_declarations.is_empty()
+		{
+			return Ok(());
+		}
+
+		// Check that only input and output predicates are used in the specification
+		for predicate_declaration in predicate_declarations.iter()
+		{
+			if input_predicate_declarations.contains(predicate_declaration)
+				|| output_predicate_declarations.contains(predicate_declaration)
+				// TODO: refactor
+				// Auxiliary predicates may occur anywhere
+				|| predicate_declaration.name.starts_with("p__")
+					&& predicate_declaration.name.ends_with("__")
+			{
+				continue;
+			}
+
+			for (section_key, statements) in self.statements.borrow().iter()
+			{
+				for statement in statements
+				{
+					match statement.kind
+					{
+						crate::problem::StatementKind::CompletedDefinition(_)
+						| crate::problem::StatementKind::IntegrityConstraint => continue,
+						_ => (),
+					}
+
+					if crate::formula_contains_predicate(&statement.formula, predicate_declaration)
+					{
+						return Err(crate::Error::new_predicate_should_not_occur_in_specification(
+							std::rc::Rc::clone(predicate_declaration)));
+					}
+				}
+			}
+		}
+
+		Ok(())
+	}
+
 	pub(crate) fn restrict_to_output_predicates(&mut self) -> Result<(), crate::Error>
 	{
 		let predicate_declarations = self.predicate_declarations.borrow();

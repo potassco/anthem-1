@@ -2,11 +2,13 @@ mod arithmetic_terms;
 mod closures;
 mod copy_formula;
 mod output_predicates;
+mod variables_in_terms;
 
 pub(crate) use arithmetic_terms::*;
 pub(crate) use closures::*;
 pub(crate) use copy_formula::*;
 pub(crate) use output_predicates::*;
+pub(crate) use variables_in_terms::*;
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) enum OperatorNotation

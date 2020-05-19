@@ -172,7 +172,7 @@ pub(crate) fn replace_variable_in_formula_with_term(formula: &mut foliage::Formu
 	}
 }
 
-fn copy_term(term: &foliage::Term) -> foliage::Term
+pub(crate) fn copy_term(term: &foliage::Term) -> foliage::Term
 {
 	use foliage::Term;
 

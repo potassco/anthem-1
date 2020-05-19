@@ -47,11 +47,7 @@ where
 	match problem.check_that_only_input_and_output_predicates_are_used()
 	{
 		Ok(_) => (),
-		Err(error) =>
-		{
-			log::error!("{}", error);
-			std::process::exit(1)
-		}
+		Err(error) => log::warn!("{}", error),
 	}
 
 	match problem.restrict_to_output_predicates()

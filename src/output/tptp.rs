@@ -389,6 +389,7 @@ where
 
 		match &self.formula
 		{
+			// TODO: handle cases with 0 parameters properly
 			Formula::Exists(exists) =>
 			{
 				write!(formatter, "?[")?;
@@ -408,6 +409,7 @@ where
 
 				write!(formatter, "]: ({:?})", display_formula(&exists.argument))?;
 			},
+			// TODO: handle cases with 0 parameters properly
 			Formula::ForAll(for_all) =>
 			{
 				write!(formatter, "![")?;
@@ -428,6 +430,7 @@ where
 				write!(formatter, "]: ({:?})", display_formula(&for_all.argument))?;
 			},
 			Formula::Not(argument) => write!(formatter, "~{:?}", display_formula(argument))?,
+			// TODO: handle cases with < 2 arguments properly
 			Formula::And(arguments) =>
 			{
 				write!(formatter, "(")?;
@@ -445,6 +448,7 @@ where
 
 				write!(formatter, ")")?;
 			},
+			// TODO: handle cases with < 2 arguments properly
 			Formula::Or(arguments) =>
 			{
 				write!(formatter, "(")?;
@@ -465,6 +469,7 @@ where
 			Formula::Implies(Implies{antecedent, implication, ..}) =>
 				write!(formatter, "({:?} => {:?})", display_formula(antecedent),
 					display_formula(implication))?,
+			// TODO: handle cases with < 2 arguments properly
 			Formula::IfAndOnlyIf(arguments) => match arguments.len()
 			{
 				0 => write!(formatter, "$true")?,

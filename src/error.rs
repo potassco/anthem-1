@@ -30,6 +30,7 @@ pub enum Kind
 	// TODO: rename to something Vampire-specific
 	ProveProgram(Option<i32>, String, String),
 	ParseVampireOutput(String, String),
+	IO,
 }
 
 pub struct Error
@@ -191,6 +192,11 @@ impl Error
 	{
 		Self::new(Kind::ParseVampireOutput(stdout, stderr))
 	}
+
+	pub(crate) fn new_io<S: Into<Source>>(source: S) -> Self
+	{
+		Self::new(Kind::IO).with(source)
+	}
 }
 
 impl std::fmt::Debug for Error
@@ -275,6 +281,7 @@ impl std::fmt::Debug for Error
 				{}\
 				==== stderr ===========================================================\n\
 				{}", stdout, stderr),
+			Kind::IO => write!(formatter, "input/output error"),
 		}?;
 
 		if let Some(source) = &self.source
@@ -303,5 +310,13 @@ impl std::error::Error for Error
 			Some(source) => Some(source.as_ref()),
 			None => None,
 		}
+	}
+}
+
+impl From<std::io::Error> for Error
+{
+	fn from(error: std::io::Error) -> Self
+	{
+		Self::new_io(error)
 	}
 }

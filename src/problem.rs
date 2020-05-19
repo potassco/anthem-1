@@ -190,13 +190,16 @@ impl Problem
 	}
 
 	fn print_step_title(&self, step_title: &str, color: &termcolor::ColorSpec)
+		-> Result<(), crate::Error>
 	{
 		let longest_possible_key = "    Finished";
 
 		self.shell.borrow_mut().print(
 			&format!("{:>step_title_width$} ", step_title,
 				step_title_width = longest_possible_key.chars().count()),
-			color);
+			color)?;
+
+		Ok(())
 	}
 
 	pub fn prove(&self, proof_direction: ProofDirection) -> Result<(), crate::Error>
@@ -205,9 +208,9 @@ impl Problem
 			|| proof_direction == ProofDirection::Both
 		{
 			self.print_step_title("Started",
-				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)));
+				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)))?;
 			self.shell.borrow_mut().println(&"verification of assertions from translated program",
-				&termcolor::ColorSpec::new());
+				&termcolor::ColorSpec::new())?;
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -244,7 +247,7 @@ impl Problem
 				ProofResult::Disproven => step_title_color.set_fg(Some(termcolor::Color::Red)),
 			};
 
-			self.print_step_title("Finished", &step_title_color);
+			self.print_step_title("Finished", &step_title_color)?;
 			println!("verification of assertions from translated program");
 		}
 
@@ -257,9 +260,9 @@ impl Problem
 			|| proof_direction == ProofDirection::Both
 		{
 			self.print_step_title("Started",
-				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)));
+				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)))?;
 			self.shell.borrow_mut().println(&"verification of translated program from assertions",
-				&termcolor::ColorSpec::new());
+				&termcolor::ColorSpec::new())?;
 
 			let mut statements = self.statements.borrow_mut();
 
@@ -295,7 +298,7 @@ impl Problem
 				ProofResult::Disproven => step_title_color.set_fg(Some(termcolor::Color::Red)),
 			};
 
-			self.print_step_title("Finished", &step_title_color);
+			self.print_step_title("Finished", &step_title_color)?;
 			println!("verification of translated program from assertions");
 		}
 
@@ -324,7 +327,7 @@ impl Problem
 
 	fn prove_unproven_statements(&self) -> Result<ProofResult, crate::Error>
 	{
-		let display_statement = |statement: &Statement|
+		let display_statement = |statement: &Statement| -> Result<(), crate::Error>
 		{
 			let step_title = match statement.proof_status
 			{
@@ -349,10 +352,10 @@ impl Problem
 				_ => step_title_color.set_fg(Some(termcolor::Color::Cyan)),
 			};
 
-			self.print_step_title(&step_title, &step_title_color);
+			self.print_step_title(&step_title, &step_title_color)?;
 
 			self.shell.borrow_mut().print(&format!("{}: ", statement.kind),
-				&termcolor::ColorSpec::new());
+				&termcolor::ColorSpec::new())?;
 
 			let format_context = FormatContext
 			{
@@ -365,6 +368,8 @@ impl Problem
 			};
 
 			print!("{}", foliage::format::display_formula(&statement.formula, &format_context));
+
+			Ok(())
 		};
 
 		// Show all statements that are assumed to be proven
@@ -373,7 +378,7 @@ impl Problem
 			for statement in statements.iter_mut()
 				.filter(|statement| statement.proof_status == ProofStatus::AssumedProven)
 			{
-				display_statement(statement);
+				display_statement(statement)?;
 				println!("");
 			}
 		}
@@ -381,16 +386,18 @@ impl Problem
 		loop
 		{
 			match self.next_unproven_statement_do_mut(
-				|statement|
+				|statement| -> Result<(), crate::Error>
 				{
 					statement.proof_status = ProofStatus::ToProveNow;
 
 					print!("\x1b[s");
-					display_statement(statement);
+					display_statement(statement)?;
 					print!("\x1b[u");
 
 					use std::io::Write as _;
-					std::io::stdout().flush();
+					std::io::stdout().flush()?;
+
+					Ok(())
 				})
 			{
 				Some(_) => (),
@@ -412,7 +419,7 @@ impl Problem
 					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "300"]))?;
 
 			match self.next_unproven_statement_do_mut(
-				|statement|
+				|statement| -> Result<(), crate::Error>
 				{
 					statement.proof_status = match proof_result
 					{
@@ -423,7 +430,7 @@ impl Problem
 
 					self.shell.borrow_mut().erase_line();
 
-					display_statement(statement);
+					display_statement(statement)?;
 
 					match proof_result
 					{
@@ -435,15 +442,17 @@ impl Problem
 					if let Some(proof_time_seconds) = proof_time_seconds
 					{
 						self.shell.borrow_mut().print(&format!(" in {} seconds", proof_time_seconds),
-							termcolor::ColorSpec::new().set_fg(Some(termcolor::Color::Black)).set_intense(true));
+							termcolor::ColorSpec::new().set_fg(Some(termcolor::Color::Black)).set_intense(true))?;
 					}
+
+					Ok(())
 				})
 			{
 				Some(_) => (),
 				None => unreachable!(),
 			}
 
-			self.shell.borrow_mut().println(&"", &termcolor::ColorSpec::new());
+			self.shell.borrow_mut().println(&"", &termcolor::ColorSpec::new())?;
 
 			if proof_result != ProofResult::Proven
 			{

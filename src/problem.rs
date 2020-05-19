@@ -144,7 +144,8 @@ impl Problem
 
 		let hidden_predicate_declarations =
 			predicate_declarations.iter().filter(|x| !output_predicate_declarations.contains(*x)
-				&& !input_predicate_declarations.contains(*x));
+				&& !input_predicate_declarations.contains(*x)
+				&& !(x.name.starts_with("p__") && x.name.ends_with("__")));
 
 		let mut statements = self.statements.borrow_mut();
 

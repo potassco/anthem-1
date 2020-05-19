@@ -143,8 +143,10 @@ impl<'p> Translator<'p>
 
 		for predicate_declaration in self.problem.predicate_declarations.borrow().iter()
 		{
-			// Don’t perform completion for input predicates
+			// Don’t perform completion for input predicates and built-in predicates
 			if self.problem.input_predicate_declarations.borrow().contains(predicate_declaration)
+				|| predicate_declaration.name.starts_with("p__")
+					&& predicate_declaration.name.ends_with("__")
 			{
 				continue;
 			}

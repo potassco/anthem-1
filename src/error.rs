@@ -251,7 +251,7 @@ impl std::fmt::Debug for Error
 					predicate_declaration),
 			Kind::PredicateShouldNotOccurInSpecification(ref predicate_declaration) =>
 				write!(formatter,
-					"predicate {} should not occur in specification (it is not declared as an input or output predicate)",
+					"{} should not occur in specification because it’s a private predicate (consider declaring it an input or output predicate)",
 					predicate_declaration),
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>

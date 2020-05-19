@@ -107,7 +107,7 @@ impl Problem
 				continue;
 			}
 
-			for (section_key, statements) in self.statements.borrow().iter()
+			for (_, statements) in self.statements.borrow().iter()
 			{
 				for statement in statements
 				{

@@ -2,11 +2,11 @@
 #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub enum SectionKind
 {
-	CompletedDefinitions,
-	IntegrityConstraints,
 	Axioms,
 	Assumptions,
 	Lemmas,
+	CompletedDefinitions,
+	IntegrityConstraints,
 	Assertions,
 }
 

@@ -306,6 +306,7 @@ impl Problem
 	where
 		F: FnMut(&mut Statement) -> G,
 	{
+		// TODO: properly ensure that statements are proven in the right order
 		for section in self.statements.borrow_mut().iter_mut()
 		{
 			for statement in section.1.iter_mut()

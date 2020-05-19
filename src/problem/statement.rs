@@ -11,14 +11,6 @@ pub(crate) enum StatementKind
 	Assertion,
 }
 
-impl StatementKind
-{
-	pub fn display_capitalized(&self) -> StatementKindCapitalizedDisplay
-	{
-		StatementKindCapitalizedDisplay(self)
-	}
-}
-
 impl std::fmt::Debug for StatementKind
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
@@ -37,33 +29,6 @@ impl std::fmt::Debug for StatementKind
 }
 
 impl std::fmt::Display for StatementKind
-{
-	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
-	{
-		write!(formatter, "{:?}", self)
-	}
-}
-
-pub(crate) struct StatementKindCapitalizedDisplay<'s>(&'s StatementKind);
-
-impl<'s> std::fmt::Debug for StatementKindCapitalizedDisplay<'s>
-{
-	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
-	{
-		match self.0
-		{
-			StatementKind::Axiom => write!(formatter, "Axiom"),
-			StatementKind::Assumption => write!(formatter, "Assumption"),
-			StatementKind::CompletedDefinition(ref predicate_declaration) =>
-				write!(formatter, "Completed definition of {}", predicate_declaration),
-			StatementKind::IntegrityConstraint => write!(formatter, "Integrity constraint"),
-			StatementKind::Lemma(_) => write!(formatter, "Lemma"),
-			StatementKind::Assertion => write!(formatter, "Assertion"),
-		}
-	}
-}
-
-impl<'s> std::fmt::Display for StatementKindCapitalizedDisplay<'s>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{

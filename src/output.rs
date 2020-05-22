@@ -1,6 +1,7 @@
 pub(crate) mod shell;
 pub(crate) mod tptp;
 
+pub use shell::ColorChoice;
 pub(crate) use shell::Shell;
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]

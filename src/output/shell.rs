@@ -6,12 +6,7 @@ pub struct Shell
 enum ShellOutput
 {
 	Basic(Box<dyn std::io::Write>),
-	WithColorSupport
-	{
-		stream: termcolor::StandardStream,
-		color_choice: ColorChoice,
-		is_a_tty: bool,
-	},
+	WithColorSupport(termcolor::StandardStream),
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -24,16 +19,15 @@ pub enum ColorChoice
 
 impl Shell
 {
-	pub fn from_stdout() -> Self
+	pub fn from_stdout(color_choice: ColorChoice) -> Self
 	{
 		Self
 		{
-			output: ShellOutput::WithColorSupport
+			output: match color_choice
 			{
-				stream:
-					termcolor::StandardStream::stdout(ColorChoice::Auto.to_termcolor_color_choice()),
-				color_choice: ColorChoice::Auto,
-				is_a_tty: atty::is(atty::Stream::Stdout),
+				ColorChoice::Never => ShellOutput::Basic(Box::new(std::io::stdout())),
+				_ => ShellOutput::WithColorSupport(termcolor::StandardStream::stdout(
+					color_choice.to_termcolor_color_choice())),
 			},
 		}
 	}
@@ -67,7 +61,7 @@ impl ShellOutput
 		match *self
 		{
 			Self::Basic(ref mut write) => write!(write, "{}", text),
-			Self::WithColorSupport{ref mut stream, ..} =>
+			Self::WithColorSupport(ref mut stream) =>
 			{
 				stream.reset()?;
 				stream.set_color(color)?;
@@ -89,7 +83,7 @@ impl ShellOutput
 		match *self
 		{
 			Self::Basic(ref mut write) => writeln!(write, ""),
-			Self::WithColorSupport{ref mut stream, ..} => writeln!(stream, ""),
+			Self::WithColorSupport(ref mut stream) => writeln!(stream, ""),
 		}
 	}
 
@@ -103,7 +97,7 @@ impl ShellOutput
 		let _ = match *self
 		{
 			Self::Basic(ref mut write) => write.write_all(erase_sequence),
-			Self::WithColorSupport{ref mut stream, ..} => stream.write_all(erase_sequence),
+			Self::WithColorSupport(ref mut stream) => stream.write_all(erase_sequence),
 		};
 	}
 }
@@ -121,6 +115,35 @@ impl ColorChoice
 				true => termcolor::ColorChoice::Auto,
 				false => termcolor::ColorChoice::Never,
 			},
+		}
+	}
+}
+
+impl std::fmt::Debug for ColorChoice
+{
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		match self
+		{
+			ColorChoice::Always => write!(formatter, "always"),
+			ColorChoice::Never => write!(formatter, "never"),
+			ColorChoice::Auto => write!(formatter, "auto"),
+		}
+	}
+}
+
+impl std::str::FromStr for ColorChoice
+{
+	type Err = crate::Error;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err>
+	{
+		match s
+		{
+			"always" => Ok(ColorChoice::Always),
+			"never" => Ok(ColorChoice::Never),
+			"auto" => Ok(ColorChoice::Auto),
+			_ => Err(crate::Error::new_unknown_color_choice(s.to_string())),
 		}
 	}
 }

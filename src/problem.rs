@@ -28,7 +28,7 @@ pub struct Problem
 
 impl Problem
 {
-	pub fn new() -> Self
+	pub fn new(color_choice: crate::output::ColorChoice) -> Self
 	{
 		Self
 		{
@@ -37,7 +37,7 @@ impl Problem
 
 			statements: std::cell::RefCell::new(std::collections::BTreeMap::new()),
 
-			shell: std::cell::RefCell::new(crate::output::Shell::from_stdout()),
+			shell: std::cell::RefCell::new(crate::output::Shell::from_stdout(color_choice)),
 		}
 	}
 

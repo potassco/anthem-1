@@ -22,6 +22,7 @@ pub enum Kind
 	//ParseConstantDeclaration,
 	UnknownProofDirection(String),
 	UnknownDomainIdentifier(String),
+	UnknownColorChoice(String),
 	VariableNameNotAllowed(String),
 	FormulaNotClosed(std::rc::Rc<crate::VariableDeclarations>),
 	NoCompletedDefinitionFound(std::rc::Rc<crate::PredicateDeclaration>),
@@ -142,6 +143,11 @@ impl Error
 		Self::new(Kind::UnknownDomainIdentifier(domain_identifier))
 	}
 
+	pub(crate) fn new_unknown_color_choice(color_choice: String) -> Self
+	{
+		Self::new(Kind::UnknownColorChoice(color_choice))
+	}
+
 	pub(crate) fn new_variable_name_not_allowed(variable_name: String) -> Self
 	{
 		Self::new(Kind::VariableNameNotAllowed(variable_name))
@@ -230,6 +236,8 @@ impl std::fmt::Debug for Error
 				"unknown proof direction “{}” (allowed: integer, program)", proof_direction),
 			Kind::UnknownDomainIdentifier(ref domain_identifier) => write!(formatter,
 				"unknown domain identifier “{}” (allowed: int, program)", domain_identifier),
+			Kind::UnknownColorChoice(ref color_choice) => write!(formatter,
+				"unknown color choice “{}” (allowed: auto, always, never)", color_choice),
 			Kind::VariableNameNotAllowed(ref variable_name) => write!(formatter,
 				"variable name “{}” not allowed (program variables must start with X, Y, or Z and integer variables with I, J, K, L, M, or N)",
 				variable_name),

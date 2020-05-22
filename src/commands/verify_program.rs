@@ -1,10 +1,11 @@
 pub fn run<P>(program_path: P, specification_path: P,
-	proof_direction: crate::problem::ProofDirection, no_simplify: bool)
+	proof_direction: crate::problem::ProofDirection, no_simplify: bool,
+	color_choice: crate::output::ColorChoice)
 where
 	P: AsRef<std::path::Path>,
 {
 	//let context = crate::translate::verify_properties::Context::new();
-	let mut problem = crate::Problem::new();
+	let mut problem = crate::Problem::new(color_choice);
 
 	log::info!("reading specification “{}”", specification_path.as_ref().display());
 

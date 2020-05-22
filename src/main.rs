@@ -23,6 +23,10 @@ enum Command
 		/// Do not simplify translated program
 		#[structopt(long)]
 		no_simplify: bool,
+
+		/// Whether to use colors in the output (auto, always, never)
+		#[structopt(name = "color", long, default_value = "auto")]
+		color_choice: anthem::output::ColorChoice,
 	}
 }
 
@@ -40,8 +44,9 @@ fn main()
 			specification_path,
 			proof_direction,
 			no_simplify,
+			color_choice,
 		}
 			=> anthem::commands::verify_program::run(&program_path, &specification_path,
-				proof_direction, no_simplify),
+				proof_direction, no_simplify, color_choice),
 	}
 }

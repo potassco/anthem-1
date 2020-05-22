@@ -1,3 +1,5 @@
+use foliage::flavor::VariableDeclaration as _;
+
 pub type Source = Box<dyn std::error::Error>;
 
 pub enum Kind
@@ -21,10 +23,10 @@ pub enum Kind
 	UnknownProofDirection(String),
 	UnknownDomainIdentifier(String),
 	VariableNameNotAllowed(String),
-	FormulaNotClosed(std::rc::Rc<foliage::VariableDeclarations>),
-	NoCompletedDefinitionFound(std::rc::Rc<foliage::PredicateDeclaration>),
-	CannotHidePredicate(std::rc::Rc<foliage::PredicateDeclaration>),
-	PredicateShouldNotOccurInSpecification(std::rc::Rc<foliage::PredicateDeclaration>),
+	FormulaNotClosed(std::rc::Rc<crate::VariableDeclarations>),
+	NoCompletedDefinitionFound(std::rc::Rc<crate::PredicateDeclaration>),
+	CannotHidePredicate(std::rc::Rc<crate::PredicateDeclaration>),
+	PredicateShouldNotOccurInSpecification(std::rc::Rc<crate::PredicateDeclaration>),
 	WriteTPTPProgram,
 	RunVampire,
 	// TODO: rename to something Vampire-specific
@@ -146,28 +148,28 @@ impl Error
 		Self::new(Kind::VariableNameNotAllowed(variable_name))
 	}
 
-	pub(crate) fn new_formula_not_closed(free_variables: std::rc::Rc<foliage::VariableDeclarations>)
+	pub(crate) fn new_formula_not_closed(free_variables: std::rc::Rc<crate::VariableDeclarations>)
 		-> Self
 	{
 		Self::new(Kind::FormulaNotClosed(free_variables))
 	}
 
 	pub(crate) fn new_no_completed_definition_found(
-		predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>)
+		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
 	{
 		Self::new(Kind::NoCompletedDefinitionFound(predicate_declaration))
 	}
 
 	pub(crate) fn new_cannot_hide_predicate(
-		predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>)
+		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
 	{
 		Self::new(Kind::CannotHidePredicate(predicate_declaration))
 	}
 
 	pub(crate) fn new_predicate_should_not_occur_in_specification(
-		predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>)
+		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
 	{
 		Self::new(Kind::PredicateShouldNotOccurInSpecification(predicate_declaration))
@@ -240,25 +242,29 @@ impl std::fmt::Debug for Error
 			Kind::WriteTPTPProgram => write!(formatter, "error writing TPTP program"),
 			Kind::FormulaNotClosed(free_variable_declarations) =>
 			{
-				let free_variable_names = free_variable_declarations
-					.iter()
-					.map(|variable_declaration| &variable_declaration.name);
+				write!(formatter, "formula may not contain free variables (free variables in this formula: ")?;
 
-				let free_variable_names_output = itertools::join(free_variable_names, ", ");
+				let mut separator = "";
 
-				write!(formatter, "formula may not contain free variables (free variables in this formula: {})",
-					free_variable_names_output)
+				for free_variable_declaration in &**free_variable_declarations
+				{
+					write!(formatter, "{}", separator)?;
+					free_variable_declaration.display_name(formatter)?;
+					separator = ", ";
+				}
+
+				write!(formatter, ")")
 			},
 			Kind::NoCompletedDefinitionFound(ref predicate_declaration) =>
-				write!(formatter, "no completed definition found for {}", predicate_declaration),
+				write!(formatter, "no completed definition found for {}", predicate_declaration.declaration),
 			Kind::CannotHidePredicate(ref predicate_declaration) =>
 				write!(formatter,
 					"cannot hide predicate {} (the completed definition transitively depends on itself)",
-					predicate_declaration),
+					predicate_declaration.declaration),
 			Kind::PredicateShouldNotOccurInSpecification(ref predicate_declaration) =>
 				write!(formatter,
 					"{} should not occur in specification because it’s a private predicate (consider declaring it an input or output predicate)",
-					predicate_declaration),
+					predicate_declaration.declaration),
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>
 			{

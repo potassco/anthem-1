@@ -1,10 +1,10 @@
-fn replace_variables_in_term(term: &mut foliage::Term,
-	old_variable_declarations: &foliage::VariableDeclarations,
-	new_variable_declarations: &foliage::VariableDeclarations)
+fn replace_variables_in_term(term: &mut crate::Term,
+	old_variable_declarations: &crate::VariableDeclarations,
+	new_variable_declarations: &crate::VariableDeclarations)
 {
 	assert_eq!(old_variable_declarations.len(), new_variable_declarations.len());
 
-	use foliage::Term;
+	use crate::Term;
 
 	match term
 	{
@@ -45,11 +45,11 @@ fn replace_variables_in_term(term: &mut foliage::Term,
 	}
 }
 
-fn replace_variables_in_formula(formula: &mut foliage::Formula,
-	old_variable_declarations: &foliage::VariableDeclarations,
-	new_variable_declarations: &foliage::VariableDeclarations)
+fn replace_variables_in_formula(formula: &mut crate::Formula,
+	old_variable_declarations: &crate::VariableDeclarations,
+	new_variable_declarations: &crate::VariableDeclarations)
 {
-	use foliage::Formula;
+	use crate::Formula;
 
 	match formula
 	{
@@ -92,10 +92,10 @@ fn replace_variables_in_formula(formula: &mut foliage::Formula,
 	}
 }
 
-fn replace_variable_in_term_with_term(term: &mut foliage::Term,
-	variable_declaration: &foliage::VariableDeclaration, replacement_term: &foliage::Term)
+fn replace_variable_in_term_with_term(term: &mut crate::Term,
+	variable_declaration: &crate::VariableDeclaration, replacement_term: &crate::Term)
 {
-	use foliage::Term;
+	use crate::Term;
 
 	match term
 	{
@@ -127,10 +127,10 @@ fn replace_variable_in_term_with_term(term: &mut foliage::Term,
 	}
 }
 
-pub(crate) fn replace_variable_in_formula_with_term(formula: &mut foliage::Formula,
-	variable_declaration: &foliage::VariableDeclaration, replacement_term: &foliage::Term)
+pub(crate) fn replace_variable_in_formula_with_term(formula: &mut crate::Formula,
+	variable_declaration: &crate::VariableDeclaration, replacement_term: &crate::Term)
 {
-	use foliage::Formula;
+	use crate::Formula;
 
 	match formula
 	{
@@ -172,9 +172,9 @@ pub(crate) fn replace_variable_in_formula_with_term(formula: &mut foliage::Formu
 	}
 }
 
-pub(crate) fn copy_term(term: &foliage::Term) -> foliage::Term
+pub(crate) fn copy_term(term: &crate::Term) -> crate::Term
 {
-	use foliage::Term;
+	use crate::Term;
 
 	match term
 	{
@@ -194,67 +194,49 @@ pub(crate) fn copy_term(term: &foliage::Term) -> foliage::Term
 	}
 }
 
-fn copy_quantified_formula<D>(quantified_expression: &foliage::QuantifiedFormula, declarations: &D)
-	-> foliage::QuantifiedFormula
-where
-	D: crate::traits::VariableDeclarationDomain + crate::traits::AssignVariableDeclarationDomain,
+fn copy_quantified_formula(quantified_expression: &crate::QuantifiedFormula)
+	-> crate::QuantifiedFormula
 {
 	let copy_parameters =
 		quantified_expression.parameters.iter()
-			.map(
-				|parameter|
-				{
-					let copy_parameter = std::rc::Rc::new(
-						foliage::VariableDeclaration::new(parameter.name.clone()));
-
-					if let Some(domain) = declarations.variable_declaration_domain(parameter)
-					{
-						declarations.assign_variable_declaration_domain(&copy_parameter, domain);
-					}
-
-					copy_parameter
-				})
+			// TODO: check correctness of clone implementation
+			.map(|x| x.clone())
 			.collect();
 	let copy_parameters = std::rc::Rc::new(copy_parameters);
 
-	let mut copy_argument = copy_formula(&quantified_expression.argument, declarations);
+	let mut copy_argument = copy_formula(&quantified_expression.argument);
 
 	replace_variables_in_formula(&mut copy_argument, &quantified_expression.parameters,
 		&copy_parameters);
 
-	foliage::QuantifiedFormula::new(copy_parameters, Box::new(copy_argument))
+	crate::QuantifiedFormula::new(copy_parameters, Box::new(copy_argument))
 }
 
-pub(crate) fn copy_formula<D>(formula: &foliage::Formula, declarations: &D) -> foliage::Formula
-where
-	D: crate::traits::VariableDeclarationDomain + crate::traits::AssignVariableDeclarationDomain,
+pub(crate) fn copy_formula(formula: &crate::Formula) -> crate::Formula
 {
-	use foliage::Formula;
+	use crate::Formula;
 
 	match formula
 	{
 		Formula::And(arguments) =>
-			Formula::and(arguments.iter().map(
-				|argument| copy_formula(argument, declarations)).collect()),
+			Formula::and(arguments.iter().map(|argument| copy_formula(argument)).collect()),
 		Formula::Boolean(value) => Formula::boolean(*value),
 		Formula::Compare(compare) =>
 			Formula::compare(compare.operator, Box::new(copy_term(&compare.left)),
 				Box::new(copy_term(&compare.right))),
 		Formula::Exists(quantified_formula) =>
-			Formula::Exists(copy_quantified_formula(quantified_formula, declarations)),
+			Formula::Exists(copy_quantified_formula(quantified_formula)),
 		Formula::ForAll(quantified_formula) =>
-			Formula::ForAll(copy_quantified_formula(quantified_formula, declarations)),
+			Formula::ForAll(copy_quantified_formula(quantified_formula)),
 		Formula::IfAndOnlyIf(arguments) =>
 			Formula::if_and_only_if(
-				arguments.iter().map(|argument| copy_formula(argument, declarations)).collect()),
+				arguments.iter().map(|argument| copy_formula(argument)).collect()),
 		Formula::Implies(implies) =>
-			Formula::implies(implies.direction,
-				Box::new(copy_formula(&implies.antecedent, declarations)),
-				Box::new(copy_formula(&implies.implication, declarations))),
-		Formula::Not(argument) => Formula::not(Box::new(copy_formula(&argument, declarations))),
+			Formula::implies(implies.direction, Box::new(copy_formula(&implies.antecedent)),
+				Box::new(copy_formula(&implies.implication))),
+		Formula::Not(argument) => Formula::not(Box::new(copy_formula(&argument))),
 		Formula::Or(arguments) =>
-			Formula::or(arguments.iter().map(
-				|argument| copy_formula(argument, declarations)).collect()),
+			Formula::or(arguments.iter().map(|argument| copy_formula(argument)).collect()),
 		Formula::Predicate(predicate) =>
 			Formula::predicate(std::rc::Rc::clone(&predicate.declaration),
 				predicate.arguments.iter().map(|argument| copy_term(argument)).collect()),

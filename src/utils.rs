@@ -1,9 +1,11 @@
 mod arithmetic_terms;
+mod autoname_variables;
 mod closures;
 mod copy_formula;
 mod output_predicates;
 mod variables_in_terms;
 
+pub(crate) use autoname_variables::*;
 pub(crate) use arithmetic_terms::*;
 pub(crate) use closures::*;
 pub(crate) use copy_formula::*;

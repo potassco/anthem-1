@@ -1,8 +1,8 @@
-pub(crate) fn term_contains_variable(term: &foliage::Term,
-	variable_declaration: &foliage::VariableDeclaration)
+pub(crate) fn term_contains_variable(term: &crate::Term,
+	variable_declaration: &crate::VariableDeclaration)
 	-> bool
 {
-	use foliage::Term;
+	use crate::Term;
 
 	match term
 	{

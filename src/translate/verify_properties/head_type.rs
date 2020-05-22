@@ -1,6 +1,6 @@
 pub(crate) struct HeadAtom<'a>
 {
-	pub predicate_declaration: std::rc::Rc<foliage::PredicateDeclaration>,
+	pub predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>,
 	pub arguments: &'a [clingo::ast::Term<'a>],
 }
 
@@ -15,7 +15,7 @@ pub(crate) enum HeadType<'a>
 pub(crate) fn determine_head_type<'a, C>(head_literal: &'a clingo::ast::HeadLiteral, context: &C)
 	-> Result<HeadType<'a>, crate::Error>
 where
-	C: foliage::FindOrCreatePredicateDeclaration
+	C: foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor>
 {
 	let create_head_atom = |function: &'a clingo::ast::Function| -> Result<_, crate::Error>
 	{

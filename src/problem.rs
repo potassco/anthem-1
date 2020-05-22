@@ -6,6 +6,8 @@ pub use proof_direction::ProofDirection;
 pub(crate) use section_kind::SectionKind;
 pub(crate) use statement::{ProofStatus, Statement, StatementKind};
 
+use foliage::flavor::{FunctionDeclaration as _, PredicateDeclaration as _};
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ProofResult
 {
@@ -15,35 +17,14 @@ pub enum ProofResult
 }
 
 type VariableDeclarationIDs
-	= std::collections::BTreeMap::<std::rc::Rc<foliage::VariableDeclaration>, usize>;
-
-type InputConstantDeclarationDomains
-	= std::collections::BTreeMap<std::rc::Rc<foliage::FunctionDeclaration>, crate::Domain>;
-
-type VariableDeclarationDomains
-	= std::collections::BTreeMap<std::rc::Rc<foliage::VariableDeclaration>, crate::Domain>;
-
-struct FormatContext<'a, 'b>
-{
-	pub program_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
-	pub integer_variable_declaration_ids: std::cell::RefCell<VariableDeclarationIDs>,
-	pub input_constant_declaration_domains: &'a InputConstantDeclarationDomains,
-	pub variable_declaration_domains: &'b VariableDeclarationDomains,
-}
+	= std::collections::BTreeMap::<std::rc::Rc<crate::VariableDeclaration>, usize>;
 
 pub struct Problem
 {
-	function_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
-	pub predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
+	function_declarations: std::cell::RefCell<crate::FunctionDeclarations>,
+	pub predicate_declarations: std::cell::RefCell<crate::PredicateDeclarations>,
 
 	statements: std::cell::RefCell<std::collections::BTreeMap<SectionKind, Vec<Statement>>>,
-
-	pub input_constant_declarations: std::cell::RefCell<foliage::FunctionDeclarations>,
-	pub input_constant_declaration_domains: std::cell::RefCell<InputConstantDeclarationDomains>,
-	pub input_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
-	pub output_predicate_declarations: std::cell::RefCell<foliage::PredicateDeclarations>,
-	// TODO: clean up as variable declarations are dropped
-	variable_declaration_domains: std::cell::RefCell<VariableDeclarationDomains>,
 
 	shell: std::cell::RefCell<crate::output::Shell>,
 }
@@ -54,27 +35,16 @@ impl Problem
 	{
 		Self
 		{
-			function_declarations: std::cell::RefCell::new(foliage::FunctionDeclarations::new()),
-			predicate_declarations: std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
+			function_declarations: std::cell::RefCell::new(crate::FunctionDeclarations::new()),
+			predicate_declarations: std::cell::RefCell::new(crate::PredicateDeclarations::new()),
 
 			statements: std::cell::RefCell::new(std::collections::BTreeMap::new()),
-
-			input_constant_declarations:
-				std::cell::RefCell::new(foliage::FunctionDeclarations::new()),
-			input_constant_declaration_domains:
-				std::cell::RefCell::new(InputConstantDeclarationDomains::new()),
-			input_predicate_declarations:
-				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
-			output_predicate_declarations:
-				std::cell::RefCell::new(foliage::PredicateDeclarations::new()),
-			variable_declaration_domains:
-				std::cell::RefCell::new(VariableDeclarationDomains::new()),
 
 			shell: std::cell::RefCell::new(crate::output::Shell::from_stdout()),
 		}
 	}
 
-	pub(crate) fn add_statement(&self, section_kind: SectionKind, statement: Statement)
+	pub(crate) fn add_statement(&self, section_kind: SectionKind, mut statement: Statement)
 	{
 		let mut statements = self.statements.borrow_mut();
 		let section = statements.entry(section_kind).or_insert(vec![]);
@@ -86,10 +56,8 @@ impl Problem
 		-> Result<(), crate::Error>
 	{
 		let predicate_declarations = self.predicate_declarations.borrow();
-		let input_predicate_declarations = self.input_predicate_declarations.borrow();
-		let output_predicate_declarations = self.output_predicate_declarations.borrow();
 
-		if output_predicate_declarations.is_empty()
+		if predicate_declarations.iter().find(|x| *x.is_output.borrow()).is_none()
 		{
 			return Ok(());
 		}
@@ -97,12 +65,10 @@ impl Problem
 		// Check that only input and output predicates are used in the specification
 		for predicate_declaration in predicate_declarations.iter()
 		{
-			if input_predicate_declarations.contains(predicate_declaration)
-				|| output_predicate_declarations.contains(predicate_declaration)
-				// TODO: refactor
+			if *predicate_declaration.is_input.borrow()
+				|| *predicate_declaration.is_output.borrow()
 				// Auxiliary predicates may occur anywhere
-				|| predicate_declaration.name.starts_with("p__")
-					&& predicate_declaration.name.ends_with("__")
+				|| predicate_declaration.is_built_in()
 			{
 				continue;
 			}
@@ -133,19 +99,15 @@ impl Problem
 	pub(crate) fn restrict_to_output_predicates(&mut self) -> Result<(), crate::Error>
 	{
 		let predicate_declarations = self.predicate_declarations.borrow();
-		let input_predicate_declarations = self.input_predicate_declarations.borrow();
-		let output_predicate_declarations = self.output_predicate_declarations.borrow();
 
 		// If no output statements were provided, show all predicates by default
-		if output_predicate_declarations.is_empty()
+		if predicate_declarations.iter().find(|x| *x.is_output.borrow()).is_none()
 		{
 			return Ok(());
 		}
 
-		let hidden_predicate_declarations =
-			predicate_declarations.iter().filter(|x| !output_predicate_declarations.contains(*x)
-				&& !input_predicate_declarations.contains(*x)
-				&& !(x.name.starts_with("p__") && x.name.ends_with("__")));
+		let hidden_predicate_declarations = predicate_declarations.iter()
+			.filter(|x| !*x.is_output.borrow() && !*x.is_input.borrow() && !x.is_built_in());
 
 		let mut statements = self.statements.borrow_mut();
 
@@ -181,7 +143,7 @@ impl Problem
 				for statement in statements.iter_mut()
 				{
 					crate::utils::replace_predicate_in_formula_with_completed_definition(
-						&mut statement.formula, &completed_definition, self)?;
+						&mut statement.formula, &completed_definition)?;
 				}
 			}
 		}
@@ -357,17 +319,7 @@ impl Problem
 			self.shell.borrow_mut().print(&format!("{}: ", statement.kind),
 				&termcolor::ColorSpec::new())?;
 
-			let format_context = FormatContext
-			{
-				program_variable_declaration_ids:
-					std::cell::RefCell::new(VariableDeclarationIDs::new()),
-				integer_variable_declaration_ids:
-					std::cell::RefCell::new(VariableDeclarationIDs::new()),
-				input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
-				variable_declaration_domains: &self.variable_declaration_domains.borrow(),
-			};
-
-			print!("{}", foliage::format::display_formula(&statement.formula, &format_context));
+			print!("{}", statement.formula);
 
 			Ok(())
 		};
@@ -405,11 +357,7 @@ impl Problem
 				None => break,
 			}
 
-			let mut tptp_problem_to_prove_next_statement = "".to_string();
-
-			self.write_tptp_problem_to_prove_next_statement(
-				&mut tptp_problem_to_prove_next_statement)
-				.map_err(|error| crate::Error::new_write_tptp_program(error))?;
+			let tptp_problem_to_prove_next_statement = format!("{}", self.display_tptp());
 
 			log::trace!("TPTP program:\n{}", &tptp_problem_to_prove_next_statement);
 
@@ -463,21 +411,20 @@ impl Problem
 		Ok(ProofResult::Proven)
 	}
 
-	fn write_tptp_problem_to_prove_next_statement(&self, formatter: &mut String) -> std::fmt::Result
+	fn display_tptp(&self) -> ProblemTPTPDisplay
 	{
-		use std::fmt::Write as _;
+		ProblemTPTPDisplay(self)
+	}
+}
 
-		let format_context = FormatContext
-		{
-			program_variable_declaration_ids:
-				std::cell::RefCell::new(VariableDeclarationIDs::new()),
-			integer_variable_declaration_ids:
-				std::cell::RefCell::new(VariableDeclarationIDs::new()),
-			input_constant_declaration_domains: &self.input_constant_declaration_domains.borrow(),
-			variable_declaration_domains: &self.variable_declaration_domains.borrow(),
-		};
+struct ProblemTPTPDisplay<'p>(&'p Problem);
 
-		let write_title = |formatter: &mut String, title, section_separator| -> std::fmt::Result
+impl<'p> std::fmt::Display for ProblemTPTPDisplay<'p>
+{
+	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		let write_title = |formatter: &mut dyn std::fmt::Write, title, section_separator|
+			-> std::fmt::Result
 		{
 			write!(formatter, "{}{}", section_separator, "%".repeat(72))?;
 			write!(formatter, "\n% {}", title)?;
@@ -499,42 +446,40 @@ impl Problem
 			= include_str!("output/tptp/preamble_axioms.tptp").trim_end();
 		writeln!(formatter, "{}", tptp_preamble_anthem_types)?;
 
-		if !self.predicate_declarations.borrow().is_empty()
-			|| !self.function_declarations.borrow().is_empty()
+		if !self.0.predicate_declarations.borrow().is_empty()
+			|| !self.0.function_declarations.borrow().is_empty()
 		{
 			write_title(formatter, "types", section_separator)?;
 
-			if !self.predicate_declarations.borrow().is_empty()
+			if !self.0.predicate_declarations.borrow().is_empty()
 			{
 				writeln!(formatter, "% predicate types")?;
 			}
 
-			for predicate_declaration in self.predicate_declarations.borrow().iter()
-				.filter(|x| !(x.name.starts_with("p__") || x.name.ends_with("__")))
+			for predicate_declaration in self.0.predicate_declarations.borrow().iter()
+				.filter(|x| !x.is_built_in())
 			{
 				writeln!(formatter, "tff(type, type, {}).",
 					crate::output::tptp::display_predicate_declaration(predicate_declaration))?;
 			}
 
-			if !self.function_declarations.borrow().is_empty()
+			if !self.0.function_declarations.borrow().is_empty()
 			{
 				writeln!(formatter, "% function types")?;
 			}
 
-			for function_declaration in self.function_declarations.borrow().iter()
-				.filter(|x| !(x.name.starts_with("f__") || x.name.ends_with("__")))
+			for function_declaration in self.0.function_declarations.borrow().iter()
+				.filter(|x| !x.is_built_in())
 			{
 				writeln!(formatter, "tff(type, type, {}).",
-					crate::output::tptp::display_function_declaration(function_declaration,
-						&format_context))?;
+					crate::output::tptp::display_function_declaration(function_declaration))?;
 			}
 		}
 
-		let function_declarations = self.function_declarations.borrow();
-		let symbolic_constants = function_declarations.iter().filter(
-			|x| !self.input_constant_declaration_domains.borrow().contains_key(*x));
+		let function_declarations = self.0.function_declarations.borrow();
+		let symbolic_constants = function_declarations.iter().filter(|x| !*x.is_input.borrow());
 
-		let mut last_symbolic_constant: Option<std::rc::Rc<foliage::FunctionDeclaration>> = None;
+		let mut last_symbolic_constant: Option<std::rc::Rc<crate::FunctionDeclaration>> = None;
 
 		// TODO: put in axioms section
 		for (i, symbolic_constant) in symbolic_constants.enumerate()
@@ -545,7 +490,7 @@ impl Problem
 				writeln!(formatter, "% axioms for order of symbolic constants")?;
 			}
 
-			if symbolic_constant.arity > 0
+			if symbolic_constant.arity() > 0
 			{
 				// TODO: refactor
 				unimplemented!("n-ary function declarations aren’t supported");
@@ -553,14 +498,17 @@ impl Problem
 
 			if let Some(last_symbolic_constant) = last_symbolic_constant
 			{
-				writeln!(formatter, "tff(symbolic_constant_order, axiom, p__less__({}, {})).",
-					last_symbolic_constant.name, symbolic_constant.name)?;
+				write!(formatter, "tff(symbolic_constant_order, axiom, p__less__(")?;
+				last_symbolic_constant.display_name(formatter)?;
+				write!(formatter, ", ")?;
+				symbolic_constant.display_name(formatter)?;
+				writeln!(formatter, ")).")?;
 			}
 
 			last_symbolic_constant = Some(std::rc::Rc::clone(symbolic_constant));
 		}
 
-		for (section_kind, statements) in self.statements.borrow().iter()
+		for (section_kind, statements) in self.0.statements.borrow().iter()
 		{
 			if statements.is_empty()
 			{
@@ -615,7 +563,7 @@ impl Problem
 
 				// TODO: add proper statement type
 				writeln!(formatter, "tff({}, {}, {}).", name, statement_type,
-					crate::output::tptp::display_formula(&statement.formula, &format_context))?;
+					crate::output::tptp::display_formula(&statement.formula))?;
 			}
 		}
 
@@ -623,23 +571,19 @@ impl Problem
 	}
 }
 
-impl foliage::FindOrCreateFunctionDeclaration for Problem
+impl foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor> for Problem
 {
 	fn find_or_create_function_declaration(&self, name: &str, arity: usize)
-		-> std::rc::Rc<foliage::FunctionDeclaration>
+		-> std::rc::Rc<crate::FunctionDeclaration>
 	{
 		let mut function_declarations = self.function_declarations.borrow_mut();
 
-		match function_declarations.iter().find(|x| x.name == name && x.arity == arity)
+		match function_declarations.iter().find(|x| x.matches_signature(name, arity))
 		{
 			Some(declaration) => std::rc::Rc::clone(&declaration),
 			None =>
 			{
-				let declaration = foliage::FunctionDeclaration
-				{
-					name: name.to_string(),
-					arity,
-				};
+				let declaration = crate::FunctionDeclaration::new(name.to_string(), arity);
 				let declaration = std::rc::Rc::new(declaration);
 
 				function_declarations.insert(std::rc::Rc::clone(&declaration));
@@ -652,23 +596,19 @@ impl foliage::FindOrCreateFunctionDeclaration for Problem
 	}
 }
 
-impl foliage::FindOrCreatePredicateDeclaration for Problem
+impl foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor> for Problem
 {
 	fn find_or_create_predicate_declaration(&self, name: &str, arity: usize)
-		-> std::rc::Rc<foliage::PredicateDeclaration>
+		-> std::rc::Rc<crate::PredicateDeclaration>
 	{
 		let mut predicate_declarations = self.predicate_declarations.borrow_mut();
 
-		match predicate_declarations.iter().find(|x| x.name == name && x.arity == arity)
+		match predicate_declarations.iter().find(|x| x.matches_signature(name, arity))
 		{
 			Some(declaration) => std::rc::Rc::clone(&declaration),
 			None =>
 			{
-				let declaration = foliage::PredicateDeclaration
-				{
-					name: name.to_string(),
-					arity,
-				};
+				let declaration = crate::PredicateDeclaration::new(name.to_string(), arity);
 				let declaration = std::rc::Rc::new(declaration);
 
 				predicate_declarations.insert(std::rc::Rc::clone(&declaration));
@@ -678,143 +618,6 @@ impl foliage::FindOrCreatePredicateDeclaration for Problem
 				declaration
 			},
 		}
-	}
-}
-
-impl crate::traits::AssignVariableDeclarationDomain for Problem
-{
-	fn assign_variable_declaration_domain(&self,
-		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>, domain: crate::Domain)
-	{
-		let mut variable_declaration_domains = self.variable_declaration_domains.borrow_mut();
-
-		match variable_declaration_domains.get(variable_declaration)
-		{
-			Some(current_domain) => assert_eq!(*current_domain, domain,
-				"inconsistent variable declaration domain"),
-			None =>
-			{
-				variable_declaration_domains
-					.insert(std::rc::Rc::clone(variable_declaration).into(), domain);
-			},
-		}
-	}
-}
-
-impl crate::traits::VariableDeclarationDomain for Problem
-{
-	fn variable_declaration_domain(&self,
-		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
-		-> Option<crate::Domain>
-	{
-		self.variable_declaration_domains.borrow().iter().find_map(
-			|(x, domain)|
-			match x == variable_declaration
-			{
-				true => Some(*domain),
-				false => None,
-			})
-	}
-}
-
-impl<'a, 'b> FormatContext<'a, 'b>
-{
-	fn variable_declaration_id(&self,
-		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
-		-> usize
-	{
-		let mut variable_declaration_ids = match self.variable_declaration_domains
-			.get(variable_declaration)
-		{
-			Some(crate::Domain::Program) => self.program_variable_declaration_ids.borrow_mut(),
-			Some(crate::Domain::Integer) => self.integer_variable_declaration_ids.borrow_mut(),
-			None => unreachable!("all variables should be declared at this point"),
-		};
-
-		match variable_declaration_ids.get(variable_declaration)
-		{
-			Some(id) => *id,
-			None =>
-			{
-				let id = variable_declaration_ids.len();
-				variable_declaration_ids.insert(std::rc::Rc::clone(variable_declaration).into(), id);
-				id
-			},
-		}
-	}
-}
-
-impl<'a, 'b> crate::traits::InputConstantDeclarationDomain for FormatContext<'a, 'b>
-{
-	fn input_constant_declaration_domain(&self,
-		declaration: &std::rc::Rc<foliage::FunctionDeclaration>) -> crate::Domain
-	{
-		// Assume the program domain if not specified otherwise
-		self.input_constant_declaration_domains.get(declaration).map(|x| *x)
-			.unwrap_or(crate::Domain::Program)
-	}
-}
-
-impl<'a, 'b> crate::traits::VariableDeclarationDomain for FormatContext<'a, 'b>
-{
-	fn variable_declaration_domain(&self,
-		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
-		-> Option<crate::Domain>
-	{
-		self.variable_declaration_domains.get(variable_declaration)
-			.map(|x| *x)
-	}
-}
-
-impl<'a, 'b> crate::traits::VariableDeclarationID for FormatContext<'a, 'b>
-{
-	fn variable_declaration_id(&self,
-		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
-		-> usize
-	{
-		use crate::traits::VariableDeclarationDomain;
-
-		let mut variable_declaration_ids = match self.variable_declaration_domain(
-			variable_declaration)
-		{
-			Some(crate::Domain::Program) => self.program_variable_declaration_ids.borrow_mut(),
-			Some(crate::Domain::Integer) => self.integer_variable_declaration_ids.borrow_mut(),
-			None => panic!("all variables should be declared at this point"),
-		};
-
-		match variable_declaration_ids.get(variable_declaration)
-		{
-			Some(id) =>
-			{
-				*id
-			}
-			None =>
-			{
-				let id = variable_declaration_ids.len();
-				variable_declaration_ids.insert(std::rc::Rc::clone(variable_declaration).into(), id);
-				id
-			},
-		}
-	}
-}
-
-impl<'a, 'b> foliage::format::Format for FormatContext<'a, 'b>
-{
-	fn display_variable_declaration(&self, formatter: &mut std::fmt::Formatter,
-		variable_declaration: &std::rc::Rc<foliage::VariableDeclaration>)
-		-> std::fmt::Result
-	{
-		let id = self.variable_declaration_id(variable_declaration);
-		let domain = self.variable_declaration_domains.get(variable_declaration)
-			.expect("unspecified variable domain");
-
-		let prefix = match domain
-		{
-			crate::Domain::Integer => "N",
-			crate::Domain::Program => "X",
-		};
-
-		write!(formatter, "{}{}", prefix, id + 1)
 	}
 }
 

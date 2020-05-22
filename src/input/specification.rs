@@ -1,96 +1,8 @@
-// TODO: refactor
-fn term_assign_variable_declaration_domains<D>(term: &foliage::Term, declarations: &D)
-	-> Result<(), crate::Error>
-where
-	D: crate::traits::AssignVariableDeclarationDomain,
-{
-	match term
-	{
-		foliage::Term::BinaryOperation(binary_operation) =>
-		{
-			term_assign_variable_declaration_domains(&binary_operation.left, declarations)?;
-			term_assign_variable_declaration_domains(&binary_operation.right, declarations)?;
-		},
-		foliage::Term::Function(function) =>
-			for argument in &function.arguments
-			{
-				term_assign_variable_declaration_domains(&argument, declarations)?;
-			},
-		foliage::Term::UnaryOperation(unary_operation) =>
-			term_assign_variable_declaration_domains(&unary_operation.argument, declarations)?,
-		foliage::Term::Variable(variable) =>
-		{
-			let domain =  match variable.declaration.name.chars().next()
-			{
-				Some('X')
-				| Some('Y')
-				| Some('Z') => crate::Domain::Program,
-				Some('I')
-				| Some('J')
-				| Some('K')
-				| Some('L')
-				| Some('M')
-				| Some('N') => crate::Domain::Integer,
-				Some(_) => return Err(
-					crate::Error::new_variable_name_not_allowed(variable.declaration.name.clone())),
-				None => unreachable!(),
-			};
-
-			declarations.assign_variable_declaration_domain(&variable.declaration, domain);
-		},
-		_ => (),
-	}
-
-	Ok(())
-}
-
-fn formula_assign_variable_declaration_domains<D>(formula: &foliage::Formula, declarations: &D)
-	-> Result<(), crate::Error>
-where
-	D: crate::traits::AssignVariableDeclarationDomain,
-{
-	match formula
-	{
-		foliage::Formula::And(arguments)
-		| foliage::Formula::Or(arguments)
-		| foliage::Formula::IfAndOnlyIf(arguments) =>
-			for argument in arguments
-			{
-				formula_assign_variable_declaration_domains(&argument, declarations)?;
-			},
-		foliage::Formula::Compare(compare) =>
-		{
-			term_assign_variable_declaration_domains(&compare.left, declarations)?;
-			term_assign_variable_declaration_domains(&compare.right, declarations)?;
-		},
-		foliage::Formula::Exists(quantified_formula)
-		| foliage::Formula::ForAll(quantified_formula) =>
-			formula_assign_variable_declaration_domains(&quantified_formula.argument,
-				declarations)?,
-		foliage::Formula::Implies(implies) =>
-		{
-			formula_assign_variable_declaration_domains(&implies.antecedent, declarations)?;
-			formula_assign_variable_declaration_domains(&implies.implication, declarations)?;
-		}
-		foliage::Formula::Not(argument) =>
-			formula_assign_variable_declaration_domains(&argument, declarations)?,
-		foliage::Formula::Predicate(predicate) =>
-			for argument in &predicate.arguments
-			{
-				term_assign_variable_declaration_domains(&argument, declarations)?;
-			},
-		_ => (),
-	}
-
-	Ok(())
-}
-
 fn open_formula<'i, D>(input: &'i str, declarations: &D)
-	-> Result<(foliage::OpenFormula, &'i str), crate::Error>
+	-> Result<(crate::OpenFormula, &'i str), crate::Error>
 where
-	D: foliage::FindOrCreateFunctionDeclaration
-		+ foliage::FindOrCreatePredicateDeclaration
-		+ crate::traits::AssignVariableDeclarationDomain,
+	D: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
+		+ foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor>
 {
 	let terminator_position = match input.find('.')
 	{
@@ -106,9 +18,7 @@ where
 	let open_formula = foliage::parse::formula(formula_input, declarations)
 		.map_err(|error| crate::Error::new_parse_formula(error))?;
 
-	formula_assign_variable_declaration_domains(&open_formula.formula, declarations)?;
-
-	let open_formula = foliage::OpenFormula
+	let open_formula = crate::OpenFormula
 	{
 		free_variable_declarations: open_formula.free_variable_declarations,
 		formula: open_formula.formula,
@@ -118,11 +28,10 @@ where
 }
 
 fn formula<'i, D>(mut input: &'i str, declarations: &D)
-	-> Result<(foliage::Formula, &'i str), crate::Error>
+	-> Result<(crate::Formula, &'i str), crate::Error>
 where
-	D: foliage::FindOrCreateFunctionDeclaration
-		+ foliage::FindOrCreatePredicateDeclaration
-		+ crate::traits::AssignVariableDeclarationDomain,
+	D: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
+		+ foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor>
 {
 	let (open_formula, remaining_input) = open_formula(input, declarations)?;
 
@@ -137,7 +46,7 @@ where
 }
 
 fn formula_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
-	-> Result<(foliage::Formula, &'i str), crate::Error>
+	-> Result<(crate::Formula, &'i str), crate::Error>
 {
 	input = foliage::parse::tokens::trim_start(input);
 
@@ -257,15 +166,12 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 		{
 			input = remaining_input;
 
-			let mut input_predicate_declarations =
-				problem.input_predicate_declarations.borrow_mut();
-
 			use foliage::FindOrCreatePredicateDeclaration as _;
 
 			let predicate_declaration =
 				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity);
 
-			input_predicate_declarations.insert(predicate_declaration);
+			*predicate_declaration.is_input.borrow_mut() = true;
 		}
 		// Parse input constant specifiers
 		else
@@ -279,20 +185,13 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 
 			input = remaining_input;
 
-			let mut input_constant_declarations =
-				problem.input_constant_declarations.borrow_mut();
-
 			use foliage::FindOrCreateFunctionDeclaration as _;
 
 			let constant_declaration =
 				problem.find_or_create_function_declaration(constant_or_predicate_name, 0);
 
-			input_constant_declarations.insert(std::rc::Rc::clone(&constant_declaration));
-
-			let mut input_constant_declaration_domains =
-				problem.input_constant_declaration_domains.borrow_mut();
-
-			input_constant_declaration_domains.insert(constant_declaration, domain);
+			*constant_declaration.is_input.borrow_mut() = true;
+			*constant_declaration.domain.borrow_mut() = domain;
 		}
 
 		let mut input_characters = input.chars();
@@ -337,15 +236,12 @@ fn output_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 		{
 			input = remaining_input;
 
-			let mut output_predicate_declarations =
-				problem.output_predicate_declarations.borrow_mut();
-
 			use foliage::FindOrCreatePredicateDeclaration as _;
 
 			let predicate_declaration =
 				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity);
 
-			output_predicate_declarations.insert(predicate_declaration);
+			*predicate_declaration.is_output.borrow_mut() = true;
 		}
 		else
 		{

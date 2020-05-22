@@ -1,11 +1,10 @@
 // TODO: rename context
 pub(crate) fn translate_body_term<C>(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
-	context: &C, variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
-	-> Result<foliage::Formula, crate::Error>
+	context: &C, variable_declaration_stack: &crate::VariableDeclarationStackLayer)
+	-> Result<crate::Formula, crate::Error>
 where
-	C: foliage::FindOrCreateFunctionDeclaration
-		+ foliage::FindOrCreatePredicateDeclaration
-		+ crate::traits::AssignVariableDeclarationDomain
+	C: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
+		+ foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor>,
 {
 	let function = match body_term.term_type()
 	{
@@ -18,22 +17,16 @@ where
 	let predicate_declaration = context.find_or_create_predicate_declaration(function_name,
 		function.arguments().len());
 
-	let parameters = function.arguments().iter().map(|_|
-		{
-			let variable_declaration = std::rc::Rc::new(
-				foliage::VariableDeclaration::new("<anonymous>".to_string()));
-			context.assign_variable_declaration_domain(&variable_declaration,
-				crate::Domain::Program);
-			variable_declaration
-		})
-		.collect::<foliage::VariableDeclarations>();
+	let parameters = function.arguments().iter().map(
+		|_| std::rc::Rc::new(crate::VariableDeclaration::new_generated(crate::Domain::Program)))
+		.collect::<crate::VariableDeclarations>();
 	let parameters = std::rc::Rc::new(parameters);
 
 	let predicate_arguments = parameters.iter().map(
-		|parameter| foliage::Term::variable(std::rc::Rc::clone(parameter)))
+		|parameter| crate::Term::variable(std::rc::Rc::clone(parameter)))
 		.collect::<Vec<_>>();
 
-	let predicate = foliage::Formula::predicate(predicate_declaration, predicate_arguments);
+	let predicate = crate::Formula::predicate(predicate_declaration, predicate_arguments);
 
 	let predicate_literal = match sign
 	{
@@ -41,7 +34,7 @@ where
 		| clingo::ast::Sign::DoubleNegation
 			=> predicate,
 		clingo::ast::Sign::Negation
-			=> foliage::Formula::not(Box::new(predicate)),
+			=> crate::Formula::not(Box::new(predicate)),
 	};
 
 	if function.arguments().is_empty()
@@ -60,18 +53,17 @@ where
 
 	arguments.push(predicate_literal);
 
-	let and = foliage::Formula::and(arguments);
+	let and = crate::Formula::and(arguments);
 
-	Ok(foliage::Formula::exists(parameters, Box::new(and)))
+	Ok(crate::Formula::exists(parameters, Box::new(and)))
 }
 
 pub(crate) fn translate_body_literal<C>(body_literal: &clingo::ast::BodyLiteral,
-	context: &C, variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
-	-> Result<foliage::Formula, crate::Error>
+	context: &C, variable_declaration_stack: &crate::VariableDeclarationStackLayer)
+	-> Result<crate::Formula, crate::Error>
 where
-	C: foliage::FindOrCreateFunctionDeclaration
-		+ foliage::FindOrCreatePredicateDeclaration
-		+ crate::traits::AssignVariableDeclarationDomain
+	C: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
+		+ foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor>,
 {
 	match body_literal.sign()
 	{
@@ -97,21 +89,16 @@ where
 				_ => return Err(crate::Error::new_logic("unexpected negated Boolean value")),
 			}
 
-			Ok(foliage::Formula::Boolean(value))
+			Ok(crate::Formula::Boolean(value))
 		},
 		clingo::ast::LiteralType::Symbolic(term) => translate_body_term(term, literal.sign(),
 			context, variable_declaration_stack),
 		clingo::ast::LiteralType::Comparison(comparison) =>
 		{
-			let parameters = (0..2).map(|_|
-				{
-					let variable_declaration = std::rc::Rc::new(
-						foliage::VariableDeclaration::new("<anonymous>".to_string()));
-					context.assign_variable_declaration_domain(&variable_declaration,
-						crate::Domain::Program);
-					variable_declaration
-				})
-				.collect::<foliage::VariableDeclarations>();
+			let parameters = (0..2).map(
+				|_| std::rc::Rc::new(crate::VariableDeclaration::new_generated(
+					crate::Domain::Program)))
+				.collect::<crate::VariableDeclarations>();
 			let parameters = std::rc::Rc::new(parameters);
 
 			let mut parameters_iterator = parameters.iter();
@@ -123,19 +110,19 @@ where
 			let choose_z2_in_t2 = crate::translate::common::choose_value_in_term(comparison.right(),
 				std::rc::Rc::clone(parameter_z2), context, variable_declaration_stack)?;
 
-			let variable_1 = foliage::Term::variable(std::rc::Rc::clone(parameter_z1));
-			let variable_2 = foliage::Term::variable(std::rc::Rc::clone(parameter_z2));
+			let variable_1 = crate::Term::variable(std::rc::Rc::clone(parameter_z1));
+			let variable_2 = crate::Term::variable(std::rc::Rc::clone(parameter_z2));
 
 			let operator = crate::translate::common::translate_comparison_operator(
 				comparison.comparison_type());
 
-			let compare_z1_and_z2 = foliage::Formula::compare(operator, Box::new(variable_1),
+			let compare_z1_and_z2 = crate::Formula::compare(operator, Box::new(variable_1),
 				Box::new(variable_2));
 
 			let and =
-				foliage::Formula::and(vec![choose_z1_in_t1, choose_z2_in_t2, compare_z1_and_z2]);
+				crate::Formula::and(vec![choose_z1_in_t1, choose_z2_in_t2, compare_z1_and_z2]);
 
-			Ok(foliage::Formula::exists(parameters, Box::new(and)))
+			Ok(crate::Formula::exists(parameters, Box::new(and)))
 		},
 		_ => Err(crate::Error::new_unsupported_language_feature(
 			"body literals other than Booleans, terms, or comparisons")),
@@ -143,15 +130,14 @@ where
 }
 
 pub(crate) fn translate_body<C>(body_literals: &[clingo::ast::BodyLiteral], context: &C,
-	variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
-	-> Result<foliage::Formulas, crate::Error>
+	variable_declaration_stack: &crate::VariableDeclarationStackLayer)
+	-> Result<crate::Formulas, crate::Error>
 where
-	C: foliage::FindOrCreateFunctionDeclaration
-		+ foliage::FindOrCreatePredicateDeclaration
-		+ crate::traits::AssignVariableDeclarationDomain
+	C: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
+		+ foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor>,
 {
 	body_literals.iter()
 		.map(|body_literal| translate_body_literal(body_literal, context,
 			variable_declaration_stack))
-		.collect::<Result<foliage::Formulas, crate::Error>>()
+		.collect::<Result<crate::Formulas, crate::Error>>()
 }

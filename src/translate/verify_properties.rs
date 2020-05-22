@@ -3,16 +3,17 @@ mod translate_body;
 
 use head_type::*;
 use translate_body::*;
-use crate::traits::AssignVariableDeclarationDomain as _;
+
+use foliage::flavor::{PredicateDeclaration as _};
 
 struct PredicateDefinitions
 {
-	pub parameters: std::rc::Rc<foliage::VariableDeclarations>,
-	pub definitions: Vec<foliage::OpenFormula>,
+	pub parameters: std::rc::Rc<crate::VariableDeclarations>,
+	pub definitions: Vec<crate::OpenFormula>,
 }
 
 type Definitions =
-	std::collections::BTreeMap::<std::rc::Rc<foliage::PredicateDeclaration>, PredicateDefinitions>;
+	std::collections::BTreeMap::<std::rc::Rc<crate::PredicateDeclaration>, PredicateDefinitions>;
 
 pub(crate) struct Translator<'p>
 {
@@ -76,8 +77,7 @@ impl<'p> Translator<'p>
 
 		log::info!("read input program “{}”", program_path.as_ref().display());
 
-		let completed_definition = |predicate_declaration, definitions: &mut Definitions,
-			problem: &crate::Problem|
+		let completed_definition = |predicate_declaration, definitions: &mut Definitions|
 		{
 			match definitions.remove(predicate_declaration)
 			{
@@ -87,19 +87,19 @@ impl<'p> Translator<'p>
 					let or_arguments = predicate_definitions.definitions.into_iter()
 						.map(|x| crate::existential_closure(x))
 						.collect::<Vec<_>>();
-					let or = foliage::Formula::or(or_arguments);
+					let or = crate::Formula::or(or_arguments);
 
 					let head_arguments = predicate_definitions.parameters.iter()
-						.map(|x| foliage::Term::variable(std::rc::Rc::clone(x)))
+						.map(|x| crate::Term::variable(std::rc::Rc::clone(x)))
 						.collect::<Vec<_>>();
 
-					let head_predicate = foliage::Formula::predicate(
+					let head_predicate = crate::Formula::predicate(
 						std::rc::Rc::clone(predicate_declaration), head_arguments);
 
 					let completed_definition =
-						foliage::Formula::if_and_only_if(vec![head_predicate, or]);
+						crate::Formula::if_and_only_if(vec![head_predicate, or]);
 
-					let open_formula = foliage::OpenFormula
+					let open_formula = crate::OpenFormula
 					{
 						free_variable_declarations: predicate_definitions.parameters,
 						formula: completed_definition,
@@ -110,27 +110,21 @@ impl<'p> Translator<'p>
 				// This predicate has no definitions, so universally falsify it
 				None =>
 				{
-					let parameters = std::rc::Rc::new((0..predicate_declaration.arity)
-						.map(|_|
-						{
-							let variable_declaration = std::rc::Rc::new(
-								foliage::VariableDeclaration::new("<anonymous>".to_string()));
-							problem.assign_variable_declaration_domain(&variable_declaration,
-								crate::Domain::Program);
-							variable_declaration
-						})
+					let parameters = std::rc::Rc::new((0..predicate_declaration.arity()).map(
+						|_| std::rc::Rc::new(crate::VariableDeclaration::new_generated(
+							crate::Domain::Program)))
 						.collect::<Vec<_>>());
 
 					let head_arguments = parameters.iter()
-						.map(|x| foliage::Term::variable(std::rc::Rc::clone(x)))
+						.map(|x| crate::Term::variable(std::rc::Rc::clone(x)))
 						.collect();
 
-					let head_predicate = foliage::Formula::predicate(
+					let head_predicate = crate::Formula::predicate(
 						std::rc::Rc::clone(predicate_declaration), head_arguments);
 
-					let not = foliage::Formula::not(Box::new(head_predicate));
+					let not = crate::Formula::not(Box::new(head_predicate));
 
-					let open_formula = foliage::OpenFormula
+					let open_formula = crate::OpenFormula
 					{
 						free_variable_declarations: parameters,
 						formula: not,
@@ -144,9 +138,7 @@ impl<'p> Translator<'p>
 		for predicate_declaration in self.problem.predicate_declarations.borrow().iter()
 		{
 			// Don’t perform completion for input predicates and built-in predicates
-			if self.problem.input_predicate_declarations.borrow().contains(predicate_declaration)
-				|| predicate_declaration.name.starts_with("p__")
-					&& predicate_declaration.name.ends_with("__")
+			if *predicate_declaration.is_input.borrow() || predicate_declaration.is_built_in()
 			{
 				continue;
 			}
@@ -154,12 +146,18 @@ impl<'p> Translator<'p>
 			let statement_kind = crate::problem::StatementKind::CompletedDefinition(
 				std::rc::Rc::clone(&predicate_declaration));
 
-			let completed_definition = completed_definition(predicate_declaration,
-				&mut self.definitions, self.problem);
+			let mut completed_definition = completed_definition(predicate_declaration,
+				&mut self.definitions);
+
+			crate::autoname_variables(&mut completed_definition);
+
+			//crate::simplify(&mut completed_definition);
+
+			let statement_name =
+				format!("completed_definition_{}", predicate_declaration.tptp_statement_name());
 
 			let statement = crate::problem::Statement::new(statement_kind, completed_definition)
-				.with_name(format!("completed_definition_{}_{}", predicate_declaration.name,
-					predicate_declaration.arity));
+				.with_name(statement_name);
 
 			self.problem.add_statement(crate::problem::SectionKind::CompletedDefinitions,
 				statement);
@@ -180,15 +178,10 @@ impl<'p> Translator<'p>
 			{
 				if !self.definitions.contains_key(&head_atom.predicate_declaration)
 				{
-					let parameters = std::rc::Rc::new((0..head_atom.predicate_declaration.arity)
-						.map(|_|
-						{
-							let variable_declaration = std::rc::Rc::new(
-								foliage::VariableDeclaration::new("<anonymous>".to_string()));
-							self.problem.assign_variable_declaration_domain(&variable_declaration,
-								crate::Domain::Program);
-							variable_declaration
-						})
+					let parameters = std::rc::Rc::new((0..head_atom.predicate_declaration.arity())
+						.map(
+							|_| std::rc::Rc::new(crate::VariableDeclaration::new_generated(
+								crate::Domain::Program)))
 						.collect());
 
 					self.definitions.insert(
@@ -207,9 +200,9 @@ impl<'p> Translator<'p>
 				let parameters = std::rc::Rc::clone(&predicate_definitions.parameters);
 				let free_variable_declarations = std::cell::RefCell::new(vec![]);
 				let free_layer =
-					foliage::VariableDeclarationStackLayer::Free(free_variable_declarations);
+					crate::VariableDeclarationStackLayer::Free(free_variable_declarations);
 				let parameters_layer =
-					foliage::VariableDeclarationStackLayer::bound(&free_layer, parameters);
+					crate::VariableDeclarationStackLayer::bound(&free_layer, parameters);
 
 				let mut definition_arguments =
 					translate_body(rule.body(), self.problem, &parameters_layer)?;
@@ -220,10 +213,10 @@ impl<'p> Translator<'p>
 				if let HeadType::ChoiceWithSingleAtom(_) = head_type
 				{
 					let head_arguments = predicate_definitions.parameters.iter()
-						.map(|x| foliage::Term::variable(std::rc::Rc::clone(x)))
+						.map(|x| crate::Term::variable(std::rc::Rc::clone(x)))
 						.collect::<Vec<_>>();
 
-					let head_predicate = foliage::Formula::predicate(
+					let head_predicate = crate::Formula::predicate(
 						std::rc::Rc::clone(&head_atom.predicate_declaration), head_arguments);
 
 					definition_arguments.push(head_predicate);
@@ -245,7 +238,7 @@ impl<'p> Translator<'p>
 				// TODO: refactor
 				let free_variable_declarations = match free_layer
 				{
-					foliage::VariableDeclarationStackLayer::Free(free_variable_declarations)
+					crate::VariableDeclarationStackLayer::Free(free_variable_declarations)
 						=> free_variable_declarations.into_inner(),
 					_ => unreachable!(),
 				};
@@ -253,11 +246,11 @@ impl<'p> Translator<'p>
 				let definition = match definition_arguments.len()
 				{
 					1 => definition_arguments.pop().unwrap(),
-					0 => foliage::Formula::true_(),
-					_ => foliage::Formula::and(definition_arguments),
+					0 => crate::Formula::true_(),
+					_ => crate::Formula::and(definition_arguments),
 				};
 
-				let definition = foliage::OpenFormula
+				let definition = crate::OpenFormula
 				{
 					free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
 					formula: definition,
@@ -269,32 +262,34 @@ impl<'p> Translator<'p>
 			{
 				let free_variable_declarations = std::cell::RefCell::new(vec![]);
 				let free_layer =
-					foliage::VariableDeclarationStackLayer::Free(free_variable_declarations);
+					crate::VariableDeclarationStackLayer::Free(free_variable_declarations);
 
 				let mut arguments = translate_body(rule.body(), self.problem, &free_layer)?;
 
 				// TODO: refactor
 				let free_variable_declarations = match free_layer
 				{
-					foliage::VariableDeclarationStackLayer::Free(free_variable_declarations)
+					crate::VariableDeclarationStackLayer::Free(free_variable_declarations)
 						=> free_variable_declarations.into_inner(),
 					_ => unreachable!(),
 				};
 
 				let formula = match arguments.len()
 				{
-					1 => foliage::Formula::not(Box::new(arguments.pop().unwrap())),
-					0 => foliage::Formula::false_(),
-					_ => foliage::Formula::not(Box::new(foliage::Formula::and(arguments))),
+					1 => crate::Formula::not(Box::new(arguments.pop().unwrap())),
+					0 => crate::Formula::false_(),
+					_ => crate::Formula::not(Box::new(crate::Formula::and(arguments))),
 				};
 
-				let open_formula = foliage::OpenFormula
+				let open_formula = crate::OpenFormula
 				{
 					free_variable_declarations: std::rc::Rc::new(free_variable_declarations),
 					formula,
 				};
 
 				let integrity_constraint = crate::universal_closure(open_formula);
+
+				//crate::simplify(&mut integrity_constraint);
 
 				let statement = crate::problem::Statement::new(
 					crate::problem::StatementKind::IntegrityConstraint, integrity_constraint)

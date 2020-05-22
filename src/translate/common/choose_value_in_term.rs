@@ -1,19 +1,18 @@
-pub(crate) fn choose_value_in_primitive(term: Box<foliage::Term>,
-	variable_declaration: std::rc::Rc<foliage::VariableDeclaration>)
-	-> foliage::Formula
+pub(crate) fn choose_value_in_primitive(term: Box<crate::Term>,
+	variable_declaration: std::rc::Rc<crate::VariableDeclaration>)
+	-> crate::Formula
 {
-	let variable = foliage::Term::variable(variable_declaration);
+	let variable = crate::Term::variable(variable_declaration);
 
-	foliage::Formula::equal(Box::new(variable), term)
+	crate::Formula::equal(Box::new(variable), term)
 }
 
 pub(crate) fn choose_value_in_term<C>(term: &clingo::ast::Term,
-	variable_declaration: std::rc::Rc<foliage::VariableDeclaration>, context: &C,
-	variable_declaration_stack: &foliage::VariableDeclarationStackLayer)
-	-> Result<foliage::Formula, crate::Error>
+	variable_declaration: std::rc::Rc<crate::VariableDeclaration>, context: &C,
+	variable_declaration_stack: &crate::VariableDeclarationStackLayer)
+	-> Result<crate::Formula, crate::Error>
 where
-	C: foliage::FindOrCreateFunctionDeclaration
-		+ crate::traits::AssignVariableDeclarationDomain
+	C: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>,
 {
 	match term.term_type()
 	{
@@ -21,15 +20,15 @@ where
 			.map_err(|error| crate::Error::new_logic("clingo error").with(error))?
 		{
 			clingo::SymbolType::Number => Ok(choose_value_in_primitive(
-				Box::new(foliage::Term::integer(symbol.number()
+				Box::new(crate::Term::integer(symbol.number()
 					.map_err(|error| crate::Error::new_logic("clingo error").with(error))?)),
 				variable_declaration)),
 			clingo::SymbolType::Infimum => Ok(choose_value_in_primitive(
-				Box::new(foliage::Term::infimum()), variable_declaration)),
+				Box::new(crate::Term::infimum()), variable_declaration)),
 			clingo::SymbolType::Supremum => Ok(choose_value_in_primitive(
-				Box::new(foliage::Term::supremum()), variable_declaration)),
+				Box::new(crate::Term::supremum()), variable_declaration)),
 			clingo::SymbolType::String => Ok(choose_value_in_primitive(
-				Box::new(foliage::Term::string(symbol.string()
+				Box::new(crate::Term::string(symbol.string()
 					.map_err(|error| crate::Error::new_logic("clingo error").with(error))?
 					.to_string())),
 				variable_declaration)),
@@ -51,7 +50,7 @@ where
 
 				let constant_declaration =
 					context.find_or_create_function_declaration(constant_name, 0);
-				let function = foliage::Term::function(constant_declaration, vec![]);
+				let function = crate::Term::function(constant_declaration, vec![]);
 
 				Ok(choose_value_in_primitive(Box::new(function), variable_declaration))
 			}
@@ -60,14 +59,14 @@ where
 		{
 			let other_variable_declaration = match variable_name
 			{
-				// TODO: check
 				// Every occurrence of anonymous variables is treated as if it introduced a fresh
 				// variable declaration
 				"_" => variable_declaration_stack.free_variable_declarations_do_mut(
 					|free_variable_declarations|
 					{
+						// TODO: check domain type
 						let variable_declaration = std::rc::Rc::new(
-							foliage::VariableDeclaration::new("_".to_owned()));
+							crate::VariableDeclaration::new_generated(crate::Domain::Program));
 
 						free_variable_declarations.push(std::rc::Rc::clone(&variable_declaration));
 
@@ -75,9 +74,7 @@ where
 					}),
 				_ => variable_declaration_stack.find_or_create(variable_name),
 			};
-			context.assign_variable_declaration_domain(&other_variable_declaration,
-				crate::Domain::Program);
-			let other_variable = foliage::Term::variable(other_variable_declaration);
+			let other_variable = crate::Term::variable(other_variable_declaration);
 
 			Ok(choose_value_in_primitive(Box::new(other_variable), variable_declaration))
 		},
@@ -92,26 +89,21 @@ where
 				| foliage::BinaryOperator::Multiply
 					=>
 				{
-					let parameters = (0..2).map(|_|
-						{
-							let variable_declaration = std::rc::Rc::new(
-								foliage::VariableDeclaration::new("<anonymous>".to_string()));
-							context.assign_variable_declaration_domain(&variable_declaration,
-								crate::Domain::Integer);
-							variable_declaration
-						})
-						.collect::<foliage::VariableDeclarations>();
+					let parameters = (0..2).map(
+						|_| std::rc::Rc::new(crate::VariableDeclaration::new_generated(
+							crate::Domain::Integer)))
+						.collect::<crate::VariableDeclarations>();
 					let parameters = std::rc::Rc::new(parameters);
 
 					let parameter_1 = &parameters[0];
 					let parameter_2 = &parameters[1];
 
-					let translated_binary_operation = foliage::Term::binary_operation(operator,
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(&parameter_1))),
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(&parameter_2))));
+					let translated_binary_operation = crate::Term::binary_operation(operator,
+						Box::new(crate::Term::variable(std::rc::Rc::clone(&parameter_1))),
+						Box::new(crate::Term::variable(std::rc::Rc::clone(&parameter_2))));
 
-					let equals = foliage::Formula::equal(
-						Box::new(foliage::Term::variable(variable_declaration)),
+					let equals = crate::Formula::equal(
+						Box::new(crate::Term::variable(variable_declaration)),
 						Box::new(translated_binary_operation));
 
 					let choose_value_from_left_argument = choose_value_in_term(
@@ -122,24 +114,19 @@ where
 						binary_operation.right(), std::rc::Rc::clone(&parameter_2), context,
 							variable_declaration_stack)?;
 
-					let and = foliage::Formula::And(vec![equals, choose_value_from_left_argument,
+					let and = crate::Formula::And(vec![equals, choose_value_from_left_argument,
 						choose_value_from_right_argument]);
 
-					Ok(foliage::Formula::exists(parameters, Box::new(and)))
+					Ok(crate::Formula::exists(parameters, Box::new(and)))
 				},
 				foliage::BinaryOperator::Divide
 				| foliage::BinaryOperator::Modulo
 					=>
 				{
-					let parameters = (0..4).map(|_|
-						{
-							let variable_declaration = std::rc::Rc::new(
-								foliage::VariableDeclaration::new("<anonymous>".to_string()));
-							context.assign_variable_declaration_domain(&variable_declaration,
-								crate::Domain::Integer);
-							variable_declaration
-						})
-						.collect::<foliage::VariableDeclarations>();
+					let parameters = (0..4).map(
+						|_| std::rc::Rc::new(crate::VariableDeclaration::new_generated(
+							crate::Domain::Integer)))
+						.collect::<crate::VariableDeclarations>();
 					let parameters = std::rc::Rc::new(parameters);
 
 					let parameter_i = &parameters[0];
@@ -147,15 +134,15 @@ where
 					let parameter_q = &parameters[2];
 					let parameter_r = &parameters[3];
 
-					let j_times_q = foliage::Term::multiply(
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_j))),
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_q))));
+					let j_times_q = crate::Term::multiply(
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_j))),
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_q))));
 
-					let j_times_q_plus_r = foliage::Term::add(Box::new(j_times_q),
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_r))));
+					let j_times_q_plus_r = crate::Term::add(Box::new(j_times_q),
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_r))));
 
-					let i_equals_j_times_q_plus_r = foliage::Formula::equal(
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_i))),
+					let i_equals_j_times_q_plus_r = crate::Formula::equal(
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_i))),
 						Box::new(j_times_q_plus_r));
 
 					let choose_i_in_t1 = choose_value_in_term(binary_operation.left(),
@@ -164,26 +151,26 @@ where
 					let choose_j_in_t2 = choose_value_in_term(binary_operation.right(),
 						std::rc::Rc::clone(parameter_j), context, variable_declaration_stack)?;
 
-					let j_not_equal_to_0 = foliage::Formula::not_equal(
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_j))),
-						Box::new(foliage::Term::integer(0)));
+					let j_not_equal_to_0 = crate::Formula::not_equal(
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_j))),
+						Box::new(crate::Term::integer(0)));
 
-					let r_greater_or_equal_to_0 = foliage::Formula::greater_or_equal(
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_r))),
-						Box::new(foliage::Term::integer(0)));
+					let r_greater_or_equal_to_0 = crate::Formula::greater_or_equal(
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_r))),
+						Box::new(crate::Term::integer(0)));
 
-					let r_less_than_q = foliage::Formula::less(
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_r))),
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_q))));
+					let r_less_than_q = crate::Formula::less(
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_r))),
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_q))));
 
-					let z_equal_to_q = foliage::Formula::equal(
+					let z_equal_to_q = crate::Formula::equal(
 						Box::new(
-							foliage::Term::variable(std::rc::Rc::clone(&variable_declaration))),
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_q))));
+							crate::Term::variable(std::rc::Rc::clone(&variable_declaration))),
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_q))));
 
-					let z_equal_to_r = foliage::Formula::equal(
-						Box::new(foliage::Term::variable(variable_declaration)),
-						Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_r))));
+					let z_equal_to_r = crate::Formula::equal(
+						Box::new(crate::Term::variable(variable_declaration)),
+						Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_r))));
 
 					let last_argument = match operator
 					{
@@ -192,11 +179,11 @@ where
 						_ => return Err(crate::Error::new_logic("unreachable code")),
 					};
 
-					let and = foliage::Formula::and(vec![i_equals_j_times_q_plus_r, choose_i_in_t1,
+					let and = crate::Formula::and(vec![i_equals_j_times_q_plus_r, choose_i_in_t1,
 						choose_j_in_t2, j_not_equal_to_0, r_greater_or_equal_to_0, r_less_than_q,
 						last_argument]);
 
-					Ok(foliage::Formula::exists(parameters, Box::new(and)))
+					Ok(crate::Formula::exists(parameters, Box::new(and)))
 				},
 				foliage::BinaryOperator::Exponentiate =>
 					Err(crate::Error::new_unsupported_language_feature("exponentiation")),
@@ -210,41 +197,34 @@ where
 					return Err(crate::Error::new_unsupported_language_feature("absolute value")),
 				clingo::ast::UnaryOperator::Minus =>
 				{
-					let parameter_z_prime = std::rc::Rc::new(foliage::VariableDeclaration::new(
-						"<anonymous>".to_string()));
-					context.assign_variable_declaration_domain(&parameter_z_prime,
-						crate::Domain::Integer);
+					let parameter_z_prime = std::rc::Rc::new(
+						crate::VariableDeclaration::new_generated(crate::Domain::Integer));
 
-					let negative_z_prime = foliage::Term::negative(Box::new(
-						foliage::Term::variable(std::rc::Rc::clone(&parameter_z_prime))));
-					let equals = foliage::Formula::equal(
-						Box::new(foliage::Term::variable(variable_declaration)),
+					let negative_z_prime = crate::Term::negative(Box::new(
+						crate::Term::variable(std::rc::Rc::clone(&parameter_z_prime))));
+					let equals = crate::Formula::equal(
+						Box::new(crate::Term::variable(variable_declaration)),
 						Box::new(negative_z_prime));
 
 					let choose_z_prime_in_t_prime = choose_value_in_term(unary_operation.argument(),
 						std::rc::Rc::clone(&parameter_z_prime), context,
 						variable_declaration_stack)?;
 
-					let and = foliage::Formula::and(vec![equals, choose_z_prime_in_t_prime]);
+					let and = crate::Formula::and(vec![equals, choose_z_prime_in_t_prime]);
 
 					let parameters = std::rc::Rc::new(vec![parameter_z_prime]);
 
-					Ok(foliage::Formula::exists(parameters, Box::new(and)))
+					Ok(crate::Formula::exists(parameters, Box::new(and)))
 				},
 				_ => Err(crate::Error::new_not_yet_implemented("todo")),
 			}
 		},
 		clingo::ast::TermType::Interval(interval) =>
 		{
-			let parameters = (0..3).map(|_|
-				{
-					let variable_declaration = std::rc::Rc::new(
-						foliage::VariableDeclaration::new("<anonymous>".to_string()));
-					context.assign_variable_declaration_domain(&variable_declaration,
-						crate::Domain::Integer);
-					variable_declaration
-				})
-				.collect::<foliage::VariableDeclarations>();
+			let parameters = (0..3).map(
+				|_| std::rc::Rc::new(crate::VariableDeclaration::new_generated(
+					crate::Domain::Integer)))
+				.collect::<crate::VariableDeclarations>();
 			let parameters = std::rc::Rc::new(parameters);
 
 			let parameter_i = &parameters[0];
@@ -257,22 +237,22 @@ where
 			let choose_j_in_t_2 = choose_value_in_term(interval.right(),
 				std::rc::Rc::clone(parameter_j), context, variable_declaration_stack)?;
 
-			let i_less_than_or_equal_to_k = foliage::Formula::less_or_equal(
-				Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_i))),
-				Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_k))));
+			let i_less_than_or_equal_to_k = crate::Formula::less_or_equal(
+				Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_i))),
+				Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_k))));
 
-			let k_less_than_or_equal_to_j = foliage::Formula::less_or_equal(
-				Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_k))),
-				Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_j))));
+			let k_less_than_or_equal_to_j = crate::Formula::less_or_equal(
+				Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_k))),
+				Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_j))));
 
-			let z_equals_k = foliage::Formula::equal(
-				Box::new(foliage::Term::variable(variable_declaration)),
-				Box::new(foliage::Term::variable(std::rc::Rc::clone(parameter_k))));
+			let z_equals_k = crate::Formula::equal(
+				Box::new(crate::Term::variable(variable_declaration)),
+				Box::new(crate::Term::variable(std::rc::Rc::clone(parameter_k))));
 
-			let and = foliage::Formula::and(vec![choose_i_in_t_1, choose_j_in_t_2,
+			let and = crate::Formula::and(vec![choose_i_in_t_1, choose_j_in_t_2,
 				i_less_than_or_equal_to_k, k_less_than_or_equal_to_j, z_equals_k]);
 
-			Ok(foliage::Formula::exists(parameters, Box::new(and)))
+			Ok(crate::Formula::exists(parameters, Box::new(and)))
 		},
 		clingo::ast::TermType::Function(_) =>
 			Err(crate::Error::new_unsupported_language_feature("symbolic functions")),

@@ -1,16 +1,15 @@
-pub(crate) fn is_term_arithmetic<C>(term: &foliage::Term, context: &C) -> Result<bool, crate::Error>
-where
-	C: crate::traits::InputConstantDeclarationDomain
-		+ crate::traits::VariableDeclarationDomain
+pub(crate) fn is_term_arithmetic(term: &crate::Term) -> Result<bool, crate::Error>
 {
+	use crate::Term;
+
 	match term
 	{
-		foliage::Term::Boolean(_)
-		| foliage::Term::SpecialInteger(_)
-		| foliage::Term::String(_)
+		Term::Boolean(_)
+		| Term::SpecialInteger(_)
+		| Term::String(_)
 			=> Ok(false),
-		foliage::Term::Integer(_) => Ok(true),
-		foliage::Term::Function(ref function) =>
+		Term::Integer(_) => Ok(true),
+		Term::Function(ref function) =>
 		{
 			if !function.arguments.is_empty()
 			{
@@ -18,20 +17,17 @@ where
 					crate::Error::new_unsupported_language_feature("functions with arguments"));
 			}
 
-			let domain = context.input_constant_declaration_domain(&function.declaration);
-
-			Ok(domain == crate::Domain::Integer)
+			Ok(*function.declaration.domain.borrow() == crate::Domain::Integer)
 		},
-		foliage::Term::Variable(foliage::Variable{ref declaration}) =>
-			match context.variable_declaration_domain(declaration)
+		Term::Variable(crate::Variable{ref declaration}) =>
+			match declaration.domain()?
 			{
-				Some(crate::Domain::Program) => Ok(false),
-				Some(crate::Domain::Integer) => Ok(true),
-				None => Err(crate::Error::new_logic("unspecified variable declaration domain")),
+				crate::Domain::Program => Ok(false),
+				crate::Domain::Integer => Ok(true),
 			},
-		foliage::Term::BinaryOperation(foliage::BinaryOperation{ref left, ref right, ..})
-			=> Ok(is_term_arithmetic(left, context)? && is_term_arithmetic(right, context)?),
-		foliage::Term::UnaryOperation(foliage::UnaryOperation{ref argument, ..})
-			=> is_term_arithmetic(argument, context),
+		Term::BinaryOperation(crate::BinaryOperation{ref left, ref right, ..})
+			=> Ok(is_term_arithmetic(left)? && is_term_arithmetic(right)?),
+		Term::UnaryOperation(crate::UnaryOperation{ref argument, ..})
+			=> is_term_arithmetic(argument),
 	}
 }

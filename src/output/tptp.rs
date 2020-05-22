@@ -1,3 +1,6 @@
+use foliage::flavor::{FunctionDeclaration as _, PredicateDeclaration as _,
+	 VariableDeclaration as _};
+
 pub(crate) struct DomainDisplay
 {
 	domain: crate::Domain,
@@ -33,37 +36,22 @@ impl std::fmt::Display for DomainDisplay
 	}
 }
 
-pub(crate) struct FunctionDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::InputConstantDeclarationDomain
+pub(crate) struct FunctionDeclarationDisplay<'a>(&'a crate::FunctionDeclaration);
+
+pub(crate) fn display_function_declaration<'a>(function_declaration: &'a crate::FunctionDeclaration)
+	-> FunctionDeclarationDisplay<'a>
 {
-	function_declaration: &'a std::rc::Rc<foliage::FunctionDeclaration>,
-	context: &'b C,
+	FunctionDeclarationDisplay(function_declaration)
 }
 
-pub(crate) fn display_function_declaration<'a, 'b, C>(
-	function_declaration: &'a std::rc::Rc<foliage::FunctionDeclaration>, context: &'b C)
-	-> FunctionDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::InputConstantDeclarationDomain
-{
-	FunctionDeclarationDisplay
-	{
-		function_declaration,
-		context,
-	}
-}
-
-impl<'a, 'b, C> std::fmt::Debug for FunctionDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::InputConstantDeclarationDomain
+impl<'a> std::fmt::Debug for FunctionDeclarationDisplay<'a>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(formatter, "{}:", self.function_declaration.name)?;
+		self.0.display_name(formatter)?;
+		write!(formatter, ":")?;
 
-		let domain = self.context.input_constant_declaration_domain(self.function_declaration);
-		let domain_identifier = match domain
+		let domain_identifier = match *self.0.domain.borrow()
 		{
 			crate::Domain::Integer => "$int",
 			crate::Domain::Program => "object",
@@ -71,11 +59,11 @@ where
 
 		let mut separator = "";
 
-		if self.function_declaration.arity > 0
+		if self.0.arity() > 0
 		{
 			write!(formatter, " (")?;
 
-			for _ in 0..self.function_declaration.arity
+			for _ in 0..self.0.arity()
 			{
 				write!(formatter, "{}object", separator)?;
 				separator = " * ";
@@ -88,9 +76,7 @@ where
 	}
 }
 
-impl<'a, 'b, C> std::fmt::Display for FunctionDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::InputConstantDeclarationDomain
+impl<'a> std::fmt::Display for FunctionDeclarationDisplay<'a>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
@@ -98,10 +84,10 @@ where
 	}
 }
 
-pub(crate) struct PredicateDeclarationDisplay<'a>(&'a std::rc::Rc<foliage::PredicateDeclaration>);
+pub(crate) struct PredicateDeclarationDisplay<'a>(&'a crate::PredicateDeclaration);
 
 pub(crate) fn display_predicate_declaration<'a>(
-	predicate_declaration: &'a std::rc::Rc<foliage::PredicateDeclaration>)
+	predicate_declaration: &'a crate::PredicateDeclaration)
 	-> PredicateDeclarationDisplay<'a>
 {
 	PredicateDeclarationDisplay(predicate_declaration)
@@ -111,15 +97,16 @@ impl<'a> std::fmt::Debug for PredicateDeclarationDisplay<'a>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		write!(formatter, "{}:", self.0.name)?;
+		self.0.display_name(formatter)?;
+		write!(formatter, ":")?;
 
 		let mut separator = "";
 
-		if self.0.arity > 0
+		if self.0.arity() > 0
 		{
 			write!(formatter, " (")?;
 
-			for _ in 0..self.0.arity
+			for _ in 0..self.0.arity()
 			{
 				write!(formatter, "{}object", separator)?;
 				separator = " * ";
@@ -140,94 +127,20 @@ impl<'a> std::fmt::Display for PredicateDeclarationDisplay<'a>
 	}
 }
 
-pub(crate) struct VariableDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
+pub(crate) struct TermDisplay<'a>(&'a crate::Term);
+
+pub(crate) fn display_term<'a>(term: &'a crate::Term) -> TermDisplay<'a>
 {
-	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>,
-	context: &'b C,
+	TermDisplay(term)
 }
 
-pub(crate) fn display_variable_declaration<'a, 'b, C>(
-	variable_declaration: &'a std::rc::Rc<foliage::VariableDeclaration>, context: &'b C)
-	-> VariableDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	VariableDeclarationDisplay
-	{
-		variable_declaration,
-		context,
-	}
-}
-
-impl<'a, 'b, C> std::fmt::Debug for VariableDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
+impl<'a> std::fmt::Debug for TermDisplay<'a>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		let id = self.context.variable_declaration_id(self.variable_declaration);
-		let domain = self.context.variable_declaration_domain(self.variable_declaration)
-			.expect("unspecified variable domain");
-
-		let prefix = match domain
-		{
-			crate::Domain::Integer => "N",
-			crate::Domain::Program => "X",
-		};
-
-		write!(formatter, "{}{}", prefix, id + 1)
-	}
-}
-
-impl<'a, 'b, C> std::fmt::Display for VariableDeclarationDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
-	{
-		write!(formatter, "{:?}", &self)
-	}
-}
-
-pub(crate) struct TermDisplay<'a, 'b, C>
-{
-	term: &'a foliage::Term,
-	context: &'b C,
-}
-
-pub(crate) fn display_term<'a, 'b, C>(term: &'a foliage::Term, context: &'b C)
-	-> TermDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	TermDisplay
-	{
-		term,
-		context,
-	}
-}
-
-impl<'a, 'b, C> std::fmt::Debug for TermDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
-	{
-		let display_variable_declaration = |variable_declaration|
-			display_variable_declaration(variable_declaration, self.context);
-		let display_term = |term| display_term(term, self.context);
-
 		use foliage::*;
 
-		match &self.term
+		match &self.0
 		{
 			Term::Boolean(true) => write!(formatter, "$true"),
 			Term::Boolean(false) => write!(formatter, "$false"),
@@ -239,19 +152,19 @@ where
 				false => write!(formatter, "{}", value),
 			},
 			Term::String(_) => panic!("strings not supported in TPTP"),
-			Term::Variable(variable) =>
-				write!(formatter, "{:?}", display_variable_declaration(&variable.declaration)),
+			Term::Variable(variable) => variable.declaration.display_name(formatter),
 			Term::Function(function) =>
 			{
-				write!(formatter, "{}", function.declaration.name)?;
+				function.declaration.display_name(formatter)?;
 
-				assert!(function.declaration.arity == function.arguments.len(),
+				assert!(function.declaration.arity() == function.arguments.len(),
 					"function has a different number of arguments than declared (expected {}, got {})",
-					function.declaration.arity, function.arguments.len());
+					function.declaration.arity(), function.arguments.len());
 
 				if function.arguments.len() > 0
 				{
-					write!(formatter, "{}(", function.declaration.name)?;
+					function.declaration.display_name(formatter)?;
+					write!(formatter, "(")?;
 
 					let mut separator = "";
 
@@ -290,10 +203,7 @@ where
 	}
 }
 
-impl<'a, 'b, C> std::fmt::Display for TermDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
+impl<'a> std::fmt::Display for TermDisplay<'a>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
@@ -301,47 +211,26 @@ where
 	}
 }
 
-pub(crate) struct FormulaDisplay<'a, 'b, C>
+pub(crate) struct FormulaDisplay<'a>(&'a crate::Formula);
+
+pub(crate) fn display_formula<'a>(formula: &'a crate::Formula) -> FormulaDisplay<'a>
 {
-	formula: &'a foliage::Formula,
-	context: &'b C,
+	FormulaDisplay(formula)
 }
 
-pub(crate) fn display_formula<'a, 'b, C>(formula: &'a foliage::Formula, context: &'b C)
-	-> FormulaDisplay<'a, 'b, C>
-where
-	C: crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
-{
-	FormulaDisplay
-	{
-		formula,
-		context,
-	}
-}
-
-impl<'a, 'b, C> std::fmt::Debug for FormulaDisplay<'a, 'b, C>
-where
-	C: crate::traits::InputConstantDeclarationDomain
-		+ crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
+impl<'a> std::fmt::Debug for FormulaDisplay<'a>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{
-		let display_variable_declaration = |variable_declaration|
-			display_variable_declaration(variable_declaration, self.context);
-		let display_term = |term| display_term(term, self.context);
-		let display_formula = |formula| display_formula(formula, self.context);
-
 		let mut display_compare = |left, right, notation, integer_operator_name,
 			auxiliary_predicate_name| -> std::fmt::Result
 		{
 			let mut notation = notation;
 			let mut operation_identifier = integer_operator_name;
 
-			let is_left_term_arithmetic = crate::is_term_arithmetic(left, self.context)
+			let is_left_term_arithmetic = crate::is_term_arithmetic(left)
 				.expect("could not determine whether term is arithmetic");
-			let is_right_term_arithmetic = crate::is_term_arithmetic(right, self.context)
+			let is_right_term_arithmetic = crate::is_term_arithmetic(right)
 				.expect("could not determine whether term is arithmetic");
 
 			match (!is_left_term_arithmetic || !is_right_term_arithmetic, auxiliary_predicate_name)
@@ -387,47 +276,40 @@ where
 
 		use foliage::*;
 
-		match &self.formula
+		match &self.0
 		{
 			// TODO: handle cases with 0 parameters properly
-			Formula::Exists(exists) =>
+			Formula::Exists(quantified_formula)
+			| Formula::ForAll(quantified_formula) =>
 			{
-				write!(formatter, "?[")?;
+				let operator_symbol = match &self.0
+				{
+					Formula::Exists(_) => "?",
+					Formula::ForAll(_) => "!",
+					_ => unreachable!(),
+				};
+
+				write!(formatter, "{}[", operator_symbol)?;
 
 				let mut separator = "";
 
-				for parameter in exists.parameters.iter()
+				for parameter in quantified_formula.parameters.iter()
 				{
-					let parameter_domain = self.context.variable_declaration_domain(parameter)
-						.expect("unspecified variable domain");
+					let domain = match parameter.domain()
+					{
+						Ok(domain) => domain,
+						Err(_) => unreachable!(
+							"all variable domains should have been checked at this point"),
+					};
 
-					write!(formatter, "{}{:?}: {}", separator,
-						display_variable_declaration(parameter), display_domain(parameter_domain))?;
+					write!(formatter, "{}", separator)?;
+					parameter.display_name(formatter)?;
+					write!(formatter, ": {}", display_domain(domain))?;
 
 					separator = ", "
 				}
 
-				write!(formatter, "]: ({:?})", display_formula(&exists.argument))?;
-			},
-			// TODO: handle cases with 0 parameters properly
-			Formula::ForAll(for_all) =>
-			{
-				write!(formatter, "![")?;
-
-				let mut separator = "";
-
-				for parameter in for_all.parameters.iter()
-				{
-					let parameter_domain = self.context.variable_declaration_domain(parameter)
-						.expect("unspecified variable domain");
-
-					write!(formatter, "{}{:?}: {}", separator,
-						display_variable_declaration(parameter), display_domain(parameter_domain))?;
-
-					separator = ", "
-				}
-
-				write!(formatter, "]: ({:?})", display_formula(&for_all.argument))?;
+				write!(formatter, "]: ({:?})", display_formula(&quantified_formula.argument))?;
 			},
 			Formula::Not(argument) => write!(formatter, "~{:?}", display_formula(argument))?,
 			// TODO: handle cases with < 2 arguments properly
@@ -524,7 +406,7 @@ where
 			Formula::Boolean(false) => write!(formatter, "$false")?,
 			Formula::Predicate(predicate) =>
 			{
-				write!(formatter, "{}", predicate.declaration.name)?;
+				predicate.declaration.display_name(formatter)?;
 
 				if !predicate.arguments.is_empty()
 				{
@@ -536,9 +418,8 @@ where
 					{
 						write!(formatter, "{}", separator)?;
 
-						let is_argument_arithmetic =
-							crate::is_term_arithmetic(argument, self.context)
-								.expect("could not determine whether term is arithmetic");
+						let is_argument_arithmetic = crate::is_term_arithmetic(argument)
+							.expect("could not determine whether term is arithmetic");
 
 						match is_argument_arithmetic
 						{
@@ -558,11 +439,7 @@ where
 	}
 }
 
-impl<'a, 'b, C> std::fmt::Display for FormulaDisplay<'a, 'b, C>
-where
-	C: crate::traits::InputConstantDeclarationDomain
-		+ crate::traits::VariableDeclarationDomain
-		+ crate::traits::VariableDeclarationID
+impl<'a> std::fmt::Display for FormulaDisplay<'a>
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result
 	{

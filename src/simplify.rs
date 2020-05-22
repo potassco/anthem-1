@@ -18,9 +18,9 @@ impl SimplificationResult
 	}
 }
 
-fn remove_unnecessary_exists_parameters(formula: &mut foliage::Formula) -> SimplificationResult
+fn remove_unnecessary_exists_parameters(formula: &mut crate::Formula) -> SimplificationResult
 {
-	use foliage::Formula;
+	use crate::Formula;
 
 	match formula
 	{
@@ -123,10 +123,10 @@ fn remove_unnecessary_exists_parameters(formula: &mut foliage::Formula) -> Simpl
 	}
 }
 
-fn simplify_quantified_formulas_without_parameters(formula: &mut foliage::Formula)
+fn simplify_quantified_formulas_without_parameters(formula: &mut crate::Formula)
 	-> SimplificationResult
 {
-	use foliage::Formula;
+	use crate::Formula;
 
 	match formula
 	{
@@ -153,7 +153,7 @@ fn simplify_quantified_formulas_without_parameters(formula: &mut foliage::Formul
 			if quantified_formula.parameters.is_empty()
 			{
 				// TODO: remove workaround
-				let mut argument = foliage::Formula::false_();
+				let mut argument = crate::Formula::false_();
 				std::mem::swap(&mut argument, &mut quantified_formula.argument);
 
 				*formula = argument;
@@ -171,22 +171,22 @@ fn simplify_quantified_formulas_without_parameters(formula: &mut foliage::Formul
 	}
 }
 
-fn simplify_trivial_n_ary_formulas(formula: &mut foliage::Formula) -> SimplificationResult
+fn simplify_trivial_n_ary_formulas(formula: &mut crate::Formula) -> SimplificationResult
 {
-	use foliage::Formula;
+	use crate::Formula;
 
 	match formula
 	{
 		Formula::And(arguments)
 		| Formula::IfAndOnlyIf(arguments) if arguments.is_empty() =>
 		{
-			*formula = foliage::Formula::true_();
+			*formula = crate::Formula::true_();
 
 			return SimplificationResult::Simplified;
 		},
 		| Formula::Or(arguments) if arguments.is_empty() =>
 		{
-			*formula = foliage::Formula::false_();
+			*formula = crate::Formula::false_();
 
 			return SimplificationResult::Simplified;
 		},
@@ -225,7 +225,7 @@ fn simplify_trivial_n_ary_formulas(formula: &mut foliage::Formula) -> Simplifica
 	}
 }
 
-pub(crate) fn simplify(formula: &mut foliage::Formula)
+pub(crate) fn simplify(formula: &mut crate::Formula)
 {
 	loop
 	{

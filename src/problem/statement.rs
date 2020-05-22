@@ -5,7 +5,7 @@ pub(crate) enum StatementKind
 {
 	Axiom,
 	Assumption,
-	CompletedDefinition(std::rc::Rc<foliage::PredicateDeclaration>),
+	CompletedDefinition(std::rc::Rc<crate::PredicateDeclaration>),
 	IntegrityConstraint,
 	Lemma(ProofDirection),
 	Assertion,
@@ -20,7 +20,7 @@ impl std::fmt::Debug for StatementKind
 			Self::Axiom => write!(formatter, "axiom"),
 			Self::Assumption => write!(formatter, "assumption"),
 			Self::CompletedDefinition(ref predicate_declaration) =>
-				write!(formatter, "completed definition of {}", predicate_declaration),
+				write!(formatter, "completed definition of {}", predicate_declaration.declaration),
 			Self::IntegrityConstraint => write!(formatter, "integrity constraint"),
 			Self::Lemma(_) => write!(formatter, "lemma"),
 			Self::Assertion => write!(formatter, "assertion"),
@@ -52,13 +52,13 @@ pub(crate) struct Statement
 {
 	pub kind: StatementKind,
 	pub name: Option<String>,
-	pub formula: foliage::Formula,
+	pub formula: crate::Formula,
 	pub proof_status: ProofStatus,
 }
 
 impl Statement
 {
-	pub fn new(kind: StatementKind, formula: foliage::Formula) -> Self
+	pub fn new(kind: StatementKind, formula: crate::Formula) -> Self
 	{
 		Self
 		{

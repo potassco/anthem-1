@@ -1,8 +1,8 @@
-pub(crate) fn formula_contains_predicate(formula: &foliage::Formula,
-	predicate_declaration: &foliage::PredicateDeclaration)
+pub(crate) fn formula_contains_predicate(formula: &crate::Formula,
+	predicate_declaration: &crate::PredicateDeclaration)
 	-> bool
 {
-	use foliage::Formula;
+	use crate::Formula;
 
 	match formula
 	{
@@ -24,13 +24,10 @@ pub(crate) fn formula_contains_predicate(formula: &foliage::Formula,
 	}
 }
 
-fn replace_predicate_in_formula<D>(formula: &mut foliage::Formula,
-	predicate_to_replace: &foliage::Predicate, replacement_formula: &foliage::Formula,
-	declarations: &D)
-where
-	D: crate::traits::VariableDeclarationDomain + crate::traits::AssignVariableDeclarationDomain,
+fn replace_predicate_in_formula(formula: &mut crate::Formula,
+	predicate_to_replace: &crate::Predicate, replacement_formula: &crate::Formula)
 {
-	use foliage::{Formula, Term};
+	use crate::{Formula, Term};
 
 	match formula
 	{
@@ -40,29 +37,27 @@ where
 			for mut argument in arguments
 			{
 				replace_predicate_in_formula(&mut argument, predicate_to_replace,
-					replacement_formula, declarations);
+					replacement_formula);
 			},
 		Formula::Boolean(_)
 		| Formula::Compare(_) => (),
 		Formula::Exists(quantified_expression)
 		| Formula::ForAll(quantified_expression) =>
 			replace_predicate_in_formula(&mut quantified_expression.argument, predicate_to_replace,
-				replacement_formula, declarations),
+				replacement_formula),
 		Formula::Implies(implies) =>
 		{
 			replace_predicate_in_formula(&mut implies.antecedent, predicate_to_replace,
-				replacement_formula, declarations);
+				replacement_formula);
 			replace_predicate_in_formula(&mut implies.implication, predicate_to_replace,
-				replacement_formula, declarations);
+				replacement_formula);
 		},
 		Formula::Not(argument) =>
-			replace_predicate_in_formula(argument, predicate_to_replace, replacement_formula,
-				declarations),
+			replace_predicate_in_formula(argument, predicate_to_replace, replacement_formula),
 		Formula::Predicate(predicate) =>
 			if predicate.declaration == predicate_to_replace.declaration
 			{
-				let mut replacement_formula =
-					crate::utils::copy_formula(replacement_formula, declarations);
+				let mut replacement_formula = crate::utils::copy_formula(replacement_formula);
 
 				for (index, argument) in predicate.arguments.iter().enumerate()
 				{
@@ -81,49 +76,49 @@ where
 	}
 }
 
-pub(crate) fn replace_predicate_in_formula_with_completed_definition<D>(
-	formula: &mut foliage::Formula, completed_definition: &foliage::Formula, declarations: &D)
+pub(crate) fn replace_predicate_in_formula_with_completed_definition(
+	formula: &mut crate::Formula, completed_definition: &crate::Formula)
 	-> Result<(), crate::Error>
-where
-	D: crate::traits::VariableDeclarationDomain + crate::traits::AssignVariableDeclarationDomain,
 {
-	let false_ = foliage::Formula::false_();
+	use crate::Formula;
+
+	let false_ = crate::Formula::false_();
 
 	// TODO: refactor
 	let (completed_definition_predicate, completed_definition) = match completed_definition
 	{
-		foliage::Formula::ForAll(quantified_expression) => match *quantified_expression.argument
+		Formula::ForAll(quantified_expression) => match *quantified_expression.argument
 		{
-			foliage::Formula::IfAndOnlyIf(ref arguments) =>
+			Formula::IfAndOnlyIf(ref arguments) =>
 			{
 				assert_eq!(arguments.len(), 2, "invalid completed definition");
 
 				match arguments[0]
 				{
-					foliage::Formula::Predicate(ref predicate) => (predicate, &arguments[1]),
+					Formula::Predicate(ref predicate) => (predicate, &arguments[1]),
 					_ => panic!("invalid completed definition"),
 				}
 			},
-			foliage::Formula::Not(ref argument) => match **argument
+			Formula::Not(ref argument) => match **argument
 			{
-				foliage::Formula::Predicate(ref predicate) => (predicate, &false_),
+				Formula::Predicate(ref predicate) => (predicate, &false_),
 				_ => panic!("invalid completed definition"),
 			},
 			_ => panic!("invalid completed definition"),
 		},
-		foliage::Formula::IfAndOnlyIf(ref arguments) =>
+		Formula::IfAndOnlyIf(ref arguments) =>
 		{
 			assert_eq!(arguments.len(), 2, "invalid completed definition");
 
 			match arguments[0]
 			{
-				foliage::Formula::Predicate(ref predicate) => (predicate, &arguments[1]),
+				Formula::Predicate(ref predicate) => (predicate, &arguments[1]),
 				_ => panic!("invalid completed definition"),
 			}
 		},
-		foliage::Formula::Not(ref argument) => match **argument
+		Formula::Not(ref argument) => match **argument
 		{
-			foliage::Formula::Predicate(ref predicate) => (predicate, &false_),
+			Formula::Predicate(ref predicate) => (predicate, &false_),
 			_ => panic!("invalid completed definition"),
 		},
 		_ => panic!("invalid completed definition"),
@@ -139,8 +134,7 @@ where
 			std::rc::Rc::clone(&completed_definition_predicate.declaration)));
 	}
 
-	replace_predicate_in_formula(formula, completed_definition_predicate, completed_definition,
-		declarations);
+	replace_predicate_in_formula(formula, completed_definition_predicate, completed_definition);
 
 	Ok(())
 }

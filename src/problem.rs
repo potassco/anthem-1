@@ -16,9 +16,6 @@ pub enum ProofResult
 	Disproven,
 }
 
-type VariableDeclarationIDs
-	= std::collections::BTreeMap::<std::rc::Rc<crate::VariableDeclaration>, usize>;
-
 pub struct Problem
 {
 	function_declarations: std::cell::RefCell<crate::FunctionDeclarations>,

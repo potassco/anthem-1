@@ -11,8 +11,6 @@ impl FunctionDeclaration
 {
 	pub fn is_built_in(&self) -> bool
 	{
-		use foliage::flavor::FunctionDeclaration;
-
 		self.declaration.name.starts_with("f__") && self.declaration.name.ends_with("__")
 	}
 }

@@ -27,7 +27,6 @@ pub enum Kind
 	NoCompletedDefinitionFound(std::rc::Rc<crate::PredicateDeclaration>),
 	CannotHidePredicate(std::rc::Rc<crate::PredicateDeclaration>),
 	PredicateShouldNotOccurInSpecification(std::rc::Rc<crate::PredicateDeclaration>),
-	WriteTPTPProgram,
 	RunVampire,
 	// TODO: rename to something Vampire-specific
 	ProveProgram(Option<i32>, String, String),
@@ -175,11 +174,6 @@ impl Error
 		Self::new(Kind::PredicateShouldNotOccurInSpecification(predicate_declaration))
 	}
 
-	pub(crate) fn new_write_tptp_program<S: Into<Source>>(source: S) -> Self
-	{
-		Self::new(Kind::WriteTPTPProgram).with(source)
-	}
-
 	pub(crate) fn new_run_vampire<S: Into<Source>>(source: S) -> Self
 	{
 		Self::new(Kind::RunVampire).with(source)
@@ -239,7 +233,6 @@ impl std::fmt::Debug for Error
 			Kind::VariableNameNotAllowed(ref variable_name) => write!(formatter,
 				"variable name “{}” not allowed (program variables must start with X, Y, or Z and integer variables with I, J, K, L, M, or N)",
 				variable_name),
-			Kind::WriteTPTPProgram => write!(formatter, "error writing TPTP program"),
 			Kind::FormulaNotClosed(free_variable_declarations) =>
 			{
 				write!(formatter, "formula may not contain free variables (free variables in this formula: ")?;

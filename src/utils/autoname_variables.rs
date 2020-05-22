@@ -10,8 +10,8 @@ impl IDs
 	{
 		Self
 		{
-			program_variable_id: 0,
-			integer_variable_id: 0,
+			program_variable_id: 1,
+			integer_variable_id: 1,
 		}
 	}
 }
@@ -218,6 +218,29 @@ fn set_variable_names_in_formula(formula: &mut crate::Formula, ids: &mut IDs)
 
 pub(crate) fn autoname_variables(formula: &mut crate::Formula)
 {
+	// TODO: refactor, this is a bit hacky
 	reset_variable_names_in_formula(formula);
-	set_variable_names_in_formula(formula, &mut IDs::new());
+
+	let mut ids = IDs::new();
+
+	set_variable_names_in_formula(formula, &mut ids);
+
+	// If there only exists exactly one program variable (which incremented the ID from 1 to 2),
+	// give it the special ID 0 on the second run
+	ids.program_variable_id = match ids.program_variable_id
+	{
+		2 => 0,
+		_ => 1,
+	};
+
+	// If there only exists exactly one integer variable (which incremented the ID from 1 to 2),
+	// give it the special ID 0 on the second run
+	ids.integer_variable_id = match ids.integer_variable_id
+	{
+		2 => 0,
+		_ => 1,
+	};
+
+	reset_variable_names_in_formula(formula);
+	set_variable_names_in_formula(formula, &mut ids);
 }

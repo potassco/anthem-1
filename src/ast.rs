@@ -320,7 +320,11 @@ impl foliage::flavor::VariableDeclaration for VariableDeclaration
 					None => unreachable!("all variable IDs should be assigned at this point"),
 				};
 
-				write!(formatter, "{}{}", variable_name_prefix, variable_id + 1)
+				match variable_id
+				{
+					0 => write!(formatter, "{}", variable_name_prefix),
+					_ => write!(formatter, "{}{}", variable_name_prefix, variable_id),
+				}
 			},
 		}
 	}

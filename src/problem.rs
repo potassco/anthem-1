@@ -44,7 +44,7 @@ impl Problem
 		}
 	}
 
-	pub(crate) fn add_statement(&self, section_kind: SectionKind, mut statement: Statement)
+	pub(crate) fn add_statement(&self, section_kind: SectionKind, statement: Statement)
 	{
 		let mut statements = self.statements.borrow_mut();
 		let section = statements.entry(section_kind).or_insert(vec![]);
@@ -144,6 +144,28 @@ impl Problem
 				{
 					crate::utils::replace_predicate_in_formula_with_completed_definition(
 						&mut statement.formula, &completed_definition)?;
+				}
+			}
+		}
+
+		Ok(())
+	}
+
+	pub fn simplify(&mut self) -> Result<(), crate::Error>
+	{
+		let mut statements = self.statements.borrow_mut();
+
+		for (_, statements) in statements.iter_mut()
+		{
+			for statement in statements.iter_mut()
+			{
+				match statement.kind
+				{
+					// Only simplify generated formulas
+					| StatementKind::CompletedDefinition(_)
+					| StatementKind::IntegrityConstraint =>
+						crate::simplify(&mut statement.formula)?,
+					_ => (),
 				}
 			}
 		}
@@ -319,13 +341,8 @@ impl Problem
 			self.shell.borrow_mut().print(&format!("{}: ", statement.kind),
 				&termcolor::ColorSpec::new())?;
 
-			match statement.kind
-			{
-				StatementKind::CompletedDefinition(_)
-				| StatementKind::IntegrityConstraint =>
-					crate::autoname_variables(&mut statement.formula),
-				_ => (),
-			}
+			// TODO: only perform autonaming when necessary
+			crate::autoname_variables(&mut statement.formula);
 
 			print!("{}", statement.formula);
 

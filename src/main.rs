@@ -19,6 +19,10 @@ enum Command
 		/// Proof direction (forward, backward, both)
 		#[structopt(long, default_value = "forward")]
 		proof_direction: anthem::problem::ProofDirection,
+
+		/// Do not simplify translated program
+		#[structopt(long)]
+		no_simplify: bool,
 	}
 }
 
@@ -35,8 +39,9 @@ fn main()
 			program_path,
 			specification_path,
 			proof_direction,
+			no_simplify,
 		}
 			=> anthem::commands::verify_program::run(&program_path, &specification_path,
-				proof_direction),
+				proof_direction, no_simplify),
 	}
 }

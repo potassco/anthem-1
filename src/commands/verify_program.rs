@@ -1,5 +1,5 @@
-pub fn run<P>(program_path: P, specification_path: P, proof_direction:
-	crate::problem::ProofDirection)
+pub fn run<P>(program_path: P, specification_path: P,
+	proof_direction: crate::problem::ProofDirection, no_simplify: bool)
 where
 	P: AsRef<std::path::Path>,
 {
@@ -57,6 +57,19 @@ where
 		{
 			log::error!("could not restrict problem to output predicates: {}", error);
 			std::process::exit(1)
+		}
+	}
+
+	if !no_simplify
+	{
+		match problem.simplify()
+		{
+			Ok(_) => (),
+			Err(error) =>
+			{
+				log::error!("could not simplify translated program: {}", error);
+				std::process::exit(1)
+			}
 		}
 	}
 

@@ -18,9 +18,10 @@ impl SimplificationResult
 	}
 }
 
-fn remove_unnecessary_exists_parameters(formula: &mut crate::Formula) -> SimplificationResult
+fn remove_unnecessary_exists_parameters(formula: &mut crate::Formula)
+	-> Result<SimplificationResult, crate::Error>
 {
-	use crate::Formula;
+	use crate::{Formula, Term};
 
 	match formula
 	{
@@ -33,18 +34,18 @@ fn remove_unnecessary_exists_parameters(formula: &mut crate::Formula) -> Simplif
 			for argument in arguments
 			{
 				simplification_result = simplification_result.or(
-					remove_unnecessary_exists_parameters(argument));
+					remove_unnecessary_exists_parameters(argument)?);
 			}
 
-			simplification_result
+			Ok(simplification_result)
 		},
 		Formula::Boolean(_)
 		| Formula::Compare(_)
-		| Formula::Predicate(_) => SimplificationResult::NotSimplified,
+		| Formula::Predicate(_) => Ok(SimplificationResult::NotSimplified),
 		Formula::Exists(ref mut quantified_formula) =>
 		{
 			let mut simplification_result =
-				remove_unnecessary_exists_parameters(&mut quantified_formula.argument);
+				remove_unnecessary_exists_parameters(&mut quantified_formula.argument)?;
 
 			let arguments = match *quantified_formula.argument
 			{
@@ -69,31 +70,55 @@ fn remove_unnecessary_exists_parameters(formula: &mut crate::Formula) -> Simplif
 									_ => return None,
 								};
 
-								if let foliage::Term::Variable(ref variable) = **left
+								let assigned_term = match (&**left, &**right)
 								{
-									if variable.declaration == *parameter
-										&& !crate::term_contains_variable(right, parameter)
+									(Term::Variable(ref variable), right)
+										if variable.declaration == *parameter =>
+										right,
+									(left, Term::Variable(ref variable))
+										if variable.declaration == *parameter =>
+										left,
+									_ => return None,
+								};
+
+								let parameter_domain = match parameter.domain()
+								{
+									Ok(domain) => domain,
+									Err(_) =>
+										unreachable!("all variable domains should be assigned at this point"),
+								};
+
+								let is_parameter_integer =
+									parameter_domain == crate::Domain::Integer;
+
+								let is_assigned_term_arithmetic =
+									match crate::is_term_arithmetic(assigned_term)
 									{
-										// TODO: avoid copy
-										return Some((argument_index, crate::copy_term(right)));
-									}
+										Ok(is_term_arithmetic) => is_term_arithmetic,
+										Err(error) => return Some(Err(error)),
+									};
+
+								let is_assignment_narrowing = is_parameter_integer
+									&& !is_assigned_term_arithmetic;
+
+								if crate::term_contains_variable(assigned_term, parameter)
+									|| is_assignment_narrowing
+								{
+									return None;
 								}
 
-								if let foliage::Term::Variable(ref variable) = **right
-								{
-									if variable.declaration == *parameter
-										&& !crate::term_contains_variable(left, parameter)
-									{
-										// TODO: avoid copy
-										return Some((argument_index, crate::copy_term(left)));
-									}
-								}
-
-								None
+								// TODO: avoid copy
+								Some(Ok((argument_index, crate::copy_term(assigned_term))))
 							});
 
-						if let Some((assignment_index, assigned_term)) = assignment
+						if let Some(assignment) = assignment
 						{
+							let (assignment_index, assigned_term) = match assignment
+							{
+								Err(error) => return Some(Err(error)),
+								Ok(assignment) => assignment,
+							};
+
 							arguments.remove(assignment_index);
 
 							for argument in arguments.iter_mut()
@@ -107,11 +132,11 @@ fn remove_unnecessary_exists_parameters(formula: &mut crate::Formula) -> Simplif
 							return None;
 						}
 
-						Some(std::rc::Rc::clone(parameter))
+						Some(Ok(std::rc::Rc::clone(parameter)))
 					})
-					.collect());
+					.collect::<Result<_, _>>()?);
 
-			simplification_result
+			Ok(simplification_result)
 		}
 		Formula::ForAll(ref mut quantified_formula) =>
 			remove_unnecessary_exists_parameters(&mut quantified_formula.argument),
@@ -225,22 +250,20 @@ fn simplify_trivial_n_ary_formulas(formula: &mut crate::Formula) -> Simplificati
 	}
 }
 
-pub(crate) fn simplify(formula: &mut crate::Formula)
+pub(crate) fn simplify(formula: &mut crate::Formula) -> Result<(), crate::Error>
 {
 	loop
 	{
-		if remove_unnecessary_exists_parameters(formula) == SimplificationResult::Simplified
+		if remove_unnecessary_exists_parameters(formula)? == SimplificationResult::Simplified
 			|| simplify_quantified_formulas_without_parameters(formula)
 				== SimplificationResult::Simplified
 			|| simplify_trivial_n_ary_formulas(formula) == SimplificationResult::Simplified
 		{
-			log::debug!("cool, simplified!");
-
 			continue;
 		}
 
-		log::debug!("nope, that’s it");
-
 		break;
 	}
+
+	Ok(())
 }

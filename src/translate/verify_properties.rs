@@ -146,10 +146,8 @@ impl<'p> Translator<'p>
 			let statement_kind = crate::problem::StatementKind::CompletedDefinition(
 				std::rc::Rc::clone(&predicate_declaration));
 
-			let mut completed_definition = completed_definition(predicate_declaration,
+			let completed_definition = completed_definition(predicate_declaration,
 				&mut self.definitions);
-
-			//crate::simplify(&mut completed_definition);
 
 			let statement_name =
 				format!("completed_definition_{}", predicate_declaration.tptp_statement_name());
@@ -286,8 +284,6 @@ impl<'p> Translator<'p>
 				};
 
 				let integrity_constraint = crate::universal_closure(open_formula);
-
-				//crate::simplify(&mut integrity_constraint);
 
 				let statement = crate::problem::Statement::new(
 					crate::problem::StatementKind::IntegrityConstraint, integrity_constraint)

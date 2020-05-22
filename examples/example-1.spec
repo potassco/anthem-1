@@ -1,6 +1,6 @@
 input: p/1.
 
-assert:
+spec:
 	forall N
 	(
 		forall X (p(X) -> exists I exists M (I = M and I = X and I <= N))

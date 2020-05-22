@@ -364,16 +364,16 @@ pub(crate) fn parse_specification(mut input: &str, problem: &crate::Problem)
 
 				continue;
 			},
-			"assert" =>
+			"spec" =>
 			{
 				let (formula, remaining_input) = formula_statement_body(input, problem)?;
 
 				input = remaining_input;
 
 				let statement = crate::problem::Statement::new(
-					crate::problem::StatementKind::Assertion, formula);
+					crate::problem::StatementKind::Spec, formula);
 
-				problem.add_statement(crate::problem::SectionKind::Assertions, statement);
+				problem.add_statement(crate::problem::SectionKind::Specs, statement);
 
 				continue;
 			},

@@ -18,8 +18,8 @@ output: in/1.
 assume: forall X, Y (s(X, Y) -> is_int(Y)).
 
 # Only valid sets can be included in the solution
-assert: forall X (in(X) -> X >= 1 and X <= n).
+spec: forall X (in(X) -> X >= 1 and X <= n).
 # If an element is contained in an input set, it must be covered by all solutions
-assert: forall X (exists I s(X, I) -> exists I (in(I) and s(X, I))).
+spec: forall X (exists I s(X, I) -> exists I (in(I) and s(X, I))).
 # Elements may not be covered by two input sets
-assert: forall I, J (exists X (s(X, I) and s(X, J)) and in(I) and in(J) -> I = J).
+spec: forall I, J (exists X (s(X, I) and s(X, J)) and in(I) and in(J) -> I = J).

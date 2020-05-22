@@ -10,7 +10,7 @@ axiom: forall N1, N2, N3 (N1 > N2 and N3 > 0 -> N1 * N3 > N2 * N3).
 # This axiom is necessary because we use Vampire without higher-order reasoning
 axiom: (p(0) and forall N (N >= 0 and p(N) -> p(N + 1))) -> (forall N p(N)).
 
-assert: exists N (forall X (q(X) <-> X = N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) > n).
+spec: exists N (forall X (q(X) <-> X = N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) > n).
 
 
 

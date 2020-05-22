@@ -7,7 +7,7 @@ pub enum SectionKind
 	Lemmas,
 	CompletedDefinitions,
 	IntegrityConstraints,
-	Assertions,
+	Specs,
 }
 
 impl std::fmt::Debug for SectionKind
@@ -21,7 +21,7 @@ impl std::fmt::Debug for SectionKind
 			Self::Axioms => write!(formatter, "axiom"),
 			Self::Assumptions => write!(formatter, "assumption"),
 			Self::Lemmas => write!(formatter, "lemma"),
-			Self::Assertions => write!(formatter, "assertion"),
+			Self::Specs => write!(formatter, "spec"),
 		}
 	}
 }

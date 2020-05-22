@@ -190,7 +190,8 @@ impl Problem
 		{
 			self.print_step_title("Started",
 				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)))?;
-			self.shell.borrow_mut().println(&"verification of assertions from translated program",
+			self.shell.borrow_mut().println(
+				&"verification of specification from translated program",
 				&termcolor::ColorSpec::new())?;
 
 			let mut statements = self.statements.borrow_mut();
@@ -229,7 +230,7 @@ impl Problem
 			};
 
 			self.print_step_title("Finished", &step_title_color)?;
-			println!("verification of assertions from translated program");
+			println!("verification of specification from translated program");
 		}
 
 		if proof_direction == ProofDirection::Both
@@ -242,7 +243,8 @@ impl Problem
 		{
 			self.print_step_title("Started",
 				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)))?;
-			self.shell.borrow_mut().println(&"verification of translated program from assertions",
+			self.shell.borrow_mut().println(
+				&"verification of translated program from specification",
 				&termcolor::ColorSpec::new())?;
 
 			let mut statements = self.statements.borrow_mut();
@@ -256,7 +258,7 @@ impl Problem
 					{
 						StatementKind::Axiom
 						| StatementKind::Assumption
-						| StatementKind::Assertion =>
+						| StatementKind::Spec =>
 							statement.proof_status = ProofStatus::AssumedProven,
 						StatementKind::Lemma(ProofDirection::Forward) =>
 							statement.proof_status = ProofStatus::Ignored,
@@ -280,7 +282,7 @@ impl Problem
 			};
 
 			self.print_step_title("Finished", &step_title_color)?;
-			println!("verification of translated program from assertions");
+			println!("verification of translated program from specification");
 		}
 
 		Ok(())
@@ -537,6 +539,7 @@ impl<'p> std::fmt::Display for ProblemTPTPDisplay<'p>
 				continue;
 			}
 
+			// TODO: refactor
 			let title = match section_kind
 			{
 				SectionKind::CompletedDefinitions => "completed definitions",
@@ -544,7 +547,7 @@ impl<'p> std::fmt::Display for ProblemTPTPDisplay<'p>
 				SectionKind::Axioms => "axioms",
 				SectionKind::Assumptions => "assumptions",
 				SectionKind::Lemmas => "lemmas",
-				SectionKind::Assertions => "assertions",
+				SectionKind::Specs => "specs",
 			};
 
 			write_title(formatter, title, section_separator)?;

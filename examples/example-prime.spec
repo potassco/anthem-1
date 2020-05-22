@@ -13,7 +13,7 @@ lemma(backward): forall N (composite(N) -> (exists N10 (1 <= N and N <= n and 2 
 
 lemma: forall X1 (composite(X1) <-> (exists N1, N10 (X1 = N1 and 1 <= N1 and N1 <= n and 2 <= N10 and N10 <= N1 - 1 and exists N11 (N1 = (N10 * N11) and 0 < N11)))).
 
-assert: forall X (composite(X) -> p__is_integer__(X)).
-assert: forall N (composite(N) <-> N > 1 and N <= n and exists I, J (I > 1 and J > 1 and I * J = N)).
-assert: forall X (prime(X) -> p__is_integer__(X)).
-assert: forall N (prime(N) <-> N > 1 and N <= n and not exists I, J (I > 1 and J > 1 and I * J = N)).
+#spec: forall X (composite(X) -> p__is_integer__(X)).
+#spec: forall N (composite(N) <-> N > 1 and N <= n and exists I, J (I > 1 and J > 1 and I * J = N)).
+spec: forall X (prime(X) -> p__is_integer__(X)).
+spec: forall N (prime(N) <-> N > 1 and N <= n and not exists I, J (I > 1 and J > 1 and I * J = N)).

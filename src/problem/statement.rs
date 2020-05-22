@@ -8,7 +8,7 @@ pub(crate) enum StatementKind
 	CompletedDefinition(std::rc::Rc<crate::PredicateDeclaration>),
 	IntegrityConstraint,
 	Lemma(ProofDirection),
-	Assertion,
+	Spec,
 }
 
 impl std::fmt::Debug for StatementKind
@@ -23,7 +23,7 @@ impl std::fmt::Debug for StatementKind
 				write!(formatter, "completed definition of {}", predicate_declaration.declaration),
 			Self::IntegrityConstraint => write!(formatter, "integrity constraint"),
 			Self::Lemma(_) => write!(formatter, "lemma"),
-			Self::Assertion => write!(formatter, "assertion"),
+			Self::Spec => write!(formatter, "spec"),
 		}
 	}
 }

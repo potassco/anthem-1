@@ -289,7 +289,7 @@ impl Problem
 
 	fn prove_unproven_statements(&self) -> Result<ProofResult, crate::Error>
 	{
-		let display_statement = |statement: &Statement| -> Result<(), crate::Error>
+		let display_statement = |statement: &mut Statement| -> Result<(), crate::Error>
 		{
 			let step_title = match statement.proof_status
 			{
@@ -318,6 +318,14 @@ impl Problem
 
 			self.shell.borrow_mut().print(&format!("{}: ", statement.kind),
 				&termcolor::ColorSpec::new())?;
+
+			match statement.kind
+			{
+				StatementKind::CompletedDefinition(_)
+				| StatementKind::IntegrityConstraint =>
+					crate::autoname_variables(&mut statement.formula),
+				_ => (),
+			}
 
 			print!("{}", statement.formula);
 
@@ -508,7 +516,7 @@ impl<'p> std::fmt::Display for ProblemTPTPDisplay<'p>
 			last_symbolic_constant = Some(std::rc::Rc::clone(symbolic_constant));
 		}
 
-		for (section_kind, statements) in self.0.statements.borrow().iter()
+		for (section_kind, statements) in self.0.statements.borrow_mut().iter_mut()
 		{
 			if statements.is_empty()
 			{
@@ -530,7 +538,7 @@ impl<'p> std::fmt::Display for ProblemTPTPDisplay<'p>
 
 			let mut i = 0;
 
-			for statement in statements.iter()
+			for statement in statements.iter_mut()
 			{
 				if let StatementKind::CompletedDefinition(_) = statement.kind
 				{
@@ -560,6 +568,15 @@ impl<'p> std::fmt::Display for ProblemTPTPDisplay<'p>
 					// Skip statements that are not part of this proof
 					ProofStatus::Ignored => continue,
 				};
+
+				// TODO: avoid doing this twice
+				match statement.kind
+				{
+					StatementKind::CompletedDefinition(_)
+					| StatementKind::IntegrityConstraint =>
+						crate::autoname_variables(&mut statement.formula),
+					_ => (),
+				}
 
 				// TODO: add proper statement type
 				writeln!(formatter, "tff({}, {}, {}).", name, statement_type,

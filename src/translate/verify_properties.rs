@@ -149,8 +149,6 @@ impl<'p> Translator<'p>
 			let mut completed_definition = completed_definition(predicate_declaration,
 				&mut self.definitions);
 
-			crate::autoname_variables(&mut completed_definition);
-
 			//crate::simplify(&mut completed_definition);
 
 			let statement_name =

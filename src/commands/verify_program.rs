@@ -39,8 +39,18 @@ where
 
 	if let Err(error) = problem.check_consistency(proof_direction)
 	{
-		log::error!("{}", error);
-		std::process::exit(1)
+		match error.kind
+		{
+			// In forward proofs, it’s okay to use private predicates in the specification, but
+			// issue a warning regardless
+			crate::error::Kind::PrivatePredicateInSpecification(_)
+				if !proof_direction.requires_backward_proof() => log::warn!("{}", error),
+			_ =>
+			{
+				log::error!("{}", error);
+				std::process::exit(1)
+			},
+		}
 	}
 
 	if !no_simplify

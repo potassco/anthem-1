@@ -74,6 +74,31 @@ impl Problem
 				return Err(crate::Error::new_private_predicate_cycle(
 					std::rc::Rc::clone(&predicate_declaration)));
 			}
+
+			if predicate_declaration.is_public()
+			{
+				continue;
+			}
+
+			for (_, statements) in self.statements.borrow().iter()
+			{
+				for statement in statements
+				{
+					match statement.kind
+					{
+						crate::problem::StatementKind::CompletedDefinition(_)
+						| crate::problem::StatementKind::IntegrityConstraint
+						| crate::problem::StatementKind::Lemma(_) => continue,
+						_ => (),
+					}
+
+					if crate::formula_contains_predicate(&statement.formula, predicate_declaration)
+					{
+						return Err(crate::Error::new_private_predicate_in_specification(
+							std::rc::Rc::clone(predicate_declaration)));
+					}
+				}
+			}
 		}
 
 		Ok(())

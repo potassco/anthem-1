@@ -117,7 +117,8 @@ impl PredicateDeclaration
 		let dependencies = match *dependencies
 		{
 			Some(ref dependencies) => dependencies,
-			None => unreachable!("all dependencies should have been collected at this point"),
+			// Input predicates don’t have completed definitions and no dependencies, so ignore them
+			None => return,
 		};
 
 		for dependency in dependencies.iter()

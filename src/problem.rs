@@ -69,6 +69,11 @@ impl Problem
 				continue;
 			}
 
+			if *predicate_declaration.is_input.borrow()
+			{
+				continue;
+			}
+
 			let matching_statement = |statement: &&Statement|
 				match statement.kind
 				{

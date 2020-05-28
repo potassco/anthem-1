@@ -86,6 +86,8 @@ impl foliage::flavor::FunctionDeclaration for FunctionDeclaration
 pub struct PredicateDeclaration
 {
 	pub declaration: foliage::PredicateDeclaration,
+	pub dependencies:
+		std::cell::RefCell<Option<std::collections::BTreeSet<std::rc::Rc<PredicateDeclaration>>>>,
 	pub is_input: std::cell::RefCell<bool>,
 	pub is_output: std::cell::RefCell<bool>,
 }
@@ -100,6 +102,45 @@ impl PredicateDeclaration
 	pub fn is_built_in(&self) -> bool
 	{
 		self.declaration.name.starts_with("p__") && self.declaration.name.ends_with("__")
+	}
+
+	pub fn is_public(&self) -> bool
+	{
+		*self.is_input.borrow() || *self.is_output.borrow()
+	}
+
+	fn collect_transitive_dependencies(&self,
+		mut transitive_dependencies: &mut std::collections::BTreeSet<
+			std::rc::Rc<crate::PredicateDeclaration>>)
+	{
+		let dependencies = self.dependencies.borrow();
+		let dependencies = match *dependencies
+		{
+			Some(ref dependencies) => dependencies,
+			None => unreachable!("all dependencies should have been collected at this point"),
+		};
+
+		for dependency in dependencies.iter()
+		{
+			if transitive_dependencies.contains(&*dependency)
+			{
+				continue;
+			}
+
+			transitive_dependencies.insert(std::rc::Rc::clone(&dependency));
+
+			dependency.collect_transitive_dependencies(&mut transitive_dependencies);
+		}
+	}
+
+	pub fn is_self_referential(&self) -> bool
+	{
+		let mut transitive_dependencies = std::collections::BTreeSet::new();
+		self.collect_transitive_dependencies(&mut transitive_dependencies);
+
+		log::debug!("{} depends on {:?}", self.declaration, transitive_dependencies.iter().map(|x| &x.declaration).collect::<Vec<_>>());
+
+		transitive_dependencies.contains(self)
 	}
 }
 
@@ -150,6 +191,7 @@ impl foliage::flavor::PredicateDeclaration for PredicateDeclaration
 		Self
 		{
 			declaration: foliage::PredicateDeclaration::new(name, arity),
+			dependencies: std::cell::RefCell::new(None),
 			is_input: std::cell::RefCell::new(false),
 			is_output: std::cell::RefCell::new(false),
 		}

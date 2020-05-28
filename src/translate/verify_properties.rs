@@ -135,7 +135,7 @@ impl<'p> Translator<'p>
 			}
 		};
 
-		for predicate_declaration in self.problem.predicate_declarations.borrow().iter()
+		for predicate_declaration in self.problem.predicate_declarations.borrow_mut().iter()
 		{
 			// Don’t perform completion for input predicates and built-in predicates
 			if *predicate_declaration.is_input.borrow() || predicate_declaration.is_built_in()
@@ -148,6 +148,9 @@ impl<'p> Translator<'p>
 
 			let completed_definition = completed_definition(predicate_declaration,
 				&mut self.definitions);
+
+			*predicate_declaration.dependencies.borrow_mut() =
+				Some(crate::collect_predicate_declarations(&completed_definition));
 
 			let statement_name =
 				format!("completed_definition_{}", predicate_declaration.tptp_statement_name());

@@ -6,6 +6,29 @@ pub enum ProofDirection
 	Both,
 }
 
+impl ProofDirection
+{
+	pub fn requires_forward_proof(&self) -> bool
+	{
+		match self
+		{
+			Self::Forward
+			| Self::Both => true,
+			Self::Backward => false,
+		}
+	}
+
+	pub fn requires_backward_proof(&self) -> bool
+	{
+		match self
+		{
+			Self::Forward => false,
+			Self::Backward
+			| Self::Both => true,
+		}
+	}
+}
+
 impl std::fmt::Debug for ProofDirection
 {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result

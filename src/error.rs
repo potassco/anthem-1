@@ -26,8 +26,10 @@ pub enum Kind
 	VariableNameNotAllowed(String),
 	FormulaNotClosed(std::rc::Rc<crate::VariableDeclarations>),
 	NoCompletedDefinitionFound(std::rc::Rc<crate::PredicateDeclaration>),
-	CannotHidePredicate(std::rc::Rc<crate::PredicateDeclaration>),
-	PredicateShouldNotOccurInSpecification(std::rc::Rc<crate::PredicateDeclaration>),
+	PrivatePredicateCycle(std::rc::Rc<crate::PredicateDeclaration>),
+	PrivatePredicateInSpecification(std::rc::Rc<crate::PredicateDeclaration>),
+	PrivatePredicateDependingOnPublicPredicate(std::rc::Rc<crate::PredicateDeclaration>,
+		std::rc::Rc<crate::PredicateDeclaration>),
 	RunVampire,
 	// TODO: rename to something Vampire-specific
 	ProveProgram(Option<i32>, String, String),
@@ -166,18 +168,27 @@ impl Error
 		Self::new(Kind::NoCompletedDefinitionFound(predicate_declaration))
 	}
 
-	pub(crate) fn new_cannot_hide_predicate(
+	pub(crate) fn new_private_predicate_cycle(
 		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
 	{
-		Self::new(Kind::CannotHidePredicate(predicate_declaration))
+		Self::new(Kind::PrivatePredicateCycle(predicate_declaration))
 	}
 
-	pub(crate) fn new_predicate_should_not_occur_in_specification(
+	pub(crate) fn new_private_predicate_in_specification(
 		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
 	{
-		Self::new(Kind::PredicateShouldNotOccurInSpecification(predicate_declaration))
+		Self::new(Kind::PrivatePredicateInSpecification(predicate_declaration))
+	}
+
+	pub(crate) fn new_private_predicate_depending_on_public_predicate(
+		private_predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>,
+		public_predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
+		-> Self
+	{
+		Self::new(Kind::PrivatePredicateDependingOnPublicPredicate(private_predicate_declaration,
+			public_predicate_declaration))
 	}
 
 	pub(crate) fn new_run_vampire<S: Into<Source>>(source: S) -> Self
@@ -258,14 +269,20 @@ impl std::fmt::Debug for Error
 			},
 			Kind::NoCompletedDefinitionFound(ref predicate_declaration) =>
 				write!(formatter, "no completed definition found for {}", predicate_declaration.declaration),
-			Kind::CannotHidePredicate(ref predicate_declaration) =>
+			Kind::PrivatePredicateCycle(ref predicate_declaration) =>
 				write!(formatter,
-					"cannot hide predicate {} (the completed definition transitively depends on itself)",
+					"program is not supertight (private predicate {} transitively depends on itself)",
 					predicate_declaration.declaration),
-			Kind::PredicateShouldNotOccurInSpecification(ref predicate_declaration) =>
+			Kind::PrivatePredicateInSpecification(ref predicate_declaration) =>
 				write!(formatter,
-					"{} should not occur in specification because it’s a private predicate (consider declaring it an input or output predicate)",
+					"private predicate {} should not occur in specification (consider declaring it an input or output predicate)",
 					predicate_declaration.declaration),
+			Kind::PrivatePredicateDependingOnPublicPredicate(ref private_predicate_declaration,
+				ref public_predicate_declaration) =>
+				write!(formatter,
+					"private predicate {} transitively depends on public predicate {}",
+					private_predicate_declaration.declaration,
+					public_predicate_declaration.declaration),
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>
 			{

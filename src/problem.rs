@@ -49,99 +49,59 @@ impl Problem
 		section.push(statement);
 	}
 
-	pub(crate) fn check_that_only_input_and_output_predicates_are_used(&self)
+	pub(crate) fn check_consistency(&self, proof_direction: ProofDirection)
 		-> Result<(), crate::Error>
 	{
 		let predicate_declarations = self.predicate_declarations.borrow();
-
-		if predicate_declarations.iter().find(|x| *x.is_output.borrow()).is_none()
+		let statements = self.statements.borrow();
+		let completed_definitions = match statements.get(&SectionKind::CompletedDefinitions)
 		{
-			return Ok(());
-		}
+			Some(completed_definitions) => completed_definitions,
+			None => return Ok(()),
+		};
 
-		// Check that only input and output predicates are used in the specification
 		for predicate_declaration in predicate_declarations.iter()
 		{
-			if *predicate_declaration.is_input.borrow()
-				|| *predicate_declaration.is_output.borrow()
-				// Auxiliary predicates may occur anywhere
-				|| predicate_declaration.is_built_in()
+			if predicate_declaration.is_built_in()
 			{
+				log::warn!("specification uses built-in predicate {}",
+					predicate_declaration.declaration);
 				continue;
 			}
 
-			for (_, statements) in self.statements.borrow().iter()
-			{
-				for statement in statements
+			let matching_statement = |statement: &&Statement|
+				match statement.kind
 				{
-					match statement.kind
-					{
-						crate::problem::StatementKind::CompletedDefinition(_)
-						| crate::problem::StatementKind::IntegrityConstraint => continue,
-						_ => (),
-					}
-
-					if crate::formula_contains_predicate(&statement.formula, predicate_declaration)
-					{
-						return Err(crate::Error::new_predicate_should_not_occur_in_specification(
-							std::rc::Rc::clone(predicate_declaration)));
-					}
-				}
-			}
-		}
-
-		Ok(())
-	}
-
-	pub(crate) fn restrict_to_output_predicates(&mut self) -> Result<(), crate::Error>
-	{
-		let predicate_declarations = self.predicate_declarations.borrow();
-
-		// If no output statements were provided, show all predicates by default
-		if predicate_declarations.iter().find(|x| *x.is_output.borrow()).is_none()
-		{
-			return Ok(());
-		}
-
-		let hidden_predicate_declarations = predicate_declarations.iter()
-			.filter(|x| !*x.is_output.borrow() && !*x.is_input.borrow() && !x.is_built_in());
-
-		let mut statements = self.statements.borrow_mut();
-
-		for hidden_predicate_declaration in hidden_predicate_declarations
-		{
-			let matches_completed_definition =
-				|(_, statement): &(_, &Statement)| match statement.kind
-				{
-					StatementKind::CompletedDefinition(ref predicate_declaration) =>
-						predicate_declaration == hidden_predicate_declaration,
+					StatementKind::CompletedDefinition(ref other_predicate_declaration) =>
+						predicate_declaration == &*other_predicate_declaration,
 					_ => false,
 				};
 
-			let completed_definitions = match statements.get_mut(&SectionKind::CompletedDefinitions)
-			{
-				Some(completed_definitions) => completed_definitions,
-				None => return Ok(()),
-			};
+			let completed_definition = &completed_definitions.iter()
+				.find(matching_statement)
+				.expect("all predicates should have completed definitions at this point")
+				.formula;
 
-			let completed_definition = match completed_definitions.iter().enumerate()
-				.find(matches_completed_definition)
-			{
-				Some((completed_definition_index, _)) =>
-					completed_definitions.remove(completed_definition_index).formula,
-				None => return Err(crate::Error::new_no_completed_definition_found(
-					std::rc::Rc::clone(hidden_predicate_declaration))),
-			};
+			let dependencies = crate::collect_predicate_declarations(&completed_definition);
 
-			drop(completed_definitions);
-
-			for (_, statements) in statements.iter_mut()
+			for dependency in dependencies
 			{
-				for statement in statements.iter_mut()
+				if !predicate_declaration.is_public() && dependency.is_public()
 				{
-					crate::utils::replace_predicate_in_formula_with_completed_definition(
-						&mut statement.formula, &completed_definition)?;
+					return Err(
+						crate::Error::new_private_predicate_depending_on_public_predicate(
+							std::rc::Rc::clone(&predicate_declaration),
+							std::rc::Rc::clone(&dependency)));
 				}
+			}
+
+			// If a backward proof is necessary, the program needs to be supertight, that is, no
+			// private predicates may transitively depend on themselves
+			if proof_direction.requires_forward_proof() && !predicate_declaration.is_public()
+				&& predicate_declaration.is_self_referential()
+			{
+				return Err(crate::Error::new_private_predicate_cycle(
+					std::rc::Rc::clone(&predicate_declaration)));
 			}
 		}
 
@@ -185,8 +145,7 @@ impl Problem
 
 	pub fn prove(&self, proof_direction: ProofDirection) -> Result<(), crate::Error>
 	{
-		if proof_direction == ProofDirection::Forward
-			|| proof_direction == ProofDirection::Both
+		if proof_direction.requires_forward_proof()
 		{
 			self.print_step_title("Started",
 				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)))?;
@@ -238,8 +197,7 @@ impl Problem
 			println!("");
 		}
 
-		if proof_direction == ProofDirection::Backward
-			|| proof_direction == ProofDirection::Both
+		if proof_direction.requires_backward_proof()
 		{
 			self.print_step_title("Started",
 				termcolor::ColorSpec::new().set_bold(true).set_fg(Some(termcolor::Color::Green)))?;

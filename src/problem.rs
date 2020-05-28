@@ -225,6 +225,9 @@ impl Problem
 							statement.proof_status = ProofStatus::AssumedProven,
 						StatementKind::Lemma(ProofDirection::Forward) =>
 							statement.proof_status = ProofStatus::Ignored,
+						StatementKind::CompletedDefinition(ref predicate_declaration)
+							if !predicate_declaration.is_public() =>
+							statement.proof_status = ProofStatus::AssumedProven,
 						_ => statement.proof_status = ProofStatus::ToProveLater,
 					}
 				}

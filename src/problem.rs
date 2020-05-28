@@ -102,7 +102,7 @@ impl Problem
 
 			// If a backward proof is necessary, the program needs to be supertight, that is, no
 			// private predicates may transitively depend on themselves
-			if proof_direction.requires_forward_proof() && !predicate_declaration.is_public()
+			if proof_direction.requires_backward_proof() && !predicate_declaration.is_public()
 				&& predicate_declaration.is_self_referential()
 			{
 				return Err(crate::Error::new_private_predicate_cycle(

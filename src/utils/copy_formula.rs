@@ -212,6 +212,7 @@ fn copy_quantified_formula(quantified_expression: &crate::QuantifiedFormula)
 	crate::QuantifiedFormula::new(copy_parameters, Box::new(copy_argument))
 }
 
+#[allow(dead_code)]
 pub(crate) fn copy_formula(formula: &crate::Formula) -> crate::Formula
 {
 	use crate::Formula;

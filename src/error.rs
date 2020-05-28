@@ -25,9 +25,7 @@ pub enum Kind
 	UnknownColorChoice(String),
 	VariableNameNotAllowed(String),
 	FormulaNotClosed(std::rc::Rc<crate::VariableDeclarations>),
-	NoCompletedDefinitionFound(std::rc::Rc<crate::PredicateDeclaration>),
 	PrivatePredicateCycle(std::rc::Rc<crate::PredicateDeclaration>),
-	PrivatePredicateInSpecification(std::rc::Rc<crate::PredicateDeclaration>),
 	PrivatePredicateDependingOnPublicPredicate(std::rc::Rc<crate::PredicateDeclaration>,
 		std::rc::Rc<crate::PredicateDeclaration>),
 	RunVampire,
@@ -161,25 +159,11 @@ impl Error
 		Self::new(Kind::FormulaNotClosed(free_variables))
 	}
 
-	pub(crate) fn new_no_completed_definition_found(
-		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
-		-> Self
-	{
-		Self::new(Kind::NoCompletedDefinitionFound(predicate_declaration))
-	}
-
 	pub(crate) fn new_private_predicate_cycle(
 		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
 	{
 		Self::new(Kind::PrivatePredicateCycle(predicate_declaration))
-	}
-
-	pub(crate) fn new_private_predicate_in_specification(
-		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
-		-> Self
-	{
-		Self::new(Kind::PrivatePredicateInSpecification(predicate_declaration))
 	}
 
 	pub(crate) fn new_private_predicate_depending_on_public_predicate(
@@ -267,15 +251,9 @@ impl std::fmt::Debug for Error
 
 				write!(formatter, ")")
 			},
-			Kind::NoCompletedDefinitionFound(ref predicate_declaration) =>
-				write!(formatter, "no completed definition found for {}", predicate_declaration.declaration),
 			Kind::PrivatePredicateCycle(ref predicate_declaration) =>
 				write!(formatter,
 					"program is not supertight (private predicate {} transitively depends on itself)",
-					predicate_declaration.declaration),
-			Kind::PrivatePredicateInSpecification(ref predicate_declaration) =>
-				write!(formatter,
-					"private predicate {} should not occur in specification (consider declaring it an input or output predicate)",
 					predicate_declaration.declaration),
 			Kind::PrivatePredicateDependingOnPublicPredicate(ref private_predicate_declaration,
 				ref public_predicate_declaration) =>

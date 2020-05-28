@@ -1,10 +1,10 @@
 # Auxiliary predicate to determine whether a variable is integer
-axiom: forall X (is_int(X) <-> exists N X = N).
+#axiom: forall X (is_int(X) <-> exists N X = N).
 
 # Perform the proofs under the assumption that n is a nonnegative integer input constant. n stands
 # for the total number of input sets
 input: n -> integer.
-assume: n >= 0.
+#assume: n >= 0.
 
 # s/2 is the input predicate defining the sets for which the program searches for exact covers
 input: s/2.
@@ -15,7 +15,7 @@ output: in/1.
 
 # Perform the proofs under the assumption that the second parameter of s/2 (the number of the set)
 # is always an integer
-assume: forall X, Y (s(X, Y) -> is_int(Y)).
+#assume: forall X, Y (s(X, Y) -> exists N (Y = N)).
 
 # Only valid sets can be included in the solution
 spec: forall X (in(X) -> X >= 1 and X <= n).

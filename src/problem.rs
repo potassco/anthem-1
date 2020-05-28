@@ -343,7 +343,7 @@ impl Problem
 			// TODO: make configurable again
 			let (proof_result, proof_time_seconds) =
 				run_vampire(&tptp_problem_to_prove_next_statement,
-					Some(&["--mode", "casc", "--cores", "8", "--time_limit", "300"]))?;
+					Some(&["--mode", "casc", "--cores", "4", "--time_limit", "300"]))?;
 
 			match self.next_unproven_statement_do_mut(
 				|statement| -> Result<(), crate::Error>

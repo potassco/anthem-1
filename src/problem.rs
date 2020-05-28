@@ -86,10 +86,8 @@ impl Problem
 				{
 					match statement.kind
 					{
-						crate::problem::StatementKind::CompletedDefinition(_)
-						| crate::problem::StatementKind::IntegrityConstraint
-						| crate::problem::StatementKind::Lemma(_) => continue,
-						_ => (),
+						crate::problem::StatementKind::Spec => (),
+						_ => continue,
 					}
 
 					if crate::formula_contains_predicate(&statement.formula, predicate_declaration)

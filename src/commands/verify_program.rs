@@ -20,14 +20,10 @@ where
 	};
 
 	// TODO: rename to read_specification
-	match crate::input::parse_specification(&specification_content, &mut problem)
+	if let Err(error) = crate::input::parse_specification(&specification_content, &mut problem)
 	{
-		Ok(_) => (),
-		Err(error) =>
-		{
-			log::error!("could not read specification: {}", error);
-			std::process::exit(1)
-		}
+		log::error!("could not read specification: {}", error);
+		std::process::exit(1)
 	}
 
 	log::info!("read specification “{}”", specification_path.as_ref().display());
@@ -35,48 +31,31 @@ where
 	log::info!("reading input program “{}”", program_path.as_ref().display());
 
 	// TODO: make consistent with specification call (path vs. content)
-	match crate::translate::verify_properties::Translator::new(&mut problem).translate(program_path)
+	if let Err(error) = crate::translate::verify_properties::Translator::new(&mut problem)
+		.translate(program_path)
 	{
-		Ok(_) => (),
-		Err(error) =>
-		{
-			log::error!("could not translate input program: {}", error);
-			std::process::exit(1)
-		}
+		log::error!("could not translate input program: {}", error);
+		std::process::exit(1)
 	}
 
-	match problem.check_consistency(proof_direction)
+	if let Err(error) = problem.check_consistency(proof_direction)
 	{
-		Ok(_) => (),
-		Err(error) =>
-		{
-			log::error!("{}", error);
-			std::process::exit(1)
-		}
+		log::error!("{}", error);
+		std::process::exit(1)
 	}
 
 	if !no_simplify
 	{
-		match problem.simplify()
+		if let Err(error) = problem.simplify()
 		{
-			Ok(_) => (),
-			Err(error) =>
-			{
-				log::error!("could not simplify translated program: {}", error);
-				std::process::exit(1)
-			}
-		}
-	}
-
-	match problem.prove(proof_direction)
-	{
-		Ok(()) => (),
-		Err(error) =>
-		{
-			log::error!("could not verify program: {}", error);
+			log::error!("could not simplify translated program: {}", error);
 			std::process::exit(1)
 		}
 	}
 
-	log::info!("done");
+	if let Err(error) = problem.prove(proof_direction)
+	{
+		log::error!("could not verify program: {}", error);
+		std::process::exit(1)
+	}
 }

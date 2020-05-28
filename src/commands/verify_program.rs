@@ -4,7 +4,6 @@ pub fn run<P>(program_path: P, specification_path: P,
 where
 	P: AsRef<std::path::Path>,
 {
-	//let context = crate::translate::verify_properties::Context::new();
 	let mut problem = crate::Problem::new(color_choice);
 
 	log::info!("reading specification “{}”", specification_path.as_ref().display());

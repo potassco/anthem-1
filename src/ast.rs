@@ -109,7 +109,7 @@ impl PredicateDeclaration
 		*self.is_input.borrow() || *self.is_output.borrow()
 	}
 
-	fn collect_transitive_dependencies(&self,
+	fn collect_transitive_private_dependencies(&self,
 		mut transitive_dependencies: &mut std::collections::BTreeSet<
 			std::rc::Rc<crate::PredicateDeclaration>>)
 	{
@@ -124,22 +124,27 @@ impl PredicateDeclaration
 		for dependency in dependencies.iter()
 		{
 			if transitive_dependencies.contains(&*dependency)
+				|| dependency.is_public()
+				|| dependency.is_built_in()
 			{
 				continue;
 			}
 
 			transitive_dependencies.insert(std::rc::Rc::clone(&dependency));
 
-			dependency.collect_transitive_dependencies(&mut transitive_dependencies);
+			dependency.collect_transitive_private_dependencies(&mut transitive_dependencies);
 		}
 	}
 
-	pub fn is_self_referential(&self) -> bool
+	pub fn has_private_dependency_cycle(&self) -> bool
 	{
-		let mut transitive_dependencies = std::collections::BTreeSet::new();
-		self.collect_transitive_dependencies(&mut transitive_dependencies);
+		if self.is_public() || self.is_built_in()
+		{
+			return false;
+		}
 
-		log::debug!("{} depends on {:?}", self.declaration, transitive_dependencies.iter().map(|x| &x.declaration).collect::<Vec<_>>());
+		let mut transitive_dependencies = std::collections::BTreeSet::new();
+		self.collect_transitive_private_dependencies(&mut transitive_dependencies);
 
 		transitive_dependencies.contains(self)
 	}

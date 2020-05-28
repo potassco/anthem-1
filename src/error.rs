@@ -26,8 +26,6 @@ pub enum Kind
 	VariableNameNotAllowed(String),
 	FormulaNotClosed(std::rc::Rc<crate::VariableDeclarations>),
 	PrivatePredicateCycle(std::rc::Rc<crate::PredicateDeclaration>),
-	PrivatePredicateDependingOnPublicPredicate(std::rc::Rc<crate::PredicateDeclaration>,
-		std::rc::Rc<crate::PredicateDeclaration>),
 	RunVampire,
 	// TODO: rename to something Vampire-specific
 	ProveProgram(Option<i32>, String, String),
@@ -166,15 +164,6 @@ impl Error
 		Self::new(Kind::PrivatePredicateCycle(predicate_declaration))
 	}
 
-	pub(crate) fn new_private_predicate_depending_on_public_predicate(
-		private_predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>,
-		public_predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
-		-> Self
-	{
-		Self::new(Kind::PrivatePredicateDependingOnPublicPredicate(private_predicate_declaration,
-			public_predicate_declaration))
-	}
-
 	pub(crate) fn new_run_vampire<S: Into<Source>>(source: S) -> Self
 	{
 		Self::new(Kind::RunVampire).with(source)
@@ -255,12 +244,6 @@ impl std::fmt::Debug for Error
 				write!(formatter,
 					"program is not supertight (private predicate {} transitively depends on itself)",
 					predicate_declaration.declaration),
-			Kind::PrivatePredicateDependingOnPublicPredicate(ref private_predicate_declaration,
-				ref public_predicate_declaration) =>
-				write!(formatter,
-					"private predicate {} transitively depends on public predicate {}",
-					private_predicate_declaration.declaration,
-					public_predicate_declaration.declaration),
 			Kind::RunVampire => write!(formatter, "could not run Vampire"),
 			Kind::ProveProgram(exit_code, ref stdout, ref stderr) =>
 			{

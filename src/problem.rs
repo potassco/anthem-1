@@ -52,15 +52,7 @@ impl Problem
 	pub(crate) fn check_consistency(&self, proof_direction: ProofDirection)
 		-> Result<(), crate::Error>
 	{
-		let predicate_declarations = self.predicate_declarations.borrow();
-		let statements = self.statements.borrow();
-		let completed_definitions = match statements.get(&SectionKind::CompletedDefinitions)
-		{
-			Some(completed_definitions) => completed_definitions,
-			None => return Ok(()),
-		};
-
-		for predicate_declaration in predicate_declarations.iter()
+		for predicate_declaration in self.predicate_declarations.borrow().iter()
 		{
 			if predicate_declaration.is_built_in()
 			{
@@ -72,32 +64,6 @@ impl Problem
 			if *predicate_declaration.is_input.borrow()
 			{
 				continue;
-			}
-
-			let matching_statement = |statement: &&Statement|
-				match statement.kind
-				{
-					StatementKind::CompletedDefinition(ref other_predicate_declaration) =>
-						predicate_declaration == &*other_predicate_declaration,
-					_ => false,
-				};
-
-			let completed_definition = &completed_definitions.iter()
-				.find(matching_statement)
-				.expect("all predicates should have completed definitions at this point")
-				.formula;
-
-			let dependencies = crate::collect_predicate_declarations(&completed_definition);
-
-			for dependency in dependencies
-			{
-				if !predicate_declaration.is_public() && dependency.is_public()
-				{
-					return Err(
-						crate::Error::new_private_predicate_depending_on_public_predicate(
-							std::rc::Rc::clone(&predicate_declaration),
-							std::rc::Rc::clone(&dependency)));
-				}
 			}
 
 			// If a backward proof is necessary, the program needs to be supertight, that is, no

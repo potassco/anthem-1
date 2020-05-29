@@ -17,7 +17,7 @@ enum Command
 		specification_paths: Vec<std::path::PathBuf>,
 
 		/// Proof direction (forward, backward, both)
-		#[structopt(long, default_value = "forward")]
+		#[structopt(long, default_value = "both")]
 		proof_direction: anthem::problem::ProofDirection,
 
 		/// Do not simplify translated program

@@ -4,7 +4,7 @@
 # Perform the proofs under the assumption that n is a nonnegative integer input constant. n stands
 # for the total number of input sets
 input: n -> integer.
-#assume: n >= 0.
+assume: n >= 0.
 
 # s/2 is the input predicate defining the sets for which the program searches for exact covers
 input: s/2.
@@ -15,11 +15,11 @@ output: in/1.
 
 # Perform the proofs under the assumption that the second parameter of s/2 (the number of the set)
 # is always an integer
-#assume: forall X, Y (s(X, Y) -> exists N (Y = N)).
+assume: forall Y (exists X s(X, Y) -> exists N (Y = N and N >= 1 and N <= n)).
 
 # Only valid sets can be included in the solution
-spec: forall X (in(X) -> X >= 1 and X <= n).
+spec: forall Y (in(Y) -> exists N (Y = N and N >= 1 and N <= n)).
 # If an element is contained in an input set, it must be covered by all solutions
-spec: forall X (exists I s(X, I) -> exists I (in(I) and s(X, I))).
+spec: forall X (exists Y s(X, Y) -> exists Y (in(Y) and s(X, Y))).
 # Elements may not be covered by two input sets
-spec: forall I, J (exists X (s(X, I) and s(X, J)) and in(I) and in(J) -> I = J).
+spec: forall Y, Z (exists X (s(X, Y) and s(X, Z)) and in(Y) and in(Z) -> Y = Z).

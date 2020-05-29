@@ -1,7 +1,6 @@
 input: n -> integer.
 output: prime/1.
 
-# TODO: not necessary if using the lemma below in both directions
 assume: n >= 1.
 
 spec: forall X (prime(X) -> exists N (X = N)).

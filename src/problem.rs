@@ -66,13 +66,20 @@ impl Problem
 				continue;
 			}
 
-			// If a backward proof is necessary, the program needs to be supertight, that is, no
-			// private predicates may transitively depend on themselves
+			// For a backward proof, the program must be tight and free of negative recursion
 			if proof_direction.requires_backward_proof()
-				&& predicate_declaration.has_private_dependency_cycle()
 			{
-				return Err(crate::Error::new_private_predicate_cycle(
-					std::rc::Rc::clone(&predicate_declaration)));
+				if predicate_declaration.has_positive_dependency_cycle()
+				{
+					return Err(crate::Error::new_program_not_tight(
+						std::rc::Rc::clone(&predicate_declaration)));
+				}
+
+				if predicate_declaration.has_private_dependency_cycle()
+				{
+					return Err(crate::Error::new_private_predicate_cycle(
+						std::rc::Rc::clone(&predicate_declaration)));
+				}
 			}
 
 			if predicate_declaration.is_public()

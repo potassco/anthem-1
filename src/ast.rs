@@ -83,11 +83,64 @@ impl foliage::flavor::FunctionDeclaration for FunctionDeclaration
 	}
 }
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum PredicateDependencySign
+{
+	OnlyPositive,
+	OnlyNegative,
+	PositiveAndNegative,
+}
+
+impl PredicateDependencySign
+{
+	pub fn and_positive(self) -> Self
+	{
+		match self
+		{
+			Self::OnlyPositive => Self::OnlyPositive,
+			Self::OnlyNegative
+			| Self::PositiveAndNegative => Self::PositiveAndNegative,
+		}
+	}
+
+	pub fn and_negative(self) -> Self
+	{
+		match self
+		{
+			Self::OnlyNegative => Self::OnlyNegative,
+			Self::OnlyPositive
+			| Self::PositiveAndNegative => Self::PositiveAndNegative,
+		}
+	}
+
+	pub fn is_positive(&self) -> bool
+	{
+		match self
+		{
+			Self::OnlyPositive
+			| Self::PositiveAndNegative => true,
+			Self::OnlyNegative => false,
+		}
+	}
+
+	pub fn is_negative(&self) -> bool
+	{
+		match self
+		{
+			Self::OnlyPositive => false,
+			Self::OnlyNegative
+			| Self::PositiveAndNegative => true,
+		}
+	}
+}
+
+pub type PredicateDependencies =
+	std::collections::BTreeMap<std::rc::Rc<PredicateDeclaration>, PredicateDependencySign>;
+
 pub struct PredicateDeclaration
 {
 	pub declaration: foliage::PredicateDeclaration,
-	pub dependencies:
-		std::cell::RefCell<Option<std::collections::BTreeSet<std::rc::Rc<PredicateDeclaration>>>>,
+	pub dependencies: std::cell::RefCell<Option<PredicateDependencies>>,
 	pub is_input: std::cell::RefCell<bool>,
 	pub is_output: std::cell::RefCell<bool>,
 }
@@ -109,8 +162,8 @@ impl PredicateDeclaration
 		*self.is_input.borrow() || *self.is_output.borrow()
 	}
 
-	fn collect_transitive_private_dependencies(&self,
-		mut transitive_dependencies: &mut std::collections::BTreeSet<
+	fn collect_positive_dependencies(&self,
+		mut positive_dependencies: &mut std::collections::BTreeSet<
 			std::rc::Rc<crate::PredicateDeclaration>>)
 	{
 		let dependencies = self.dependencies.borrow();
@@ -121,19 +174,59 @@ impl PredicateDeclaration
 			None => return,
 		};
 
-		for dependency in dependencies.iter()
+		for (dependency, sign) in dependencies.iter()
 		{
-			if transitive_dependencies.contains(&*dependency)
+			if positive_dependencies.contains(&*dependency)
+				|| dependency.is_built_in()
+				|| !sign.is_positive()
+			{
+				continue;
+			}
+
+			positive_dependencies.insert(std::rc::Rc::clone(dependency));
+
+			dependency.collect_positive_dependencies(&mut positive_dependencies);
+		}
+	}
+
+	fn collect_private_dependencies(&self,
+		mut private_dependencies: &mut std::collections::BTreeSet<
+			std::rc::Rc<crate::PredicateDeclaration>>)
+	{
+		let dependencies = self.dependencies.borrow();
+		let dependencies = match *dependencies
+		{
+			Some(ref dependencies) => dependencies,
+			// Input predicates don’t have completed definitions and no dependencies, so ignore them
+			None => return,
+		};
+
+		for (dependency, _) in dependencies.iter()
+		{
+			if private_dependencies.contains(&*dependency)
 				|| dependency.is_public()
 				|| dependency.is_built_in()
 			{
 				continue;
 			}
 
-			transitive_dependencies.insert(std::rc::Rc::clone(&dependency));
+			private_dependencies.insert(std::rc::Rc::clone(dependency));
 
-			dependency.collect_transitive_private_dependencies(&mut transitive_dependencies);
+			dependency.collect_private_dependencies(&mut private_dependencies);
 		}
+	}
+
+	pub fn has_positive_dependency_cycle(&self) -> bool
+	{
+		if self.is_built_in()
+		{
+			return false;
+		}
+
+		let mut positive_dependencies = std::collections::BTreeSet::new();
+		self.collect_positive_dependencies(&mut positive_dependencies);
+
+		positive_dependencies.contains(self)
 	}
 
 	pub fn has_private_dependency_cycle(&self) -> bool
@@ -143,10 +236,10 @@ impl PredicateDeclaration
 			return false;
 		}
 
-		let mut transitive_dependencies = std::collections::BTreeSet::new();
-		self.collect_transitive_private_dependencies(&mut transitive_dependencies);
+		let mut private_dependencies = std::collections::BTreeSet::new();
+		self.collect_private_dependencies(&mut private_dependencies);
 
-		transitive_dependencies.contains(self)
+		private_dependencies.contains(self)
 	}
 }
 

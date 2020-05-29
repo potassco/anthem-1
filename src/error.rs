@@ -25,6 +25,7 @@ pub enum Kind
 	UnknownColorChoice(String),
 	VariableNameNotAllowed(String),
 	FormulaNotClosed(std::rc::Rc<crate::VariableDeclarations>),
+	ProgramNotTight(std::rc::Rc<crate::PredicateDeclaration>),
 	PrivatePredicateCycle(std::rc::Rc<crate::PredicateDeclaration>),
 	PrivatePredicateInSpecification(std::rc::Rc<crate::PredicateDeclaration>),
 	RunVampire,
@@ -158,6 +159,13 @@ impl Error
 		Self::new(Kind::FormulaNotClosed(free_variables))
 	}
 
+	pub(crate) fn new_program_not_tight(
+		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
+		-> Self
+	{
+		Self::new(Kind::ProgramNotTight(predicate_declaration))
+	}
+
 	pub(crate) fn new_private_predicate_cycle(
 		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
@@ -248,9 +256,11 @@ impl std::fmt::Debug for Error
 
 				write!(formatter, ")")
 			},
+			Kind::ProgramNotTight(ref predicate_declaration) =>
+				write!(formatter, "program not tight (positive recursion involving {})",
+					predicate_declaration.declaration),
 			Kind::PrivatePredicateCycle(ref predicate_declaration) =>
-				write!(formatter,
-					"program is not supertight (private predicate {} transitively depends on itself)",
+				write!(formatter, "private recursion involving {}",
 					predicate_declaration.declaration),
 			Kind::PrivatePredicateInSpecification(ref predicate_declaration) =>
 				write!(formatter,

@@ -149,9 +149,6 @@ impl<'p> Translator<'p>
 			let completed_definition = completed_definition(predicate_declaration,
 				&mut self.definitions);
 
-			*predicate_declaration.dependencies.borrow_mut() =
-				Some(crate::collect_predicate_declarations(&completed_definition));
-
 			let statement_name =
 				format!("completed_definition_{}", predicate_declaration.tptp_statement_name());
 
@@ -203,8 +200,20 @@ impl<'p> Translator<'p>
 				let parameters_layer =
 					crate::VariableDeclarationStackLayer::bound(&free_layer, parameters);
 
+				let mut predicate_dependencies =
+					head_atom.predicate_declaration.dependencies.borrow_mut();
+
+				if predicate_dependencies.is_none()
+				{
+					*predicate_dependencies = Some(crate::PredicateDependencies::new());
+				}
+
+				// The conditional assignment above ensures unwrapping to be safe
+				let mut dependencies = predicate_dependencies.as_mut().unwrap();
+
 				let mut definition_arguments =
-					translate_body(rule.body(), self.problem, &parameters_layer)?;
+					translate_body(rule.body(), self.problem, &parameters_layer,
+						&mut Some(&mut dependencies))?;
 
 				// TODO: refactor
 				assert_eq!(predicate_definitions.parameters.len(), head_atom.arguments.len());
@@ -263,7 +272,8 @@ impl<'p> Translator<'p>
 				let free_layer =
 					crate::VariableDeclarationStackLayer::Free(free_variable_declarations);
 
-				let mut arguments = translate_body(rule.body(), self.problem, &free_layer)?;
+				let mut arguments = translate_body(rule.body(), self.problem, &free_layer,
+					&mut None)?;
 
 				// TODO: refactor
 				let free_variable_declarations = match free_layer

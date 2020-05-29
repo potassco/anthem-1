@@ -1,6 +1,7 @@
 // TODO: rename context
 pub(crate) fn translate_body_term<C>(body_term: &clingo::ast::Term, sign: clingo::ast::Sign,
-	context: &C, variable_declaration_stack: &crate::VariableDeclarationStackLayer)
+	context: &C, variable_declaration_stack: &crate::VariableDeclarationStackLayer,
+	head_predicate_dependencies: &mut Option<&mut crate::PredicateDependencies>)
 	-> Result<crate::Formula, crate::Error>
 where
 	C: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
@@ -25,6 +26,32 @@ where
 	let predicate_arguments = parameters.iter().map(
 		|parameter| crate::Term::variable(std::rc::Rc::clone(parameter)))
 		.collect::<Vec<_>>();
+
+	if let Some(head_predicate_dependencies) = head_predicate_dependencies
+	{
+		match head_predicate_dependencies.get_mut(&predicate_declaration)
+		{
+			None =>
+			{
+				let predicate_dependency_sign = match sign
+				{
+					clingo::ast::Sign::None
+					| clingo::ast::Sign::DoubleNegation => crate::PredicateDependencySign::OnlyPositive,
+					clingo::ast::Sign::Negation => crate::PredicateDependencySign::OnlyNegative,
+				};
+
+				head_predicate_dependencies.insert(
+					std::rc::Rc::clone(&predicate_declaration), predicate_dependency_sign);
+			},
+			Some(predicate_dependency_sign) =>
+				*predicate_dependency_sign = match sign
+				{
+					clingo::ast::Sign::None
+					| clingo::ast::Sign::DoubleNegation => predicate_dependency_sign.and_positive(),
+					clingo::ast::Sign::Negation => predicate_dependency_sign.and_negative(),
+				},
+		}
+	}
 
 	let predicate = crate::Formula::predicate(predicate_declaration, predicate_arguments);
 
@@ -59,7 +86,8 @@ where
 }
 
 pub(crate) fn translate_body_literal<C>(body_literal: &clingo::ast::BodyLiteral,
-	context: &C, variable_declaration_stack: &crate::VariableDeclarationStackLayer)
+	context: &C, variable_declaration_stack: &crate::VariableDeclarationStackLayer,
+	head_predicate_dependencies: &mut Option<&mut crate::PredicateDependencies>)
 	-> Result<crate::Formula, crate::Error>
 where
 	C: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
@@ -92,7 +120,7 @@ where
 			Ok(crate::Formula::Boolean(value))
 		},
 		clingo::ast::LiteralType::Symbolic(term) => translate_body_term(term, literal.sign(),
-			context, variable_declaration_stack),
+			context, variable_declaration_stack, head_predicate_dependencies),
 		clingo::ast::LiteralType::Comparison(comparison) =>
 		{
 			let parameters = (0..2).map(
@@ -130,7 +158,9 @@ where
 }
 
 pub(crate) fn translate_body<C>(body_literals: &[clingo::ast::BodyLiteral], context: &C,
-	variable_declaration_stack: &crate::VariableDeclarationStackLayer)
+	variable_declaration_stack: &crate::VariableDeclarationStackLayer,
+	// TODO: refactor
+	mut head_predicate_dependencies: &mut Option<&mut crate::PredicateDependencies>)
 	-> Result<crate::Formulas, crate::Error>
 where
 	C: foliage::FindOrCreateFunctionDeclaration<crate::FoliageFlavor>
@@ -138,6 +168,6 @@ where
 {
 	body_literals.iter()
 		.map(|body_literal| translate_body_literal(body_literal, context,
-			variable_declaration_stack))
+			variable_declaration_stack, &mut head_predicate_dependencies))
 		.collect::<Result<crate::Formulas, crate::Error>>()
 }

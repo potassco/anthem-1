@@ -2,6 +2,7 @@ mod arithmetic_terms;
 mod autoname_variables;
 mod closures;
 mod copy_formula;
+mod fold_predicates;
 mod formula_contains_predicate;
 mod variables_in_terms;
 
@@ -9,6 +10,7 @@ pub(crate) use autoname_variables::*;
 pub(crate) use arithmetic_terms::*;
 pub(crate) use closures::*;
 pub(crate) use copy_formula::*;
+pub(crate) use fold_predicates::*;
 pub(crate) use formula_contains_predicate::*;
 pub(crate) use variables_in_terms::*;
 

@@ -52,6 +52,34 @@ impl Problem
 	pub(crate) fn check_consistency(&self, proof_direction: ProofDirection)
 		-> Result<(), crate::Error>
 	{
+		for (_, statements) in self.statements.borrow().iter()
+		{
+			for statement in statements
+			{
+				match statement.kind
+				{
+					crate::problem::StatementKind::Assumption => (),
+					_ => continue,
+				}
+
+				if let Some(predicate_declaration) =
+					crate::fold_predicates(&statement.formula, None,
+						&mut |accumulator, predicate: &crate::Predicate|
+						{
+							match accumulator
+							{
+								None if !*predicate.declaration.is_input.borrow() =>
+									Some(std::rc::Rc::clone(&predicate.declaration)),
+								_ => accumulator,
+							}
+						})
+				{
+					return Err(crate::Error::new_noninput_predicate_in_assumption(
+						predicate_declaration));
+				}
+			}
+		}
+
 		for predicate_declaration in self.predicate_declarations.borrow().iter()
 		{
 			if predicate_declaration.is_built_in()

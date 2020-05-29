@@ -27,6 +27,7 @@ pub enum Kind
 	FormulaNotClosed(std::rc::Rc<crate::VariableDeclarations>),
 	ProgramNotTight(std::rc::Rc<crate::PredicateDeclaration>),
 	PrivatePredicateCycle(std::rc::Rc<crate::PredicateDeclaration>),
+	NoninputPredicateInAssumption(std::rc::Rc<crate::PredicateDeclaration>),
 	PrivatePredicateInSpecification(std::rc::Rc<crate::PredicateDeclaration>),
 	RunVampire,
 	// TODO: rename to something Vampire-specific
@@ -173,6 +174,13 @@ impl Error
 		Self::new(Kind::PrivatePredicateCycle(predicate_declaration))
 	}
 
+	pub(crate) fn new_noninput_predicate_in_assumption(
+		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
+		-> Self
+	{
+		Self::new(Kind::NoninputPredicateInAssumption(predicate_declaration))
+	}
+
 	pub(crate) fn new_private_predicate_in_specification(
 		predicate_declaration: std::rc::Rc<crate::PredicateDeclaration>)
 		-> Self
@@ -262,6 +270,10 @@ impl std::fmt::Debug for Error
 			Kind::PrivatePredicateCycle(ref predicate_declaration) =>
 				write!(formatter, "private recursion involving {}",
 					predicate_declaration.declaration),
+			Kind::NoninputPredicateInAssumption(ref predicate_declaration) =>
+				write!(formatter,
+					"assumption includes {}, which is not an input predicate (consider declaring {} an input predicate)",
+					predicate_declaration.declaration, predicate_declaration.declaration),
 			Kind::PrivatePredicateInSpecification(ref predicate_declaration) =>
 				write!(formatter,
 					"private predicate {} should not occur in specification (consider declaring it an input or output predicate)",

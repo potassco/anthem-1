@@ -74,7 +74,7 @@ impl Problem
 	pub(crate) fn check_consistency(&self, proof_direction: ProofDirection)
 		-> Result<(), crate::Error>
 	{
-		for (_, statements) in self.statements.borrow().iter()
+		for statements in self.statements.borrow().values()
 		{
 			for statement in statements
 			{
@@ -137,7 +137,7 @@ impl Problem
 				continue;
 			}
 
-			for (_, statements) in self.statements.borrow().iter()
+			for statements in self.statements.borrow().values()
 			{
 				for statement in statements
 				{
@@ -163,7 +163,7 @@ impl Problem
 	{
 		let mut statements = self.statements.borrow_mut();
 
-		for (_, statements) in statements.iter_mut()
+		for statements in statements.values_mut()
 		{
 			for statement in statements.iter_mut()
 			{
@@ -207,7 +207,7 @@ impl Problem
 			let mut statements = self.statements.borrow_mut();
 
 			// Initially reset all proof statuses
-			for (_, statements) in statements.iter_mut()
+			for statements in statements.values_mut()
 			{
 				for statement in statements.iter_mut()
 				{
@@ -259,7 +259,7 @@ impl Problem
 			let mut statements = self.statements.borrow_mut();
 
 			// Initially reset all proof statuses
-			for (_, statements) in statements.iter_mut()
+			for statements in statements.values_mut()
 			{
 				for statement in statements.iter_mut()
 				{
@@ -361,7 +361,7 @@ impl Problem
 		};
 
 		// Show all statements that are assumed to be proven
-		for (_, statements) in self.statements.borrow_mut().iter_mut()
+		for statements in self.statements.borrow_mut().values_mut()
 		{
 			for statement in statements.iter_mut()
 				.filter(|statement| statement.proof_status == ProofStatus::AssumedProven)

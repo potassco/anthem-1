@@ -256,7 +256,7 @@ impl PredicateDeclaration
 			None => return,
 		};
 
-		for (dependency, _) in dependencies.iter()
+		for dependency in dependencies.keys()
 		{
 			if private_dependencies.contains(&*dependency)
 				|| dependency.is_public()

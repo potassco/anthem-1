@@ -1,0 +1,1 @@
+lemma(backward): forall N (composite(N) <-> N > 1 and N <= n and exists I, J (I > 1 and J > 1 and I * J = N)).

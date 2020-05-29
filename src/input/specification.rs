@@ -166,10 +166,9 @@ fn input_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 		{
 			input = remaining_input;
 
-			use foliage::FindOrCreatePredicateDeclaration as _;
-
 			let predicate_declaration =
-				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity);
+				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity,
+					crate::PredicateDeclarationSource::Specification);
 
 			*predicate_declaration.is_input.borrow_mut() = true;
 		}
@@ -236,10 +235,9 @@ fn output_statement_body<'i>(mut input: &'i str, problem: &crate::Problem)
 		{
 			input = remaining_input;
 
-			use foliage::FindOrCreatePredicateDeclaration as _;
-
 			let predicate_declaration =
-				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity);
+				problem.find_or_create_predicate_declaration(constant_or_predicate_name, arity,
+					crate::PredicateDeclarationSource::Specification);
 
 			*predicate_declaration.is_output.borrow_mut() = true;
 		}

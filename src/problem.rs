@@ -49,6 +49,28 @@ impl Problem
 		section.push(statement);
 	}
 
+	pub(crate) fn process_output_predicates(&self)
+	{
+		let are_any_output_predicates_declared =
+			self.predicate_declarations.borrow().iter().find(|x| *x.is_output.borrow()).is_some();
+
+		if are_any_output_predicates_declared
+		{
+			return;
+		}
+
+		for predicate_declaration in self.predicate_declarations.borrow().iter()
+		{
+			if predicate_declaration.source.borrow().is_specification()
+				&& !*predicate_declaration.is_input.borrow()
+			{
+				log::info!("assuming {} to be an output predicate",
+					predicate_declaration.declaration);
+				*predicate_declaration.is_output.borrow_mut() = true;
+			}
+		}
+	}
+
 	pub(crate) fn check_consistency(&self, proof_direction: ProofDirection)
 		-> Result<(), crate::Error>
 	{
@@ -429,6 +451,35 @@ impl Problem
 	{
 		ProblemTPTPDisplay(self)
 	}
+
+	pub(crate) fn find_or_create_predicate_declaration(&self, name: &str, arity: usize,
+		source: crate::PredicateDeclarationSource)
+		-> std::rc::Rc<crate::PredicateDeclaration>
+	{
+		let mut predicate_declarations = self.predicate_declarations.borrow_mut();
+
+		match predicate_declarations.iter().find(|x| x.matches_signature(name, arity))
+		{
+			Some(declaration) =>
+			{
+				let mut existing_source = declaration.source.borrow_mut();
+				*existing_source = existing_source.and(source);
+
+				std::rc::Rc::clone(&declaration)
+			},
+			None =>
+			{
+				let declaration = crate::PredicateDeclaration::new(name.to_string(), arity);
+				let declaration = std::rc::Rc::new(declaration);
+
+				predicate_declarations.insert(std::rc::Rc::clone(&declaration));
+
+				log::debug!("new predicate declaration: {}/{}", name, arity);
+
+				declaration
+			},
+		}
+	}
 }
 
 struct ProblemTPTPDisplay<'p>(&'p Problem);
@@ -625,23 +676,8 @@ impl foliage::FindOrCreatePredicateDeclaration<crate::FoliageFlavor> for Problem
 	fn find_or_create_predicate_declaration(&self, name: &str, arity: usize)
 		-> std::rc::Rc<crate::PredicateDeclaration>
 	{
-		let mut predicate_declarations = self.predicate_declarations.borrow_mut();
-
-		match predicate_declarations.iter().find(|x| x.matches_signature(name, arity))
-		{
-			Some(declaration) => std::rc::Rc::clone(&declaration),
-			None =>
-			{
-				let declaration = crate::PredicateDeclaration::new(name.to_string(), arity);
-				let declaration = std::rc::Rc::new(declaration);
-
-				predicate_declarations.insert(std::rc::Rc::clone(&declaration));
-
-				log::debug!("new predicate declaration: {}/{}", name, arity);
-
-				declaration
-			},
-		}
+		(self as &Problem).find_or_create_predicate_declaration(name, arity,
+			crate::PredicateDeclarationSource::Specification)
 	}
 }
 

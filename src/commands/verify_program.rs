@@ -27,6 +27,8 @@ where
 
 	log::info!("read specification “{}”", specification_path.as_ref().display());
 
+	problem.process_output_predicates();
+
 	log::info!("reading input program “{}”", program_path.as_ref().display());
 
 	// TODO: make consistent with specification call (path vs. content)

@@ -137,9 +137,64 @@ impl PredicateDependencySign
 pub type PredicateDependencies =
 	std::collections::BTreeMap<std::rc::Rc<PredicateDeclaration>, PredicateDependencySign>;
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum PredicateDeclarationSource
+{
+	Program,
+	Specification,
+	ProgramAndSpecification,
+}
+
+impl PredicateDeclarationSource
+{
+	pub fn and(self, other: Self) -> Self
+	{
+		match (self, other)
+		{
+			(Self::ProgramAndSpecification, _)
+			| (_, Self::ProgramAndSpecification) => Self::ProgramAndSpecification,
+			(Self::Program, Self::Program) => Self::Program,
+			(Self::Specification, Self::Specification) => Self::Specification,
+			(Self::Program, Self::Specification)
+			| (Self::Specification, Self::Program) => Self::ProgramAndSpecification,
+		}
+	}
+
+	pub fn and_specification(self) -> Self
+	{
+		match self
+		{
+			Self::Program
+			| Self::ProgramAndSpecification => Self::ProgramAndSpecification,
+			Self::Specification => Self::Specification,
+		}
+	}
+
+	pub fn is_program(&self) -> bool
+	{
+		match self
+		{
+			Self::Program
+			| Self::ProgramAndSpecification => true,
+			Self::Specification => false,
+		}
+	}
+
+	pub fn is_specification(&self) -> bool
+	{
+		match self
+		{
+			Self::Program => false,
+			Self::Specification
+			| Self::ProgramAndSpecification => true,
+		}
+	}
+}
+
 pub struct PredicateDeclaration
 {
 	pub declaration: foliage::PredicateDeclaration,
+	pub source: std::cell::RefCell<PredicateDeclarationSource>,
 	pub dependencies: std::cell::RefCell<Option<PredicateDependencies>>,
 	pub is_input: std::cell::RefCell<bool>,
 	pub is_output: std::cell::RefCell<bool>,
@@ -290,6 +345,7 @@ impl foliage::flavor::PredicateDeclaration for PredicateDeclaration
 		Self
 		{
 			declaration: foliage::PredicateDeclaration::new(name, arity),
+			source: std::cell::RefCell::new(PredicateDeclarationSource::Specification),
 			dependencies: std::cell::RefCell::new(None),
 			is_input: std::cell::RefCell::new(false),
 			is_output: std::cell::RefCell::new(false),

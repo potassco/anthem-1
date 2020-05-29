@@ -1,6 +1,3 @@
-# Auxiliary predicate to determine whether a variable is integer
-#axiom: forall X (is_int(X) <-> exists N X = N).
-
 # Perform the proofs under the assumption that n is a nonnegative integer input constant. n stands
 # for the total number of input sets
 input: n -> integer.

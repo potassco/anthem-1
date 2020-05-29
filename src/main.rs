@@ -13,8 +13,8 @@ enum Command
 		program_path: std::path::PathBuf,
 
 		#[structopt(name = "specification", parse(from_os_str), required(true))]
-		/// Specification file path
-		specification_path: std::path::PathBuf,
+		/// One or more specification file paths
+		specification_paths: Vec<std::path::PathBuf>,
 
 		/// Proof direction (forward, backward, both)
 		#[structopt(long, default_value = "forward")]
@@ -41,12 +41,12 @@ fn main()
 		Command::VerifyProgram
 		{
 			program_path,
-			specification_path,
+			specification_paths,
 			proof_direction,
 			no_simplify,
 			color_choice,
 		}
-			=> anthem::commands::verify_program::run(&program_path, &specification_path,
+			=> anthem::commands::verify_program::run(&program_path, specification_paths.as_slice(),
 				proof_direction, no_simplify, color_choice),
 	}
 }

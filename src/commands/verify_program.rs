@@ -1,31 +1,35 @@
-pub fn run<P>(program_path: P, specification_path: P,
+pub fn run<P1, P2>(program_path: P1, specification_paths: &[P2],
 	proof_direction: crate::problem::ProofDirection, no_simplify: bool,
 	color_choice: crate::output::ColorChoice)
 where
-	P: AsRef<std::path::Path>,
+	P1: AsRef<std::path::Path>,
+	P2: AsRef<std::path::Path>,
 {
 	let mut problem = crate::Problem::new(color_choice);
 
-	log::info!("reading specification “{}”", specification_path.as_ref().display());
-
-	let specification_content = match std::fs::read_to_string(specification_path.as_ref())
+	for specification_path in specification_paths
 	{
-		Ok(specification_content) => specification_content,
-		Err(error) =>
+		log::info!("reading specification file “{}”", specification_path.as_ref().display());
+
+		let specification_content = match std::fs::read_to_string(specification_path.as_ref())
 		{
-			log::error!("could not access specification file: {}", error);
+			Ok(specification_content) => specification_content,
+			Err(error) =>
+			{
+				log::error!("could not access specification file: {}", error);
+				std::process::exit(1)
+			},
+		};
+
+		// TODO: rename to read_specification
+		if let Err(error) = crate::input::parse_specification(&specification_content, &mut problem)
+		{
+			log::error!("could not read specification file: {}", error);
 			std::process::exit(1)
-		},
-	};
+		}
 
-	// TODO: rename to read_specification
-	if let Err(error) = crate::input::parse_specification(&specification_content, &mut problem)
-	{
-		log::error!("could not read specification: {}", error);
-		std::process::exit(1)
+		log::info!("read specification “{}”", specification_path.as_ref().display());
 	}
-
-	log::info!("read specification “{}”", specification_path.as_ref().display());
 
 	problem.process_output_predicates();
 

@@ -326,7 +326,7 @@ impl Problem
 		{
 			let step_title = match statement.proof_status
 			{
-				ProofStatus::AssumedProven => format!("Added"),
+				ProofStatus::AssumedProven => format!("Presupposed"),
 				ProofStatus::Proven => format!("Verified"),
 				ProofStatus::NotProven
 				| ProofStatus::Disproven

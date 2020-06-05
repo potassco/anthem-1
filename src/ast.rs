@@ -422,7 +422,10 @@ impl VariableDeclaration
 						| Some('L')
 						| Some('M')
 						| Some('N') => return Ok(crate::Domain::Integer),
-						Some('X')
+						Some('U')
+						| Some('V')
+						| Some('W')
+						| Some('X')
 						| Some('Y')
 						| Some('Z') => return Ok(crate::Domain::Program),
 						Some('_') => continue,

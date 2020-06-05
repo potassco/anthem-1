@@ -8,15 +8,15 @@ input: s/2.
 
 # Only the in/1 predicate is an actual output, s/2 is an input and covered/1 and is_int/1 are
 # auxiliary
-output: in/1.
+output: in_cover/1.
 
 # Perform the proofs under the assumption that the second parameter of s/2 (the number of the set)
 # is always an integer
-assume: forall Y (exists X s(X, Y) -> exists N (Y = N and N >= 1 and N <= n)).
+assume: forall Y (exists X s(X, Y) -> exists I (Y = I and I >= 1 and I <= n)).
 
 # Only valid sets can be included in the solution
-spec: forall Y (in(Y) -> exists N (Y = N and N >= 1 and N <= n)).
+spec: forall Y (in_cover(Y) -> exists I (Y = I and I >= 1 and I <= n)).
 # If an element is contained in an input set, it must be covered by all solutions
-spec: forall X (exists Y s(X, Y) -> exists Y (in(Y) and s(X, Y))).
+spec: forall X (exists Y s(X, Y) -> exists Y (s(X, Y) and in_cover(Y))).
 # Elements may not be covered by two input sets
-spec: forall Y, Z (exists X (s(X, Y) and s(X, Z)) and in(Y) and in(Z) -> Y = Z).
+spec: forall Y, Z (exists X (s(X, Y) and s(X, Z)) and in_cover(Y) and in_cover(Z) -> Y = Z).

@@ -1,5 +1,5 @@
 # Multiplication with positive numbers preserves the order of integers
-#axiom: forall N1, N2, N3 (N1 > N2 and N3 > 0 -> N1 * N3 > N2 * N3).
+axiom: forall N1, N2, N3 (N1 > N2 and N3 > 0 -> N1 * N3 > N2 * N3).
 
 # Induction principle instantiated for p.
 # This axiom is necessary because we use Vampire without higher-order reasoning
@@ -22,11 +22,11 @@ lemma(forward): forall N (N >= 0 and not p(N + 1) -> (N + 1) * (N + 1) > n).
 lemma(backward): forall N1, N2 (N1 >= 0 and N2 >= 0 and N1 * N1 <= N2 * N2 -> N1 <= N2).
 
 lemma(backward): forall N (p(N) <-> 0 <= N and N <= n and N * N <= n).
-lemma(backward): forall N (p(N) -> N * N <= n).
+#lemma(backward): forall N (p(N) -> N * N <= n).
 lemma(backward): forall N (not p(N) and N >= 0 -> N * N > n).
 lemma(backward): forall N (N >= 0 -> N * N < (N + 1) * (N + 1)).
-lemma(backward): forall N1, N2 (p(N1) and not p(N2) and N2 >= 0 -> N1 * N1 <= n and N2 * N2 > n).
-lemma(backward): forall N1, N2 (p(N1) and not p(N2) and N2 >= 0 -> N1 * N1 < N2 * N2).
+#lemma(backward): forall N1, N2 (p(N1) and not p(N2) and N2 >= 0 -> N1 * N1 <= n and N2 * N2 > n).
+#lemma(backward): forall N1, N2 (p(N1) and not p(N2) and N2 >= 0 -> N1 * N1 < N2 * N2).
 lemma(backward): forall N1, N2 (p(N1) and not p(N2) and N2 >= 0 -> N1 < N2).
 
 lemma(backward): forall N1, N2 (p(N1) and not p(N1 + 1) and p(N2) and not p(N2 + 1) -> N1 = N2).
@@ -43,8 +43,8 @@ lemma(backward): forall N1, N2 (p(N1) and not p(N1 + 1) and p(N2) and not p(N2 +
 
 
 
-lemma(backward): exists N (forall X (q(X) <- X = N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) > n).
-lemma(backward): exists N (q(N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) > n).
+#lemma(backward): exists N (forall X (q(X) <- X = N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) > n).
+#lemma(backward): exists N (q(N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) > n).
 
 
 
@@ -63,5 +63,5 @@ lemma(backward): exists N (q(N) and N >= 0 and N * N <= n and (N + 1) * (N + 1) 
 #lemma(backward): forall N (q(N) <- p(N) and not p(N + 1)).
 
 
-lemma(backward): forall X1 (q(X1) -> p(X1) and exists X2 (exists N (X2 = N + 1 and N = X1) and not p(X2))).
-lemma(backward): forall X1 (q(X1) <- p(X1) and exists X2 (exists N (X2 = N + 1 and N = X1) and not p(X2))).
+#lemma(backward): forall X1 (q(X1) -> p(X1) and exists X2 (exists N (X2 = N + 1 and N = X1) and not p(X2))).
+#lemma(backward): forall X1 (q(X1) <- p(X1) and exists X2 (exists N (X2 = N + 1 and N = X1) and not p(X2))).

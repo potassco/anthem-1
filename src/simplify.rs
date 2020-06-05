@@ -196,6 +196,90 @@ fn simplify_quantified_formulas_without_parameters(formula: &mut crate::Formula)
 	}
 }
 
+fn join_nested_quantified_formulas_of_same_type(formula: &mut crate::Formula)
+	-> SimplificationResult
+{
+	use crate::Formula;
+
+	match formula
+	{
+		Formula::And(arguments)
+		| Formula::IfAndOnlyIf(arguments)
+		| Formula::Or(arguments) =>
+		{
+			let mut simplification_result = SimplificationResult::NotSimplified;
+
+			for mut argument in arguments
+			{
+				simplification_result = simplification_result.or(
+					join_nested_quantified_formulas_of_same_type(&mut argument));
+			}
+
+			simplification_result
+		},
+		Formula::Boolean(_)
+		| Formula::Compare(_)
+		| Formula::Predicate(_) => SimplificationResult::NotSimplified,
+		Formula::Exists(ref mut quantified_formula) =>
+		{
+			let mut simplification_result =
+				join_nested_quantified_formulas_of_same_type(&mut quantified_formula.argument);
+
+			if let Formula::Exists(ref mut nested_quantified_formula) = *quantified_formula.argument
+			{
+				// TODO: remove workaround
+				let mut argument = crate::Formula::false_();
+				std::mem::swap(&mut argument, &mut nested_quantified_formula.argument);
+
+				let joined_parameters =
+					[&quantified_formula.parameters[..], &nested_quantified_formula.parameters[..]]
+					.concat()
+					.iter()
+					.map(|x| std::rc::Rc::clone(x))
+					.collect::<Vec<_>>();
+
+				quantified_formula.parameters = std::rc::Rc::new(joined_parameters);
+				*quantified_formula.argument = argument;
+
+				simplification_result = SimplificationResult::Simplified;
+			}
+
+			simplification_result
+		},
+		Formula::ForAll(ref mut quantified_formula) =>
+		{
+			let mut simplification_result =
+				join_nested_quantified_formulas_of_same_type(&mut quantified_formula.argument);
+
+			if let Formula::ForAll(ref mut nested_quantified_formula) = *quantified_formula.argument
+			{
+				// TODO: remove workaround
+				let mut argument = crate::Formula::false_();
+				std::mem::swap(&mut argument, &mut nested_quantified_formula.argument);
+
+				let joined_parameters =
+					[&quantified_formula.parameters[..], &nested_quantified_formula.parameters[..]]
+					.concat()
+					.iter()
+					.map(|x| std::rc::Rc::clone(x))
+					.collect::<Vec<_>>();
+
+				quantified_formula.parameters = std::rc::Rc::new(joined_parameters);
+				*quantified_formula.argument = argument;
+
+				simplification_result = SimplificationResult::Simplified;
+			}
+
+			simplification_result
+		},
+		Formula::Implies(ref mut implies) =>
+			join_nested_quantified_formulas_of_same_type(&mut implies.antecedent)
+				.or(join_nested_quantified_formulas_of_same_type(&mut implies.implication)),
+		Formula::Not(ref mut argument) =>
+			join_nested_quantified_formulas_of_same_type(argument),
+	}
+}
+
 fn simplify_trivial_n_ary_formulas(formula: &mut crate::Formula) -> SimplificationResult
 {
 	use crate::Formula;
@@ -256,6 +340,8 @@ pub(crate) fn simplify(formula: &mut crate::Formula) -> Result<(), crate::Error>
 	{
 		if remove_unnecessary_exists_parameters(formula)? == SimplificationResult::Simplified
 			|| simplify_quantified_formulas_without_parameters(formula)
+				== SimplificationResult::Simplified
+			|| join_nested_quantified_formulas_of_same_type(formula)
 				== SimplificationResult::Simplified
 			|| simplify_trivial_n_ary_formulas(formula) == SimplificationResult::Simplified
 		{

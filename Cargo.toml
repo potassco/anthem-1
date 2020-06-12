@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 atty = "0.2"
-foliage = {git = "https://github.com/pluehne/foliage", branch = "parser-new"}
+foliage = {git = "https://github.com/potassco/foliage", tag = "v0.2.0-beta.1"}
 itertools = "0.9"
 log = "0.4"
 pretty_env_logger = "0.4"

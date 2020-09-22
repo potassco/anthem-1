@@ -14,10 +14,19 @@ To verify that a program implements a specification, invoke `anthem` using the `
 $ anthem verify-program <program file> <specification file>...
 ```
 
+Note that multiple specification files may be specified.
+This is useful for separating lemmas and axioms from the assumptions and specs.
+
 The example for computing the floor of the square root of a number can be reproduced as follows:
 
 ```sh
 $ anthem verify-program examples/example-2.{lp,spec,lemmas}
+```
+
+The braces notation is a Bash shorthand for
+
+```sh
+$ anthem verify-program examples/example-2.lp examples/example-2.spec examples/example-2.lemmas
 ```
 
 By default, `anthem` performs Clark’s completion on the translated formulas, detects which variables are integer, and simplifies the output by applying several basic transformation rules.
@@ -36,10 +45,10 @@ $ cargo build --release
 ```
 
 The `anthem` binary will then be available in the `target/release/` directory.
-Alternatively, `anthem` can be used with `cargo` as follows:
+Alternatively, `anthem` can be invoked using `cargo` as follows:
 
 ```sh
-$ cargo run -- verify-program 
+$ cargo run -- verify-program <program file> <specification file>...
 ```
 
 ## Contributors

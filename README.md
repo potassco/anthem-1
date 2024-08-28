@@ -2,6 +2,13 @@
 
 > Translate answer set programs to first-order theorem prover language
 
+## Status of this project
+**You're currently looking at version 1 of `anthem`, which was built by Patrick Lühne and is no longer being developed.**
+**No further commits to this repository will be made.**
+**Issues and pull request will be ignored.**
+
+**If you're interested in a recent version of anthem, have a look [here](https://github.com/potassco/anthem).**
+
 ## Overview
 
 `anthem` translates ASP programs (in the input language of [`clingo`](https://github.com/potassco/clingo)) to the language of first-order theorem provers such as [Prover9](https://www.cs.unm.edu/~mccune/mace4/).
